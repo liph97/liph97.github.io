@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đề Cương Ôn Thi Điều Dưỡng 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .no-print {
+            /* This class is kept for potential future use, though the button is removed */
+        }
+        #content-container {
+            font-size: 13pt; /* Set font size as requested */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Tailwind's green-100 */
+            color: #065f46; /* Tailwind's green-800 */
+            font-weight: 600;
+            border-left: 4px solid #10b981; /* Tailwind's green-500 */
+            padding-left: 1rem !important;
+        }
+        .question-block {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-700">Đề Cương Ôn Thi Điều Dưỡng 2025</h1>
+            <p class="text-lg text-gray-600 mt-2">Tổng hợp câu hỏi trắc nghiệm và đáp án chi tiết.</p>
+        </div>
+
+        <div class="no-print bg-white p-4 rounded-lg shadow-md mb-6 flex flex-col sm:flex-row items-center justify-center gap-4 sticky top-4 z-10">
+            <button id="toggle-all-answers" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ease-in-out flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Hiện/Ẩn Tất Cả Đáp Án
+            </button>
+        </div>
+
+        <div id="content-container" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+            
+            <!-- SECTION 1 -->
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6">Phần 1: Chuyên Môn</h2>
+                <div id="questions-part-1" class="space-y-6">
+                    <!-- Questions will be injected here by JS -->
+                </div>
+            </div>
+
+            <!-- SECTION 2 -->
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 border-b-4 border-green-500 pb-2 mb-6">Phần 2: Kiểm Soát Nhiễm Khuẩn & Thông Tư</h2>
+                <div id="questions-part-2" class="space-y-6">
+                    <!-- Questions will be injected here by JS -->
+                </div>
+            </div>
+
+            <div class="text-right mt-12 pt-6 border-t border-gray-200">
+                <p class="font-semibold text-lg text-gray-800">BS. Phạm Hải Linh</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const questionsPart1 = [
+        { q: "1. Tiến hành lấy nước tiểu để cấy tìm vi khuẩn cho người bệnh nghi ngờ bị nhiễm khuẩn tiết niệu, phương pháp tốt nhất là:", o: ["Lấy nước tiêu ở lần thứ hai trong ngày", "Lấy trong bô tiểu thu được trong 24 h sau khi đã lắc đều", "Lấy nước tiểu đầu dòng", "Lấy nước tiểu giữa dòng"], a: 3 },
+        { q: "2. Hướng dẫn người bệnh viêm phổi làm loãng đờm bằng cách:", o: ["Ăn nhiều rau xanh", "Uống nhiều nước ấm", "Tập ho", "Vỗ lưng"], a: 1 },
+        { q: "3. Biến chứng của loét dạ dày tá tràng:", o: ["Viêm ruột thừa", "Sỏi mật", "Xuất huyết tiêu hóa", "Giãn tĩnh mạch thực quản"], a: 2 },
+        { q: "4. Hướng dẫn người bệnh loét dạ dày tá tràng uống các thuốc bảo vệ niêm mạc dạ dày (Bismuth, Sucralfate,...) nên uống:", o: ["Trước khi ăn", "Sau khi ăn", "Trong lúc ăn", "Uống vào thời điểm nào cũng được"], a: 0 },
+        { q: "5. Khi nhận định BN choáng mất máu do tình trạng xuất huyết tiêu hóa, triệu chứng nào sau đây không đúng:", o: ["Da xanh tái vã mồ hôi", "Huyết áp cao", "Chân tay lạnh", "Mạch nhanh nhỏ khó bắt"], a: 1 },
+        { q: "6. Triệu chứng nào sau đây thường gặp nhất trong hội chứng tăng áp lực nội sọ:", o: ["Đau đầu", "Nôn ói", "Giảm thị lực", "Rối loạn ý thức"], a: 0 },
+        { q: "7. Biến chứng của tiểu đường lên các cơ quan sau đây, ngoại trừ:", o: ["Tim", "Phổi", "Thần kinh", "Mắt"], a: 1 },
+        { q: "8. Vị trí tiêm Insulin:", o: ["Cánh tay, đùi, mông", "Bụng, đùi, mông", "Cánh tay, bụng, đùi", "Cánh tay, bụng, đùi, mông"], a: 3 },
+        { q: "9. Các biến chứng có thể gặp tại nơi tiêm Insulin:", o: ["Thoái hóa mỡ, áp xe, teo cơ tại chỗ, phì đại mỡ dưới da", "Thoái hóa mỡ, teo cơ tại chỗ, phồng rộp", "Thoái hóa mỡ, ngứa, áp xe", "Áp xe, teo cơ tại chỗ, phì đại mỡ dưới da"], a: 0 },
+        { q: "10. Nguyên tắc đúng nhất của chế độ vận động sau nhồi máu cơ tim mà điều dưỡng viên phải hướng dẫn cho người bệnh khi ra viện là:", o: ["Không được vận động hoặc luyện tập", "3 tháng sau khi ra viện mới được luyện tập và vận động", "Vận động và luyện tập nhẹ nhàng hàng ngày", "Tập vận động từ từ với mức độ tăng dần"], a: 3 },
+        { q: "11. Khi người bệnh suy tim dùng thuốc trợ tim, dấu hiệu quan trọng nhất cần theo dõi:", o: ["Huyết áp: trước và sau dùng thuốc", "Nhịp thở: 1h/1lần", "Mạch trước và sau dùng thuốc", "Khối lượng nước tiểu trong 24 h"], a: 2 },
+        { q: "12. Biểu hiện lâm sàng thường gặp của bệnh tai biến mạch máu não:", o: ["Mất cảm giác", "Hôn mê", "Giảm thị lực", "Liệt nửa người"], a: 3 },
+        { q: "13. Nhận định nào là đúng về bệnh tay chân miệng ở trẻ nhỏ:", o: ["Trẻ đã bị tay chân miệng chắc không mắc bệnh trở lại", "Trẻ bị tay chân miệng thường có triệu chứng loét miệng, nỗi sần, mụn nước ở lòng bàn tay hay bàn chân", "Hiện nay đã có vắc- xin phòng ngừa bệnh tay chân miệng cho trẻ", "Tất cả điều đúng"], a: 1 },
+        { q: "14. Thuốc hạ sốt nào sau đây không nên dùng để hạ sốt trong sốt xuất huyết?", o: ["Hapacol", "Ibuprofen", "Tylenol", "Efferalgan"], a: 1 },
+        { q: "15. Biến chứng thường xảy ra trong vòng 24 giờ đầu sau mổ là:", o: ["Tắc ruột", "Chảy máu", "Viêm phôi", "Viêm đường tiết niệu"], a: 1 },
+        { q: "16. Sau mổ hướng dẫn NB ngồi dậy sớm đi lại để ngừa biến chứng:", o: ["Đau", "Viêm phổi và liệt ruột", "Chảy máu", "Tất cả đều đúng"], a: 1 },
+        { q: "17. Triệu chứng cơ năng thường gặp của thủng dạ dày - tá tràng:", o: ["Đau bụng đột ngột và dữ dội, nôn, bí trung đại tiện", "Bụng ít tham gia vào nhịp thở, có dấu hiệu của nhiễm trùng.", "Gõ thấy mất vùng đục trước gan", "Tất cả đều đúng"], a: 0 },
+        { q: "18. Giáo dục sức khỏe cho NB sau mổ thủng dạ dày - tá tràng:", o: ["Dinh dưỡng như bình thường", "Hạn chế thuốc lá, trà, cafe các đồ cay, nóng", "Có thể dùng các thuốc như Aspirine, Corticoide", "Tất cả đều đúng"], a: 1 },
+        { q: "19. Nguyên tắc chăm sóc dẫn lưu màng phổi:", o: ["Hệ thống ống ngắt quãng", "Không cần phải vô khuẩn", "Kín và 1 chiều", "Tất cả đều đúng"], a: 2 },
+        { q: "20. Điều nào sau đây KHÔNG đúng khi nói về các nguyên tắc chăm sóc vết thương?", o: ["Bảo đảm kỹ thuật vô khuẩn tuyệt đối", "Mỗi bộ dụng cụ chỉ dùng riêng cho một người", "Chăm sóc vết thương đúng nguyên tắc từ ngoài vào trong", "Băng gạc đắp lên vết thương phải phủ kín và cách rìa vết thương ít nhất 3-5cm"], a: 2 },
+        { q: "21. Quan trọng nhất khi chăm sóc NB bó bột, ĐD cần khuyên NB:", o: ["Kê cao chi bó bột", "Gồng cơ trong bột", "Uống nhiều nước", "Ăn nhiều chất xơ"], a: 1 },
+        { q: "22. Suy thận cấp thường do các nguyên nhân sau NGOẠI TRỪ:", o: ["Nhiễm khuẩn đặc biệt ở nhóm nhiễm khuẩn nặng có sốc", "Suy đa cơ quan", "Đa chấn thương", "Bệnh thận bẩm sinh"], a: 3 },
+        { q: "23. Phát biểu nào sau đây phù hợp với chế độ ăn trong điều trị bệnh suy thận mãn:", o: ["Ăn nhạt thường xuyên, tránh dùng các thức ăn có nhiều kali, giảm đạm", "Ăn nhạt khi có phù và huyết áp cao, dùng thức ăn có nhiều kali, giảm đạm", "Ăn nhạt khi có phù và huyết áp cao, tránh dùng thức ăn có nhiều kali, giảm đạm", "Ăn nhạt khi có phù và huyết áp cao, tránh dùng thức ăn có nhiều kali, tăng đạm"], a: 2 },
+        { q: "24. Khi cho người bệnh thở ôxy phải đảm bảo duy trì các đường dẫn ôxy an toàn không tuột khỏi người bệnh, không......", o: ["Hở", "Tắc", "Không đủ", "Thừa hoặc thiếu"], a: 1 },
+        { q: "25. Trong chăm sóc người bệnh trụy mạch, để phát hiện sớm những bất thường về huyết động của người bệnh, điều dưỡng phải theo dõi.", o: ["Huyết động", "Huyết áp", "Hàng giờ", "Liên tục"], a: 3 },
+        { q: "26. Mục đích của việc chăm sóc người bệnh bị phù do suy tim mạn là làm...... cho tim đang suy.", o: ["Tăng thể tích", "Giảm thể tích", "Giảm gánh nặng", "Tăng sự hoạt động"], a: 2 },
+        { q: "27. Để chống tắc mạch cho người bệnh phù do suy tim mạn, cần hướng dẫn người bệnh...... nhất là chi dưới.", o: ["Lợi tiểu", "Kê cao chi", "Chống đông", "Tập vận động"], a: 3 },
+        { q: "28. Người bệnh suy tim thường có khó thở tăng về đêm. Người điều dưỡng trực phải luôn theo dõi để phát hiện tình trạng.......", o: ["Thiếu ôxy não", "Suy tim nặng lên", "Tác dụng của thuốc", "Dấu hiệu ngộ độc thuốc"], a: 1 },
+        { q: "29. Nên cho người bệnh suy tim mạn dùng thuốc lợi tiểu vào......", o: ["Buổi sáng", "Buổi chiều", "Buổi trưa", "Buổi tối"], a: 0 },
+        { q: "30. Mục đích chăm sóc người bệnh ngộ độc thức ăn tránh cho người bệnh bị những ảnh hưởng của......gây ra.", o: ["Vi rút", "Vi khuẩn", "Chất độc", "Thức ăn bị nhiễm độc"], a: 2 },
+        { q: "31. Đối với bệnh nhân viêm đường mật, nên xếp cho họ giường nằm ở cạnh cửa sổ để..", o: ["Phòng té ngã", "Tiện theo dõi và chăm sóc", "Tiện theo dõi", "Theo dõi vàng da"], a: 3 },
+        { q: "32. Đối với bệnh nhân viêm đường mật, nên hướng dẫn họ sử dụng các loại thức ăn......", o: ["Ít mỡ", "Ít đạm", "Tiện theo dõi", "Theo dõi vàng da"], a: 0 },
+        { q: "33. Mục đích của chăm sóc người bệnh viêm đường mật để phát hiện sớm các... báo bác sỹ để xử lý kịp thời.", o: ["Cơn đau", "Vàng da", "Biến chứng", "Triệu chứng của bệnh"], a: 2 },
+        { q: "34. Mục đích của chăm sóc người bệnh bị dị ứng thuốc là làm thuyên giảm...... dị ứng.", o: ["Cơ địa", "Phản ứng", "Các triệu chứng", "Các biến chứng"], a: 2 },
+        { q: "35. Mục tiêu của chăm sóc người bệnh sốt cao là tránh được các tai biến như .., sặc, cắn phải lưỡi.", o: ["Hạ thân nhiệt", "Mất muối", "Mất nước", "Co giật"], a: 3 },
+        { q: "36. Mục đích của chăm sóc người bệnh bị loét mục là làm cho loét mục......", o: ["Không bị bội nhiễm", "Mau lành", "Phát triển", "Chảy nước"], a: 1 },
+        { q: "37. Chăm sóc người bệnh chảy máu đường tiêu hoá là nhằm tránh cho người bệnh ...... máu và dịch nôn.", o: ["Hít phải", "Mất thêm", "Cầm nôn", "Cầm máu"], a: 0 },
+        { q: "38. Đối với các vết thương phần mềm lớn ở chi, cần phải kiểm tra mức độ thương tổn, sự chèn ép dây thần kinh (cảm giác, vận động) và......đi qua vùng đó.", o: ["Thần kinh", "Dây chằng", "Mạch máu", "Cân cơ"], a: 2 },
+        { q: "39. Người bệnh sau mổ gãy xương hở cần phải luyện tập thụ động và chủ động sau mổ để tránh thoái hoá, ..... và cứng khớp.", o: ["Tê", "Liệt", "Teo cơ", "Biến dạng"], a: 2 },
+        { q: "40. Gãy trên lồi cầu xương cánh tay là loại gãy thường gặp nhất trong loại gãy xương chi trên nhưng lại rất hiếm gặp ở.....", o: ["Trẻ em", "Người già", "Phụ nữ có thai", "Người trưởng thành"], a: 3 },
+        { q: "41. Khi chiếu đèn cho trẻ sơ sinh vàng da, phải thay đổi tư thế của trẻ......giờ/lần để cho tất cả các phần da đều được đèn chiếu.", o: ["4", "3", "2", "1"], a: 2 },
+        { q: "42. Nhận định đau bụng trong bệnh tắc ruột có tính chất sau:", o: ["Giảm đau theo tư thế", "Đau dữ dội, từng cơn", "Không kèm theo nôn ói", "Đau liên tục"], a: 1 },
+        { q: "43. Chăm sóc đúng nhất khi bệnh nhân bí tiểu sau mổ:", o: ["Cho bệnh nhân tập gồng cơ", "Chườm ấm vùng hạ vị", "Đặt thông tiểu thường", "Cho bệnh nhân uống thuốc lợi tiểu"], a: 1 },
+        { q: "44. Mục đích định nhóm máu tại giường nhằm:", o: ["Tránh truyền khác nhóm máu cho người bệnh", "Kiểm tra lại nhóm máu của túi máu", "Tránh truyền nhầm đơn vị máu cho người bệnh", "Kiểm tra lại nhóm máu của người bệnh"], a: 2 },
+        { q: "45. Đảm bảo an toàn truyền máu nhằm mục đích:", o: ["Chỉ cần đảm bảo an toàn tuyệt đối cho người nhận máu", "Đảm bảo chống phơi nhiễm cho nhân viên y tế là được", "Đảm bảo an toàn người cho máu, người nhận máu và nhân viên y tế", "Đảm bảo đúng chỉ định truyền máu"], a: 2 },
+        { q: "46. Thứ tự của các bước trong quy trình chăm sóc:", o: ["Phân tích, lập kế hoạch điều dưỡng, thực hiện kế hoạch điều dưỡng, đánh giá", "Thu thập thông tin, xác định ưu tiên, ghi chép sự đáp ứng", "Chẩn đoán điều dưỡng, lập kế hoạch điều dưỡng, thực hiện kế hoạch điều dưỡng", "Nhận định, lập kế hoạch điều dưỡng, Thực hiện kế hoạch điều dưỡng, đánh giá"], a: 3 },
+        { q: "47. Khi nhận định đường truyền tĩnh mạch của người bệnh, điều dưỡng ghi nhận vị trí da nơi đặt kim luồn bị đỏ, sưng và ẩm khi sờ chạm. Can thiệp gì điều dưỡng cần thực hiện đầu tiên:", o: ["Khóa và rút đường truyền tĩnh mạch", "Chườm đá lạnh lên vị trí tiêm", "Kiểm tra tình trạng thông suốt của đường truyền", "Chườm ẩm, ấm băng ép lên vị trí tiêm"], a: 0 },
+        { q: "48. Vị trí thường được dùng để thử phản ứng thuốc?", o: ["1/3 trên trước và trong cánh tay", "1/3 trên trước và trong cẳng tay", "1/3 trên trước cẳng tay", "1/3 trên trước giữa cẳng tay"], a: 1 },
+        { q: "49. Tần số mạch tăng trong trường hợp nào sau:", o: ["Thở chậm", "Suy giáp", "Cường giáp", "Hạ thân nhiệt"], a: 2 },
+        { q: "50. Điều dưỡng cần theo dõi người bệnh đái tháo đường sau dùng thuốc để phát hiện sớm các biểu hiện của hạ đường huyết:", o: ["Run rẩy, vã mồ hôi, chóng mặt và mắt mờ", "Tê tay chân, mệt mỏi", "Sốt, nhức đầu", "Nôn ói, đau bụng"], a: 0 },
+        { q: "51. Vấn đề quan trọng nhất cần GDSK cho bệnh nhân đau thắt ngực:", o: ["Ngăn ngừa và kiểm soát cơn đau thắt ngực", "Động viên, tư vấn giúp bệnh nhân an tâm điều trị", "Hướng dẫn bệnh nhân tập thở giúp hô hấp hiệu quả", "Giúp bệnh nhân an tâm, giảm lo sợ giúp giảm đau."], a: 0 },
+        { q: "52. Đặc tính nào sau đây của bệnh nhân gợi ý về bệnh nhồi máu cơ tim:", o: ["Là hiện tượng cơ tim bị hoại tử một phần do mất máu", "Chỉ xảy ra ở nam giới", "Cơn đau xuất hiện từ từ và có dấu hiệu báo trước", "Cơn đau dữ dội có tính chất bóp nghẹt"], a: 0 },
+        { q: "53. Lượng nước đưa vào cho bệnh nhân suy thận mạn (kể cả ăn và uống) được tính bằng lượng nước tiểu trong ngày cộng với:", o: ["200ml", "300ml", "400ml", "500ml"], a: 3 },
+        { q: "54. Để giảm triệu chứng đau cho người bệnh viêm loét dạ dày cần:", o: ["Cho người bệnh uống thuốc giảm đau", "Thực hiện chế độ ăn uống hợp lý và sử dụng thuốc đúng liệu trình", "Thực hiện chế độ sinh hoạt khoa học", "Dùng thuốc đúng liệu trình và tái khám"], a: 1 },
+        { q: "55. Dấu hiệu nhận biết sớm nhất tình trạng mất máu ở bệnh nhân xuất huyết tiêu hóa trên là:", o: ["Da xanh tái, vã mồ hôi", "Niêm mạc, môi, mắt trắng bệch", "Nôn ra nhiều máu tươi", "Mạch nhanh, huyết áp hạ"], a: 3 },
+        { q: "56. Tư thế tốt nhất giúp bệnh nhân viêm tụy cấp giảm đau là:", o: ["Nằm đầu cao, hai chân co lại", "Ngồi co hai chân, ngã người ra sau", "Ngồi co hai chân, cúi người ra trước", "Nằm nghiêng phải, hai chân co"], a: 2 },
+        { q: "57. Biện pháp tốt nhất để đánh giá và theo dõi máu còn chảy hay đã cầm ở bệnh nhân xuất huyết tiêu hóa trên là:", o: ["Theo dõi sát mạch, huyết áp", "Theo dõi chất nôn và phân", "Đặt ống thông dạ dày và theo dõi qua ống thông", "Thường xuyên xét nghiệm số lượng hồng cầu"], a: 2 },
+        { q: "58. Albumin máu giảm nặng ở người bệnh xơ gan gây nên tình trạng nào sau đây:", o: ["Tuần hoàn bàng hệ", "Suy tế bào gan", "Cổ trướng", "Tăng áp lực tĩnh mạch cửa"], a: 2 },
+        { q: "59. Khi nhận định một bệnh nhân hen phế quản, biểu hiện nào sau đây đúng:", o: ["Khó thở chậm, thì thở vào", "Khó thở chậm, thì thở ra", "Khó thở nhanh, thì thở vào", "Khó thở nhanh, thì thở ra"], a: 1 },
+        { q: "60. Để bệnh nhân viêm phổi tập thở có hiệu quả, người điều dưỡng cần hướng dẫn:", o: ["Hít chậm, sâu bằng mũi và thở thanh qua miệng", "Hít vào qua đường miệng và thở từ từ qua mũi", "Hít thật sâu qua đường mũi và giữ hơi lại trong phổi", "Hít vào chậm qua mũi và thở ra qua môi mím"], a: 3 },
+        { q: "61. Các biến chứng mạn tính của bệnh đái tháo đường:", o: ["Hôn mê do nhiễm toan ceton", "Biến chứng bàn chân tiểu đường", "Hạ đường huyết", "Tai biến mạch máu não"], a: 1 },
+        { q: "62. Khi chăm sóc bệnh nhân hôn mê, vấn đề nào quan trọng nhất cần ưu tiên chăm sóc hàng đầu:", o: ["Đảm bảo hô hấp.", "Đảm bảo tuần hoàn", "Đảm bảo dinh dưỡng.", "Phòng chống nhiễm khuẩn"], a: 0 },
+        { q: "63. Hiện tượng vàng da sinh lý của trẻ sơ sinh đủ tháng khỏe mạnh:", o: ["Xuất hiện từ ngày thứ 2-3 đến ngày 7- 10 thì hết", "Xuất hiện từ ngày thứ 2-3 đến ngày 5-7 thì hết", "Xuất hiện từ ngày thứ 1-2 đến ngày 7- 10 thì hết", "Xuất hiện từ ngày thứ 1-2 đến ngày 5 – 7 thì hết"], a: 0 },
+        { q: "64. Dịch nhầy CTC nhiều nhất vào thời điểm nào?", o: ["Sau sạch kinh", "Ngày thứ 7-10 của chu kỳ kinh", "Ngay trước hành kinh", "Thời điểm rụng trứng"], a: 3 },
+        { q: "65. Dấu hiệu sớm nhất để phát hiện chèn ép khoang sau gãy xương là:", o: ["Mất mạch.", "Giảm cảm giác.", "Tê.", "Đau."], a: 3 },
+        { q: "66. Thời gian tốt nhất cho trẻ bú ngay sau sinh là?", o: ["15 phút", "30 phút", "45 phút", "60 phút"], a: 1 },
+        { q: "67. Giới tính của thai được xác định khi:", o: ["Thụ tinh", "Thụ thai", "Thai được 12 tuần", "Thai được 24 tuần"], a: 0 },
+        { q: "68. Những điều nên làm khi cấp cứu nạn nhân gãy xương:", o: ["Bất động chi gãy và giảm đau.", "Bất động chi gãy trên khớp.", "Đưa NB vào cơ sở y tế gần nhất.", "Bất động chi gãy dưới khớp."], a: 0 },
+        { q: "69. Trong chăm sóc trẻ co giật thuốc hạ sốt dùng bằng đường:", o: ["Tiêm truyền tĩnh mạch", "Uống", "Hậu môn", "Dán ngoài da"], a: 2 },
+        { q: "70. Bất thường nào hay gặp nhất trong thai kỳ:", o: ["Đái tháo nhạt.", "Nhiễm trùng tiểu.", "Suy tim.", "Thiếu máu thiếu sắt"], a: 3 },
+        { q: "71. Thời kỳ ủ bệnh trung bình của uốn ván là:", o: ["2 - 5 ngày", "5 - 7 ngày", "7-14 ngày", "14 - 20 ngày"], a: 2 },
+        { q: "72. Nốt thủy đậu mọc:", o: ["Theo trình tự từ đầu đến chân.", "Trên da không có trình tự nhất định", "Theo trình tự từ chân đến đầu.", "Trong niêm mạc trước, khi nhiều sẽ mọc trên da."], a: 1 },
+        { q: "73. Giai đoạn nguy hiểm của sốt xuất huyết thường xảy ra vào ngày thứ mấy của bệnh?", o: ["Ngày 1- ngày 5", "Ngày 6- ngày 7", "Ngày 3- ngày 6", "Ngày 2- ngày 4"], a: 2 },
+        { q: "74. Triệu chứng có giá trị nhất để phát hiện sớm cơn bão giáp trạng là:", o: ["Kích thích vật vã", "Run tay chân", "Mạch tăng rất nhanh", "Thân nhiệt tăng cao"], a: 2 },
+        { q: "75. Điều nào sau đây KHÔNG ĐÚNG khi chăm sóc NB có dẫn lưu:", o: ["Cho NB nghiêng về phía dẫn lưu;", "Rửa vết mổ trước, dẫn lưu sau;", "Rửa dẫn lưu trước, vết mổ sau;", "Rửa dẫn lưu sạch trước, dẫn lưu nhiễm sau."], a: 2 },
+        { q: "76. Những điểm sau đây cần chú ý trong việc điều trị sởi?", o: ["Dùng kháng sinh phổ rộng để phòng ngừa bội nhiễm trong giai đoạn xuất tiết", "Sử dụng Vitamin A", "Dùng Aspirin liều cao để hạ thân nhiệt", "Sử dụng các thuốc kháng siêu vi để ngăn ngừa biến chứng"], a: 1 },
+        { q: "77. Vào cuối thai kỳ, thai phụ thường:", o: ["Thở chậm và sâu hơn.", "Thở chậm và nông hơn.", "Thở nhanh và sâu hơn.", "Thở nhanh và nông hơn."], a: 3 },
+        { q: "78. Phòng mổ không được vượt quá:", o: ["5 người", "10 người", "12 người", "15 người"], a: 3 },
+        { q: "79. Thời gian ủ bệnh trong bệnh dại là:", o: ["Từ 10-15 ngày", "Từ 15-20 ngày", "Từ 20-30 ngày", "Từ 20-60 ngày"], a: 3 },
+        { q: "80. Thời gian thường được tính đến trong xuất hiện NKBV là?", o: ["Sau 12 giờ kể từ khi nhập viện", "Sau 24 giờ kể từ khi nhập viện", "Sau 48 giờ kể từ khi nhập viện", "Sau 72 giờ kể từ khi nhập viện"], a: 2 },
+        { q: "81. Đặc điểm bóng nước trong thủy đậu là:", o: ["Có cùng một lứa tuổi tại một thời điểm", "Không gồ lên mặt da", "Khi đóng mày không để lại sẹo nếu không bị bội nhiễm.", "Tất cả câu trên đều đúng"], a: 2 },
+        { q: "82. Phương pháp phòng ngừa thủy đậu hiệu quả nhất hiện nay là:", o: ["Cách ly NB tại bệnh viện.", "Chủng ngừa bằng Vắc xin", "Uống Acyclovir sau khi tiếp xúc với NB thủy đậu", "Tất cả các biện pháp trên"], a: 1 },
+        { q: "83. Triệu chứng lâm sàng của SXH Dengue có dấu hiệu cảnh báo:", o: ["Da sung huyết, phát ban, nhức hai hốc mắt, đau khớp, đau cơ", "Bao gồm triệu chứng lâm sàng của SXH-D kèm buồn nôn", "Bao gồm triệu chứng lâm sàng của SXH-D kèm vật vã, tiểu ít, gan to> 2cm, xuất huyết niêm mạc", "Tất cả câu trên đều đúng"], a: 2 },
+        { q: "84. Hướng dẫn cộng đồng xử trí vết thương khi bị động vật bị bệnh dại cắn, ngoại trừ:", o: ["Rửa vết thương bằng nước xà phòng,", "Rửa lại bằng nước sạch, lau khô", "Sát khuẩn vết thương bằng dung dịch sát khuẩn", "Khâu vết thương càng sớm càng tốt"], a: 3 },
+        { q: "85. Khi có máu, dịch của người bệnh rơi vào vùng da bị tổn thương của nhân viên y tế, khuyến cáo sơ cứu bước đầu tiên ?", o: ["Cọ, chà vùng vết thương bị phơi nhiễm", "Rửa bằng dung dịch sát khuẩn", "Rửa dưới vòi nước bằng xà phòng", "Rửa bằng dung dịch nước muối"], a: 2 },
+        { q: "86. Khi nhận y lệnh miệng, cần phải:", o: ["Nhân viên nhận lệnh miệng phải viết ra và đọc lại đúng nguyên văn cho người bác sĩ đã ra lệnh nghe. Bác sĩ ra y lệnh phải xác nhận bằng miệng rằng lệnh đó là chính xác", "Nhân viên nhận lệnh miệng viết lại y lệnh miệng và thực hiện ngay", "A và B đều đúng", "A và B đều sai"], a: 0 },
+        { q: "87. Thứ tự cho máu vào ống nghiệm khi làm xét nghiệm máu?", o: ["Xanh lá, xanh dương, đỏ, đen", "Đỏ, xanh dương, xanh lá, đen", "Đen, xanh dương, đỏ, xanh lá", "Xanh lá, đỏ, đen, xanh dương"], a: 1 },
+        { q: "88. Ngay khi người bệnh phản vệ, việc đầu tiên cần làm là?", o: ["Nhanh chóng chuyển người bệnh đến phòng cấp cứu", "Để người bệnh nằm tại chỗ, đầu thấp, nghiêng bên trái (nếu có nôn)", "Ngừng ngay tiếp xúc với thuốc hoặc dị nguyên", "Để người bệnh nằm tại chỗ, đầu cao, gọi người đến giúp"], a: 2 },
+        { q: "89. Quy trình chống nhầm lẫn người bệnh được thực hiện trong:", o: ["Cấp phát thuốc", "Phẫu thuật, thủ thuật", "Xét nghiệm", "Tất cả đều đúng"], a: 3 },
+        { q: "90. Để phòng ngừa nguy cơ đổ lỗi trách nhiệm cho người tiêm: Trường hợp cấp cứu bác sĩ ra y lệnh bằng miệng điều dưỡng phải nhắc lại rõ ràng tên thuốc, ... liều dùng để khẳng định không nhầm lẫn rồi mới thực hiện.", o: ["chất lượng", "số lượng", "hàm lượng", "số lần dùng"], a: 2 },
+        { q: "91. Sai sót trong sử dụng thuốc xảy ra trong:", o: ["Kê đơn thuốc", "Cấp phát thuốc", "Thực hành sử dụng thuốc", "Tất cả các hoạt động trên"], a: 3 },
+        { q: "92. Các tác hại do sự cố y khoa bao gồm:", o: ["Mắc thêm bệnh mới, chấn thương", "Tàn tật, chết người", "Đau đớn", "Tất cả đều đúng"], a: 3 },
+        { q: "93. Trong hướng dẫn chẩn đoán phản vệ, các triệu chứng gợi ý NB bị phản vệ, ngoại trừ:", o: ["Mày đay, phù mạch nhanh, rối loạn ý thức", "Khó thở, tức ngực, thở rít, tụt huyết áp hoặc ngất", "Rối loạn điện giải", "Đau bụng hoặc nôn"], a: 2 },
+        { q: "94. Trong hướng dẫn chẩn đoán mức độ phản vệ (TT số 51/2017/TT-BYT), phản vệ độ I có các triệu chứng sau:", o: ["Mày đay, ngứa, phù mạch", "Mày đay, ngứa, phù mạch, đau bụng, nôn, tiêu chảy", "Mày đay, ngứa, phù mạch, tức ngực, khản tiếng, chảy nước mũi", "Mày đay, ngứa, phù mạch, nhịp tim nhanh."], a: 0 },
+        { q: "95. Nguyên tắc hướng dẫn xử trí cấp cứu phản vệ (TT số 51/2017/TT-BYT) quy định: “Tất cả trường hợp phản vệ phải được phát hiện sớm, xử trí khẩn cấp, kịp thời ngay tại chỗ và theo dõi liên tục ít nhất trong vòng.", o: ["6 giờ", "12 giờ", "24 giờ", "36 giờ"], a: 2 },
+        { q: "96. Xử trí nào không đúng khi bệnh nhân có biểu hiện của sốc phản vệ:", o: ["Ngừng ngay đường tiếp xúc với dị nguyên", "Để bệnh nhân nằm đầu cao, chân thấp", "Để bệnh nhân nằm đầu thấp chân cao", "Cởi bỏ bớt các trang phục như dây thắt, quần áo quá chặt."], a: 1 },
+        { q: "97. Một trong những tai biến nguy hiểm nhất khi truyền máu:", o: ["Tắc kim truyền", "Bất đồng nhóm máu", "Nhiễm trùng", "Rét run, nổi mề đay"], a: 1 },
+        { q: "98. Chân tay của người bệnh bị sốc thường lạnh là do:", o: ["Giảm tưới máu ngoại biên", "Rối loạn trung tâm điều nhiệt", "Tăng khối lượng dịch trong cơ thể", "Ảnh hưởng của môi trường ngoài cơ thể"], a: 0 },
+        { q: "99. Người Điều dưỡng trước khi cho thức ăn vào dạ dày của bệnh nhân có đặt ống thông mũi-dạ dày cần phải.", o: ["Cố định chắc chắn ống thông", "Quan sát sắc mặt bệnh nhân", "Kiểm tra chắc chắn ống đã vào tới dạ dày", "Tráng ống bằng nước chín"], a: 2 },
+        { q: "100. Khi bất động chi gãy bằng nẹp phải:", o: ["Đẹp, cứng, chắc", "Đủ dài trên một khớp và dưới một khớp, đủ chắc", "Dài bằng chi gãy của bệnh nhân, và đủ chắc", "Đủ để cố định chi gãy"], a: 1 },
+    ];
+
+    const questionsPart2 = [
+        { q: "1. Anh/Chị cho biết quy định về kiểm soát nhiễm khuẩn trong các cơ sở khám bệnh, chữa bệnh hiện đang áp dụng được ban hành tại văn bản nào?", o: ["Thông tư: 16/2018/TT-BYT ngày 20/7/2018", "Thông tư 18/2009/TT-BYT ngày 14/10/2009", "Thông tư 20/2021/TT-BYT ngày 26/11/2021", "Quyết định số: 1526/QĐ-BYT ngày 24/3/2023"], a: 0 },
+        { q: "2. Các đối tượng cần tuân thủ đúng thời điểm và kỹ thuật vệ sinh tay trong các cơ sở y tế:", o: ["Nhân viên y tế tham gia chăm sóc, điều trị người bệnh", "Học viên tham gia chăm sóc, điều trị người bệnh", "Người nhà hoặc khách thăm người bệnh tham gia chăm sóc người bệnh", "Cả 3 đối tượng trên"], a: 3 },
+        { q: "3. Nhân viên y tế nên khử khuẩn tay bằng cồn trong tình huống :", o: ["Bàn tay ẩm ướt", "Bàn tay có máu/dịch cơ thể hoặc các chất ô nhiễm khác nhìn được bằng mắt thường", "Bàn tay khô và không có chất ô nhiễm nhìn thấy được bằng mắt thường", "Cả 3 tình huống trên"], a: 2 },
+        { q: "4. Có mấy thời điểm bắt buộc phải vệ sinh tay khi chăm sóc người bệnh", o: ["3", "4", "5", "6"], a: 2 },
+        { q: "5. Thời điểm “Trước khi tiếp xúc người bệnh không nằm trong “5 thời điểm vệ sinh tay\" khi chăm sóc người bệnh.", o: ["Đúng", "Sai"], a: 1 },
+        { q: "6. Vệ sinh tay là biện pháp đơn giản nhất, rẻ tiền nhất và hiệu quả nhất trong công tác kiểm soát nhiễm khuẩn", o: ["Đúng", "Sai"], a: 0 },
+        { q: "7. Rửa/ khử khuẩn găng tay được khuyến cáo.", o: ["Không", "Hiếm khi", "Đôi khi", "Luôn luôn"], a: 0 },
+        { q: "8. Mang găng thường xuyên có thể thay thế việc rửa tay trong chăm sóc người bệnh mà vẫn an toàn cho nhân viên y tế", o: ["Đúng", "Sai"], a: 1 },
+        { q: "9. Bước đầu tiên và bắt buộc trong chu trình tái xử lý dụng cụ là:", o: ["Rửa ngay bằng nước sạch", "Làm sạch (ngâm trong DD Enzym rồi rửa lại bằng nước sạch)", "Chuyển xuống khoa KSNK", "Tất cả đều đúng"], a: 1 },
+        { q: "10. Mục đích của làm sạch :", o: ["Tăng hiệu quả của quá trình tiệt khuẩn", "Giảm ăn mòn và phá hủy dụng cụ", "An toàn trong kiểm tra và đóng gói", "Tất cả đều đúng."], a: 3 },
+        { q: "11. Hãy cho biết quy chế quản lý chất thải y tế hiện đang áp dụng được ban hành tại văn bản nào:", o: ["Thông tư số 20/TT-BYT ban hành ngày 26/11/2021 Quy định về quản lý chất thải y tế trong phạm vi khuôn viên cơ sở y tế;", "Quyết định số số 43/2007/QĐ-BYT ngày 30/11/2007 của Bộ trưởng Bộ Y tế ban hành Quy chế quản lý chất thải y tế;", "Thông tư 58/2015/TTLT-BYT-BTNMT ngày 31/12/2015 Thông tư liên tịch Bộ Y tế Bộ Tài Nguyên Môi trường về quản lý chất thải y tế"], a: 0 },
+        { q: "12. Phòng ngừa chuẩn được áp dụng cho các nhóm người bệnh:", o: ["Chỉ những người bệnh vào viện để phẫu thuật", "Chỉ những người bệnh HIV/AIDS", "Chỉ những người bệnh viêm gan B", "Mọi người bệnh, không phụ thuộc vào người đó có mắc bệnh nhiễm trùng hay không"], a: 3 },
+        { q: "13. Bạn hãy chọn thực hành phù hợp nhất nếu khi ho không có khăn hoặc giấy che miệng?", o: ["Dùng bàn tay che miệng", "Ho vào khoảng trống không có người", "Dùng mặt trong khuỷu tay để che miệng", "Đứng cách xa những người chung quanh 1 mét"], a: 2 },
+        { q: "14. Khi tháo phương tiện phòng hộ cá nhân, phương tiện nào được khuyến cáo tháo sau cùng để bảo vệ cho người nhân viên y tế?", o: ["Găng tay", "Khẩu trang", "Áo choàng", "Kính bảo hộ"], a: 1 },
+        { q: "15. Biện pháp nào dưới đây KHÔNG thuộc phòng ngừa chuẩn?", o: ["Vệ sinh tay", "Sử dụng phương tiện phòng hộ cá nhân", "Sắp xếp người bệnh hợp lý", "Mang găng, khẩu trang khi chăm sóc mọi người bệnh"], a: 2 },
+        { q: "16. Phát biểu nào sau đây là KHÔNG đúng?", o: ["Mang găng không thay thế được rửa tay", "Rửa tay trước khi mang găng là thực hành bắt buộc", "Có thể sát khuẩn găng để dùng lại nếu cần phải tiết kiệm găng.", "Khi mang găng vô khuẩn và tháo găng sau sử dụng không được để tay chạm vào mặt ngoài găng"], a: 2 },
+        { q: "17. Phòng ngừa lây nhiễm, bắt buộc mang áo choàng trong các tình huống nào sau là đúng nhất?", o: ["Khi chăm sóc người bệnh thông thường", "Khi chăm sóc người bệnh ở khoa bệnh nhiệt đới", "Khi chăm sóc người bệnh có nguy cơ văng bắn máu dịch cơ thể", "Khi chăm sóc người bệnh ở khoa hồi sức tích cực"], a: 2 },
+        { q: "18. Để dụng cụ tiêm không bị nhiễm khuẩn, cần phải ?", o: ["Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng", "Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng và không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm", "Kim tiêm không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm và không nên tháo rời kim tiêm ra khỏi nắp kim trước khi tiêm", "Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng, không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm và rửa tay trước khi chuẩn bị các phương tiện tiêm và trước khi tiêm"], a: 3 },
+        { q: "19. Không cần mang găng trong các chăm sóc nếu việc tiếp xúc chỉ giới hạn ở vùng da lành lặn, như vận chuyển NB, đo huyết áp, phát thuốc?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "20. Sắp xếp NB dựa vào các nguyên tắc?", o: ["Đường lây truyền của tác nhân gây bệnh.", "Yếu tố nguy cơ lây truyền bệnh.", "Khả năng mắc nhiễm khuẩn bệnh viện.", "Cả ba nội dung trên"], a: 3 },
+        { q: "21. Theo phân loại của Spaudling, có những nhóm dụng cụ y khoa nào?", o: ["Dụng cụ không thiết yếu", "Dụng cụ bán thiết yếu", "Dụng cụ thiết yếu", "Tất cả đều đúng"], a: 3 },
+        { q: "22. Vệ sinh hô hấp được yêu cầu thực hiện?", o: ["Trong các dịch vụ bệnh đường hô hấp", "Trong các cơ sở y tế có người bệnh lao kháng thuốc", "Ở buồng chờ khám của cơ sở y tế", "Đối với bất kỳ người nào đang ho và hắt hơi"], a: 3 },
+        { q: "23. Chất thải lây nhiễm bao gồm?", o: ["Chất thải lây nhiễm sắc nhọn, Chất thải lây nhiễm không sắc nhọn, Chất thải có nguy cơ lây nhiễm cao, Chất thải giải phẫu", "Chất thải sắc nhọn, Chất thải lây nhiễm không sắc nhọn, Chất thải có nguy cơ lây nhiễm cao, Chất thải giải phẫu", "Chất thải lây nhiễm không sắc nhọn, Chất thải có nguy cơ lây nhiễm cao, Chất thải giải phẫu, chất thải lỏng y tế.", "Tất cả đều đúng"], a: 0 },
+        { q: "24. Vỏ chai, lọ đựng thuốc hoặc hoá chất, dụng cụ dính thuốc hoặc hoá chất không thuộc nhóm gây độc tế bào hoặc không có cảnh báo nguy hại trên bao bì từ nhà sản xuất thuộc nhóm chất thải nào?", o: ["Chất thải lây nhiễm", "Chất thải thông thường", "Chất thải nguy hại không lây nhiễm", "Nước thải y tế"], a: 2 },
+        { q: "25. Bao bì dụng cụ (túi, thùng, hộp) có màu vàng đựng chất thải nào?", o: ["Đựng chất thải lây nhiễm;", "Đựng chất thải hóa học nguy hại;", "Đựng chất thải thông thường;", "Đựng chất thải tái chế."], a: 0 },
+        { q: "26. Công tác kiểm soát nhiễm khuẩn bệnh viện là nhiệm vụ của ai?", o: ["Giám đốc bệnh viện", "Trưởng khoa", "Điều dưỡng trưởng", "Tất cả nhân viên y tế"], a: 3 },
+        { q: "27. Các bệnh nào lây truyền chủ yếu qua đường giọt bắn?", o: ["Viêm phổi do Mycoplasma, cúm, quai bị", "Tiêu chảy, bệnh về da, nhiễm MRSA, Gram âm đa kháng (tiếp xúc)", "Lao, sởi, thủy đậu, khi làm thủ thuật tạo khí dung trên bệnh nhân SARS (không khí)"], a: 0 },
+        { q: "28. Quản lý chất thải y tế là theo quy định pháp luật?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "29. Rửa tay thường quy bao gồm:", o: ["Rửa tay bằng dung dịch xà bông khử khuẩn; bằng dung dịch vệ sinh tay có chứa cồn", "Rửa tay bằng nước với xà bông thường; bằng nước với xà bông có chất khử khuẩn; bằng dung dịch có chứa cồn (sát khuẩn tay nhanh)", "Rửa tay bằng nước với xà bông thường; Rửa tay bằng dung dịch xà bông khử khuẩn"], a: 1 },
+        { q: "30. Trên bàn tay tồn tại: vi khuẩn thường trú và vi khuẩn vãng lai (vi khuẩn gây bệnh)", o: ["Đúng", "Sai"], a: 0 },
+        { q: "31. Khi thực hành vệ sinh tay được phép để móng tay dài, móng tay giả, đeo trang sức khi chăm sóc người bệnh", o: ["Đúng", "Sai"], a: 1 },
+        { q: "32. Mang găng thường xuyên có thể thay thế việc rửa tay trong chăm sóc người bệnh mà vẫn an toàn cho nhân viên y tế", o: ["Đúng", "Sai"], a: 1 },
+        { q: "33. Bàn tay NVYT là phương tiện lan truyền bệnh quan trọng trong các vụ dịch nhiễm khuẩn bệnh viện", o: ["Đúng", "Sai"], a: 0 },
+        { q: "34. Quy trình rửa tay thường quy có bao nhiêu bước?", o: ["4", "5", "6", "7"], a: 2 },
+        { q: "35. Lợi ích của việc rửa tay", o: ["Là biện pháp đơn giản, rẻ tiền nhất, có hiệu quả", "Rất cần thiết trong phòng ngừa nhiều bệnh nguy hiểm", "Bảo vệ gia đình bạn và cộng đồng", "Tất cả các ý trên"], a: 3 },
+        { q: "36. Ông nghe, nhiệt kế cần xử lý bằng:", o: ["Javel 0.5%", "Preseft 2,5%", "Cồn 70 độ", "Xà bông"], a: 2 },
+        { q: "37. Phòng ngừa chuẩn được áp dụng cho các nhóm người bệnh:", o: ["Chỉ những người bệnh vào viện để phẫu thuật", "Chỉ những người bệnh HIV/AIDS", "Chỉ những người bệnh viêm gan B", "Mọi người bệnh, không phụ thuộc vào người đó có mắc bệnh nhiễm trùng hay không"], a: 3 },
+        { q: "38. Thời gian sát khuẩn tay bằng dung dịch chứa cồn trung bình là:", o: ["5-10 giây", "10-15 giây", "15-20 giây", "20 - 30 giây"], a: 3 },
+        { q: "39. Biện pháp nào dưới đây KHÔNG sử dụng để dự phòng nhiễm khuẩn vết mổ:", o: ["Tắm khử khuẩn cho người bệnh trước phẫu thuật", "Loại bỏ lông và chuẩn bị vùng rạch da đúng quy định", "Vệ sinh hô hấp và sắp xếp người bệnh", "Áp dụng đúng liệu pháp kháng sinh dự phòng (KSDP)"], a: 2 },
+        { q: "40. Bạn hãy chọn thực hành phù hợp nhất nếu khi ho không có khăn hoặc giấy che miệng?", o: ["Dùng bàn tay che miệng", "Ho vào khoảng trống không có người", "Dùng mặt trong khuỷu tay để che miệng", "Đứng cách xa những người chung quanh 1 mét"], a: 2 },
+        { q: "41. Để loại bỏ phổ vi khuẩn vãng lai trên bàn tay, chỉ cần thực hiện biện pháp vệ sinh tay nào?", o: ["Vệ sinh tay thường quy", "Vệ sinh tay ngoại khoa", "Vệ sinh tay thủ thuật", "Tất cả đều đúng"], a: 0 },
+        { q: "42. Dung dịch cồn ở nồng độ nào có hiệu lực kháng khuẩn tốt nhất?", o: ["Từ 60% đến 90%", "Từ 70% đến 80%", "Từ 70% đến 100%", "Nồng độ càng cao hiệu lực kháng khuẩn càng tốt"], a: 0 },
+        { q: "43. Phạm vi tiến hành giám sát nhiễm khuẩn bệnh viện có thể là?", o: ["Trong toàn bệnh viện", "Tại một số khoa trọng điểm", "Tại một số khoa trọng điểm và Trong toàn bệnh viện", "Trên một số nhóm bệnh có nguy cơ cao, tại một số khoa trọng điểm và trong toàn bệnh viện"], a: 3 },
+        { q: "44. Biện pháp nào không phải là biện pháp phòng ngừa NKVM hiệu quả?", o: ["Sử dụng kháng sinh dự phòng trước khi rạch da ở mọi người bệnh phẫu thuật", "Sử dụng kháng sinh điều trị sau phẫu thuật với mọi người bệnh phẫu thuật", "Chuẩn bị tốt NB trước phẫu thuật nhằm loại bỏ vi sinh vật vãng lai, định cư trên da và bảo đảm tuyệt đối vô khuẩn khi phẫu thuật", "Có quy định về sử dụng kháng sinh an toàn, hợp lý ở NB sau phẫu thuật."], a: 1 },
+        { q: "45. Trong trường hợp cần phòng hộ đầy đủ nhất, trình tự tháo phương tiện phòng hộ cá nhân được khuyến cáo là?", o: ["Khẩu trang, găng tay, áo choàng, quần - bao giày, mũ, kính", "Găng tay, khẩu trang, mũ, kính, áo choàng, quần - bao giày", "Găng tay, áo choàng, quần - bao giày, mũ, kính, khẩu trang", "Áo choàng, quần - bao giày, mũ, kính, găng tay, khẩu trang"], a: 2 },
+        { q: "46. Thời điểm nào dưới đây cần phải vệ sinh tay?", o: ["Khi chuyển từ chăm sóc bẩn sang chăm sóc sạch trên cùng người bệnh.", "Trước khi mang găng và sau khi tháo găng.", "Trước khi vào buồng bệnh và sau khi ra khỏi buồng bệnh.", "Tất cả thời điểm trên"], a: 3 },
+        { q: "47. Vệ sinh hô hấp được yêu cầu thực hiện trong các tình huống?", o: ["Chỉ trong các vụ dịch SARS hoặc cúm", "Chỉ trong các cơ sở y tế có người bệnh lao kháng thuốc", "Chỉ áp dụng với người bệnh nhiễm covid.", "Cho bất kỳ người nào đang có ho và hắt hơi"], a: 3 },
+        { q: "48. Biện pháp phòng ngừa lây truyền qua đường không khí bao gồm?", o: ["Phòng cách ly có xử lý không khí thích hợp (áp lực âm) hoặc thông khí tốt", "Giữ người bệnh cách nhau tối thiểu 5 mét", "Mang áo choàng, bao giày, găng tay trước khi vào phòng bệnh", "Sát khuẩn tay nhanh bằng cồn"], a: 0 },
+        { q: "49. Phát biểu nào sau đây là KHÔNG đúng?", o: ["Mang găng không thay thế được rửa tay", "Rửa tay trước khi mang găng là thực hành bắt buộc", "Có thể sát khuẩn găng để dùng lại nếu cần phải tiết kiệm găng", "Khi mang găng vô khuẩn và tháo găng sau sử dụng không được để tay chạm vào mặt ngoài găng"], a: 2 },
+        { q: "50. Khẩu trang ngoại khoa có tác dụng gì?", o: ["Ngăn cản virus, vi khuẩn xâm nhập vào cơ thể.", "Ngăn cản được vi khuẩn xâm nhập vào cơ thể.", "Ngăn cản các giọt bắn xâm nhập vào cơ thể", "Không ngăn cản vi rus, vi khuẩn xâm nhập vào cơ thể"], a: 2 },
+        { q: "51. Khẩu trang N95 là loại khẩu trang chuyên dụng giúp phòng ngừa lây nhiễm qua đường không khí do có đặc tính?", o: ["Lọc được 95% mầm bệnh", "Lọc được 95% các hạt bụi lơ lửng trong không khí", "Lọc được 95% không khí sạch", "Lọc được 95% vi khuẩn"], a: 1 },
+        { q: "52. Thay găng khi nào là KHÔNG đúng chỉ định?", o: ["Thay găng ngay sau khi chăm sóc người bệnh này để chuyển sang người bệnh khác", "Thay găng khi thăm khám chuyển từ vùng sạch sang vùng bẩn", "Thay găng khi nghi ngờ găng thủng hoặc rách", "Thay găng khi khi thăm khám chuyển từ vùng bẩn sang vùng sạch"], a: 3 },
+        { q: "53. Phòng ngừa lây nhiễm, bắt buộc mang áo choàng trong các tình huống nào sau là đúng nhất?", o: ["Khi chăm sóc người bệnh thông thường", "Khi chăm sóc người bệnh ở khoa bệnh nhiệt đới", "Khi chăm sóc người bệnh có nguy cơ văng bắn máu dịch cơ thể", "Khi chăm sóc người bệnh ở khoa hồi sức tích cực"], a: 2 },
+        { q: "54. Máu và các chất tiết và bài tiết của cơ thể dưới đây có khả năng truyền tác nhân gây bệnh, TRỪ:", o: ["Tất cả máu và sản phẩm của máu", "Mồ hôi", "Dịch âm đạo, Tinh dịch", "Dịch dạ dày, nước ối"], a: 1 },
+        { q: "55. Để dụng cụ tiêm không bị nhiễm khuẩn, cần phải ?", o: ["Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng", "Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng và không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm", "Kim tiêm không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm và không nên tháo rời kim tiêm ra khỏi nắp kim trước khi tiêm", "Sử dụng bơm, kim tiêm còn trong bao gói nguyên vẹn, còn hạn sử dụng, không được chạm vào tay điều dưỡng hoặc vật dụng xung quanh trước khi tiêm và rửa tay trước khi chuẩn bị các phương tiện tiêm và trước khi tiêm"], a: 3 },
+        { q: "56. Hướng dẫn xử lý khi bị tổn thương do kim tiêm hay vật sắc nhọn?", o: ["Rửa ngay vùng da bị tổn thương bằng xà phòng và nước, dưới vòi nước chảy. Để máu ở vết thương tự chảy, không nặn bóp vết thương", "Rửa ngay vùng da bị tổn thương bằng xà phòng và nước, dưới vòi nước chảy. Nặn bóp vết thương nhẹ nhàng.", "Để máu ở vết thương tự chảy, không nặn bóp vết thương, sử dụng cồn để sát khuẩn vết thương.", "Báo ngay khoa KSNK."], a: 0 },
+        { q: "57. KHÔNG được cầm nắm, đụng chạm tay vào pít tông, đầu ăm bu, thân kim tiêm trong quá trình chuẩn bị thuốc, tiêm thuốc?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "58. Tiệt khuẩn (Sterilization):", o: ["Là quá trình tiêu diệt hoặc loại bỏ tất cả các dạng của vi sinh vật sống bao gồm cả bào tử vi khuẩn.", "Là quá trình loại bỏ hầu hết hoặc tất cả vi sinh vật gây bệnh trên dụng cụ (DC) nhưng không diệt bào tử vi khuẩn.", "Là quá trình tiêu diệt toàn bộ vi sinh vật và một số bào tử vi khuẩn.", "Tất cả đều đúng."], a: 0 },
+        { q: "59. Lựa chọn phương pháp xử lý dụng cụ tối thiểu cần phải áp dụng đối với những dụng cụ tiếp xúc với niêm mạc hoặc da bị tổn thương?", o: ["Tiệt khuẩn", "Khử khuẩn mức độ cao", "Khử khuẩn mức độ thấp", "Chỉ cần làm sạch."], a: 1 },
+        { q: "60. Các vị trí cần trang bị dung dịch vệ sinh tay có chứa cồn?", o: ["Giường NB nặng, NB cấp cứu", "Trên các xe tiêm, thay băng, bàn khám bệnh, xét nghiệm", "Cửa ra vào mỗi buồng bệnh", "Tất cả các câu trên."], a: 3 },
+        { q: "61. Không cần mang găng trong các chăm sóc nếu việc tiếp xúc chỉ giới hạn ở vùng da lành lặn, như vận chuyển NB, đo huyết áp, phát thuốc?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "62. Sắp xếp NB dựa vào các nguyên tắc?", o: ["Đường lây truyền của tác nhân gây bệnh.", "Yếu tố nguy cơ lây truyền bệnh.", "Khả năng mắc nhiễm khuẩn bệnh viện.", "Cả ba nội dung trên"], a: 3 },
+        { q: "63. Dụng cụ y tế tái sử dụng đều phải được xử lý trước khi sử dụng cho NB khác?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "64. Khi tháo Phương tiện Phòng hộ cá nhân, phương tiện nào được khuyến cáo tháo sau cùng để bảo vệ cho người nhân viên y tế?", o: ["Găng tay", "Khẩu trang", "Kính bảo hộ", "Áo choàng"], a: 1 },
+        { q: "65. Thực hiện Phòng ngừa chuẩn giúp phòng ngừa và kiểm soát lây nhiễm các bệnh nguyên có trong?", o: ["Chất tiết", "Chất bài tiết", "Máu", "Tất cả các câu trên đều đúng"], a: 3 },
+        { q: "66. Nhân viên y tế khi tháo bỏ phương tiện phòng hộ cá nhân, cần phải tháo bỏ đầu tiên là?", o: ["Áo choàng", "Vệ sinh tay", "Găng tay", "Khẩu trang y tế có độ lọc cao (N95)"], a: 2 },
+        { q: "67. Theo phân loại của Spaudling, có những nhóm dụng cụ y khoa nào?", o: ["Dụng cụ không thiết yếu", "Dụng cụ bán thiết yếu", "Dụng cụ thiết yếu", "Tất cả đều đúng"], a: 3 },
+        { q: "68. Khử khuẩn mức độ cao áp dụng cho những dụng cụ nào sau đây?", o: ["Dụng cụ nội soi tiêu hóa", "Dụng cụ phẫu thuật nội soi", "Dụng cụ nha khoa", "Tất cả đều đúng"], a: 3 },
+        { q: "69. Vệ sinh hô hấp được yêu cầu thực hiện?", o: ["Trong các dịch vụ bệnh đường hô hấp", "Trong các cơ sở y tế có người bệnh lao kháng thuốc", "Ở buồng chờ khám của cơ sở y tế", "Đối với bất kỳ người nào đang ho và hắt hơi"], a: 3 },
+        { q: "70. Chất thải nguy hại không lây nhiễm KHÔNG bao gồm?", o: ["Hóa chất thải bỏ có thành phần, tính chất nguy hại dưới ngưỡng chất thải nguy hại hoặc có cảnh báo nguy hại trên bao bì từ nhà sản xuất;", "Dược phẩm thải bỏ thuộc nhóm gây độc tế bào hoặc có cảnh báo nguy hại trên bao bì từ nhà sản xuất;", "Vỏ chai, lọ đựng thuốc hoặc hoá chất, các dụng cụ dính thuốc hoặc hoá chất thuộc nhóm gây độc tế bào hoặc có cảnh báo nguy hại trên bao bì từ nhà sản xuất;", "Thiết bị y tế bị vỡ, hỏng, đã qua sử dụng thải bỏ có chứa thuỷ ngân, cadimi (Cd); pin, ắc quy thải bỏ; vật liệu tráng chỉ sử dụng trong ngăn tia xạ thải bỏ;"], a: 0 },
+        { q: "71. Vỏ lọ vắc xin thuộc loại vắc xin bất hoạt hoặc giảm độc lực thải bỏ thuộc loại chất thải nào?", o: ["Chất thải lây nhiễm", "Chất thải thông thường", "Chất thải phóng xạ", "Chất thải sinh hoạt"], a: 0 },
+        { q: "72. Biểu tượng (3 mũi tên xoay vòng) dưới đây là biểu tượng chất thải nào?", o: ["Chất thải tái chế", "Chất thải thông thường", "Chất thải phóng xạ", "Chất thải sinh hoạt"], a: 0 },
+        { q: "73. Biểu tượng (đầu lâu xương chéo) dưới đây là biểu tượng chất thải nào?", o: ["Chất thải lây nhiễm", "Chất thải thông thường", "Chất thải nguy hại không lây nhiễm", "Nước thải y tế"], a: 2 },
+        { q: "74. Biểu tượng (vòng tròn sinh học) dưới đây là biểu tượng chất thải nào?", o: ["Chất thải lây nhiễm", "Chất thải thông thường", "Chất thải nguy hại không lây nhiễm", "Nước thải y tế"], a: 0 },
+        { q: "75. NVYT lựa chọn mang găng trong trường hợp nào dưới đây?", o: ["Khám bệnh.", "Cho ăn.", "Tiêm bắp, tiêm trong da, dưới da.", "Chăm sóc người bệnh lây nhiễm"], a: 3 },
+        { q: "76. Mục đích sử dụng PHCN là để bảo vệ ... khỏi bị nguy cơ phơi nhiễm và hạn chế phát tán mầm bệnh ra môi trường bên ngoài.", o: ["NVYT, người bệnh, người nhà người bệnh và người thăm bệnh", "Người bệnh người nhà người bệnh và người thăm bệnh", "NVYT, người nhà người bệnh và người thăm bệnh", "NVYT người bệnh người nhà người bệnh."], a: 0 },
+        { q: "77. Nhân viên y tế bị phơi nhiễm cần báo cáo ngay cho người chịu trách nhiệm để xử trí và thực hiện điều trị dự phòng sau phơi nhiễm theo quy định?", o: ["Đúng", "Sai"], a: 0 },
+        { q: "78. Chọn nội dung không đúng khi mang khẩu trang", o: ["Mang khẩu trang đúng chiều trên, dưới.", "Mang khẩu trang đúng mặt trong, ngoài.", "Không chạm tay vào mặt ngoài khẩu trang khi mang.", "Đặt khẩu trang cẩn thận để che kín miệng và mũi."], a: 2 },
+        { q: "79. Khẩu trang cần được thay khi nào?", o: ["Thay khẩu trang ngay khi thấy khẩu trang bị nhiễm bẩn hoặc bị ẩm ướt", "Thay khẩu trang sau mỗi khi thực hiện thủ thuật sạch/vô khuẩn.", "Thay khẩu trang sau mỗi ca làm việc.", "Tất cả thời điểm trên"], a: 3 },
+        { q: "80. Các bước mang phương tiện PHCN:", o: ["Vệ sinh tay-Mặc áo choàng-Vệ sinh tay-Mang khẩu trang theo tình huống (khẩu trang y tế hoặc N95)-Mang kính bảo hộ hoặc tấm che mặt-Mang găng theo chỉ định.", "Vệ sinh tay-Mặc áo choàng-Mang khẩu trang theo tình huống (khẩu trang y tế hoặc N95)-Mang kính bảo hộ hoặc tấm che mặt-Mang găng theo chỉ định.", "Mặc áo choàng-Vệ sinh tay-Mang khẩu trang theo tình huống (khẩu trang y tế hoặc N95)-Mang kính bảo hộ hoặc tấm che mặt-Mang găng theo chỉ định.", "Mặc áo choàng-Mang khẩu trang theo tình huống (khẩu trang y tế hoặc N95)-Mang kính bảo hộ hoặc tấm che mặt-Mang găng theo chỉ định."], a: 1 },
+        { q: "81. Các bước tháo phương tiện PHCN:", o: ["Tháo găng-Vệ sinh tay-Tháo dây buộc/khuy cài và tháo bỏ áo choàng- Vệ sinh tay-Tháo tấm che mặt hoặc kính bảo hộ-Vệ sinh tay-Tháo khẩu trang- Vệ sinh tay.", "Vệ sinh tay-Tháo găng - Tháo dây buộc/khuy cài và tháo bỏ áo choàng-Vệ sinh tay-Tháo tấm che mặt hoặc kính bảo hộ- Vệ sinh tay-Tháo khẩu trang- Vệ sinh tay.", "Tháo găng - Tháo dây buộc/khuy cài và tháo bỏ áo choàng-Vệ sinh tay-Tháo tấm che mặt hoặc kính bảo hộ - Tháo khẩu trang-Vệ sinh tay.", "Tháo găng - Tháo dây buộc/khuy cài và tháo bỏ áo choàng-Tháo tấm che mặt hoặc kính bảo hộ - Tháo khẩu trang-Vệ sinh tay."], a: 0 },
+        { q: "82. Phương tiện PHCN sau sử dụng là chất thải nào?", o: ["Chất thải lây nhiễm", "Chất thải thông thường nếu được phun khử khuẩn", "Chất thải tái chế", "Chất thải nguy hại."], a: 0 },
+        { q: "83. Sau khi loại bỏ hoặc bất cứ khi nào vô tình chạm vào khẩu trang đã sử dụng, cần làm sạch tay bằng dung dịch vệ sinh tay có chứa cồn hoặc rửa tay bằng xà phòng và nước.", o: ["Đúng", "Sai"], a: 0 },
+        { q: "84. Thông tư 31/2021/TT-BYT ngày 28/12/2021 quy định hoạt động điều dưỡng trong bệnh viện bao gồm:", o: ["5 chương, 22 điều", "5 chương, 23 điều", "4 chương, 22 điều", "4 chương, 23 điều"], a: 0 },
+        { q: "85. Hiệu lực thi hành của Thông tư 31/2021/TT-BYT quy định hoạt động điều dưỡng trong bệnh viện vào:", o: ["Ngày 27/02/2021", "Ngày 27/02/2022", "Ngày 27/12/2021", "Ngày 27/12/2022"], a: 1 },
+        { q: "86. Thông tư 31/2021/TT-BYT quy định: Người bệnh chăm sóc cấp I là người bệnh trong tình trạng nặng, nguy kịch không tự thực hiện các hoạt động cá nhân hàng ngày hoặc do yêu cầu của chuyên môn không được vận động phải phụ thuộc hoàn toàn vào........ của điều dưỡng.", o: ["Sự theo dõi, chăm sóc toàn diện và an toàn", "Sự theo dõi, chăm sóc toàn diện và liên tục", "Sự theo dõi, chăm sóc liên tục và an toàn", "Sự theo dõi, chăm sóc thường xuyên và liên tục"], a: 1 },
+        { q: "87. Thông tư 31/2021/TT-BYT của Bộ Y tế quy định hoạt động điều dưỡng trong bệnh viện quy định nguyên tắc thực hiện chăm sóc điều dưỡng là:", o: ["Chăm sóc, theo dõi người bệnh là nhiệm vụ của điều dưỡng.", "Các hoạt động chăm sóc điều dưỡng, theo dõi là do bác sĩ, điều dưỡng, hộ sinh thực hiện.", "Việc thực hiện hoạt động điều dưỡng trong bệnh viện phải đảm bảo có sự tham gia, phối hợp của các đơn vị và các chức danh chuyên môn khác trong bệnh viện", "Tất cả A, B, C đều đúng."], a: 2 },
+        { q: "88. Thông tư 31/2021/TT-BYT quy định nhiệm vụ chuyên môn chăm sóc điều dưỡng:", o: ["Tiếp nhận và nhận định người bệnh", "Xác định và thực hiện các can thiệp chăm sóc điều dưỡng", "Đánh giá kết quả thực hiện các can thiệp chăm sóc điều dưỡng", "Tất cả đều đúng"], a: 3 },
+        { q: "89. Trong thông tư 31/2021/TT-BYT có bao nhiêu mô hình phân công chăm sóc?", o: ["Có 3 mô hình phân công chăm sóc", "Có 4 mô hình phân công chăm sóc", "Có 5 mô hình phân công chăm sóc.", "Có 6 mô hình phân công chăm sóc."], a: 1 },
+        { q: "90. Trong Thông tư 31/2021, việc thực hiện hỗ trợ dinh dưỡng cho người bệnh để phù hợp tình trạng bệnh lý bác sĩ dựa vào thông tư nào?", o: ["Thông tư 31/2021/TT-BYT", "Thông tư 07/2011/TT-BYT", "Thông tư 18/2020/TT-BYT", "Thông tư 16/2018/TT-BYT"], a: 2 },
+        { q: "91. Thông tư 31/2021/TT-BYT của Bộ y tế quy định hoạt động điều dưỡng trong bệnh viện thay thế thông tư nào:", o: ["Thông tư 07/2011/TT-BYT", "Thông tư 07/2014/TT-BYT", "Thông tư 07/2020/TT-BYT", "Thông tư 07/2021/TT-BYT"], a: 0 },
+        { q: "92. Thông tư 07/2014/TT - BYT qui định những việc KHÔNG được làm của công chức, viên chức đối với đồng nghiệp?", o: ["Né tránh, đầy trách nhiệm, khuyết điểm của mình cho đồng nghiệp", "Phân biệt đối xử về dân tộc, nam nữ, các thành phần xã hội, tín ngưỡng, tôn giáo dưới mọi hình thức", "Trốn tránh trách nhiệm, thoái thác công việc hoặc nhiệm vụ được giao", "Có thái độ, gợi ý nhận tiền, quà biếu của cơ quan, tổ chức, cá nhân."], a: 0 },
+        { q: "93. Thông tư 07/2014/TT-BYT quy định đối với người bệnh điều trị nội trú có chỉ định phẫu thuật, viên chức y tế phải thông báo, giải thích trước cho người bệnh hoặc người đại diện của người bệnh về các vấn đề sau, ngoại trừ:", o: ["Tình trạng bệnh", "Phương pháp phẫu thuật", "Khả năng rủi ro có thể xảy ra", "Cách gửi mẫu bệnh phẩm"], a: 3 },
+        { q: "94. Thông tư 07/2014/TT-BYT quy định đối với người bệnh khi ra viện, việc viên chức y tế không được làm:", o: ["Thông báo, dặn dò những điều cần thực hiện", "Công khai chi tiết từng khoản chi phí trong phiếu thanh toán giá dịch vụ y tế mà người bệnh phải thanh toán", "Khẩn trương thực hiện các thủ tục cho người bệnh ra viện", "Tiếp thu ý kiến đóng góp của người bệnh một cách thờ ơ"], a: 3 },
+        { q: "95. Theo thông tư 07/2014/TT-BYT, những việc phải làm của công chức, viên chức y tế khi thi hành nhiệm vụ được giao:", o: ["Tuyên truyền, hướng dẫn người dân chấp hành nghiêm nội quy đơn vị, quy trình, quy định về chuyên môn, nghiệp vụ", "Giữ gìn bí mật thông tin liên quan đến bí mật nhà nước, bí mật cơ quan, bí mật cá nhân theo quy định của pháp luật", "Mặc trang phục, đeo thẻ công chức, viên chức đúng quy định; đeo phù hiệu của các lĩnh vực đã được pháp luật quy định", "Trung thực, chân thành, đoàn kết, có tinh thần hợp tác, chia sẻ trách nhiệm, giúp đỡ lẫn nhau."], a: 3 },
+        { q: "96. Thông tư 07/2014/TT-BYT quy định đối với người bệnh điều trị nội trú, viên chức y tế phải:", o: ["Khẩn trương tiếp đón, bố trí giường cho người bệnh và chỉ cho người bệnh và người nhà tự đọc bảng nội quy của bệnh viện và của khoa", "Khẩn trương tiếp đón, bố trí giường cho người bệnh và chỉ cho người bệnh và người nhà tự tìm hiểu chế độ ăn tại góc truyền thông của khoa", "Khẩn trương tiếp đón, bố trí giường cho người bệnh, hướng dẫn và giải thích nội quy của bệnh viện và của khoa", "Khẩn trương tiếp đón, hướng dẫn và giải thích với người bệnh và người nhà nội quy của bệnh viện, của khoa cho đến khi họ hiểu rõ rồi mới bố trí giường cho người bệnh"], a: 2 },
+        { q: "97. Những việc không được làm của viên chức y tế khi thi hành công vụ, nhiệm vụ được giao", o: ["Trốn tránh trách nhiệm, thoái thác công việc hoặc nhiệm vụ được giao", "Lạm dụng chức năng, nhiệm vụ, quyền hạn được giao và danh tiếng của cơ quan, đơn vị để giải quyết công việc cá nhân; tự đề cao vai trò của bản thân để vụ lợi", "Phân biệt đối xử về dân tộc, nam nữ, các thành phần xã hội, tín ngưỡng, tôn giáo dưới mọi hình thức", "Tất cả các nội dung trên"], a: 3 },
+        { q: "98. Thời gian thực hành để cấp giấy phép hành nghề khám chữa bệnh của Y sĩ là:", o: ["6 tháng", "9 tháng", "12 tháng", "18 tháng"], a: 1 },
+        { q: "99. Thời gian thực hành để cấp giấy phép hành nghề khám chữa bệnh của Điều dưỡng, hộ sinh, kỹ thuật y là:", o: ["6 tháng", "9 tháng", "12 tháng", "18 tháng"], a: 0 },
+        { q: "100. Một trong những nguyên tắc tổ chức thực hiện quản lý chất lượng bệnh viện là?", o: ["Lấy khách hàng làm trung tâm", "Lấy người bệnh làm trung tâm", "Lấy thân nhân người bệnh làm trung tâm", "Lấy nhân viên bệnh viện làm trung tâm"], a: 1 },
+    ];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const container1 = document.getElementById('questions-part-1');
+        const container2 = document.getElementById('questions-part-2');
+        const toggleAllBtn = document.getElementById('toggle-all-answers');
+        let allAnswersVisible = false;
+
+        function createQuestionHTML(questionData, index, part) {
+            const optionsHTML = questionData.o.map((option, i) =>
+                `<li class="p-3 rounded-md transition-colors duration-200 ${i === questionData.a ? 'answer' : ''}">${String.fromCharCode(65 + i)}. ${option}</li>`
+            ).join('');
+
+            return `
+                <div class="question-block border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+                    <p class="font-semibold mb-3 text-gray-900">${questionData.q}</p>
+                    <ol type="A" class="space-y-1 list-inside text-gray-700">${optionsHTML}</ol>
+                </div>
+            `;
+        }
+        
+        container1.innerHTML = questionsPart1.map((q, i) => createQuestionHTML(q, i, 1)).join('');
+        container2.innerHTML = questionsPart2.map((q, i) => createQuestionHTML(q, i, 2)).join('');
+        
+        const allAnswerElements = document.querySelectorAll('li.answer');
+
+        toggleAllBtn.addEventListener('click', () => {
+            allAnswersVisible = !allAnswersVisible;
+            allAnswerElements.forEach(el => {
+                el.classList.toggle('correct-answer', allAnswersVisible);
+            });
+            toggleAllBtn.innerHTML = allAnswersVisible 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a10.05 10.05 0 013.453-5.118l-1.32-1.32A11.94 11.94 0 00.458 12c1.274 4.057 5.064 7 9.542 7 .847 0 1.673-.105 2.468-.305l-1.593-1.593zM9.375 9.375l1.5 1.5m3-3l-1.5 1.5m0 0l-1.5 1.5m-3.89 3.89l7.78-7.78" /></svg> Ẩn Tất Cả Đáp Án`
+                : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> Hiện Tất Cả Đáp Án`;
+        });
+    });
+
+</script>
+</body>
+</html>
+
