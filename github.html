@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghi chú cơ bản: Tạo trang web cá nhân với GitHub Pages</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .note {
+            background-color: #fefcbf; /* yellow-100 */
+            border-left: 4px solid #facc15; /* yellow-400 */
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Hướng Dẫn Tạo Trang Web Cá Nhân Miễn Phí với GitHub Pages</h1>
+            <p class="mt-2 text-lg text-gray-600">Những bước cơ bản để đưa trang web của bạn lên mạng Internet.</p>
+        </header>
+
+        <main class="bg-white p-6 md:p-8 rounded-lg shadow-md">
+
+            <!-- Giới thiệu -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-semibold border-b pb-2 mb-4 text-sky-700">1. GitHub Pages là gì?</h2>
+                <p><strong>GitHub Pages</strong> là một dịch vụ lưu trữ (hosting) trang web tĩnh miễn phí được cung cấp bởi GitHub. Nó lấy các tệp HTML, CSS, và JavaScript trực tiếp từ một kho chứa (repository) trên GitHub và tự động xuất bản chúng thành một trang web.</p>
+                <ul class="list-disc list-inside mt-4 space-y-2">
+                    <li><strong>Miễn phí:</strong> Bạn không phải trả bất kỳ chi phí nào cho việc hosting.</li>
+                    <li><strong>Dễ dàng:</strong> Rất dễ để bắt đầu, đặc biệt nếu bạn đã quen với GitHub.</li>
+                    <li><strong>Phù hợp cho:</strong> Trang portfolio, blog cá nhân, trang giới thiệu dự án, tài liệu hướng dẫn...</li>
+                </ul>
+            </section>
+
+            <!-- Các bước thực hiện -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-semibold border-b pb-2 mb-4 text-sky-700">2. Các bước thực hiện</h2>
+
+                <!-- Bước 1 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium mb-2">Bước 1: Tạo tài khoản GitHub</h3>
+                    <p>Nếu chưa có, hãy đăng ký một tài khoản miễn phí tại <a href="https://github.com" target="_blank" class="text-blue-600 hover:underline">github.com</a>. Đây là nền tảng để bạn lưu trữ mã nguồn và trang web của mình.</p>
+                </div>
+
+                <!-- Bước 2 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium mb-2">Bước 2: Tạo một kho chứa (Repository) đặc biệt</h3>
+                    <p>Đây là bước <strong class="text-red-600">quan trọng nhất</strong>. Tên của kho chứa phải tuân theo một định dạng rất cụ thể.</p>
+                    <ol class="list-decimal list-inside mt-2 space-y-1">
+                        <li>Trên trang chủ GitHub, nhấn vào nút <strong>"New"</strong> để tạo repository mới.</li>
+                        <li>Tại ô "Repository name", bạn phải đặt tên theo đúng cú pháp sau:
+                            <div class="code-block my-2">
+                                ten-dang-nhap.github.io
+                            </div>
+                            <p>(Thay <code>ten-dang-nhap</code> bằng tên đăng nhập GitHub của chính bạn. Ví dụ: nếu tên của bạn là <code>bsphamhailinh</code>, tên repo sẽ là <code>bsphamhailinh.github.io</code>).</p>
+                        </li>
+                        <li>Đảm bảo repository được đặt ở chế độ <strong>"Public"</strong>.</li>
+                        <li>Nhấn nút <strong>"Create repository"</strong>.</li>
+                    </ol>
+                </div>
+
+                <!-- Bước 3 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium mb-2">Bước 3: Thêm tệp `index.html`</h3>
+                    <p>Mọi trang web đều cần một tệp "cửa ngõ" là <code>index.html</code>. Đây là trang sẽ hiển thị khi có người truy cập vào địa chỉ web của bạn.</p>
+                    <ol class="list-decimal list-inside mt-2 space-y-2">
+                        <li>Trong repository bạn vừa tạo, nhấn vào <strong>"Add file"</strong> > <strong>"Create new file"</strong>.</li>
+                        <li>Đặt tên tệp là <code>index.html</code>.</li>
+                        <li>Dán đoạn mã HTML cơ bản dưới đây vào phần nội dung:</li>
+                    </ol>
+                    <pre class="code-block my-2 text-sm"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="vi"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;Trang của tôi&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Chào mừng đến với trang web của tôi!&lt;/h1&gt;
+    &lt;p&gt;Đây là trang web được host trên GitHub Pages.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                </div>
+
+                <!-- Bước 4 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium mb-2">Bước 4: Lưu thay đổi (Commit file)</h3>
+                    <p>Sau khi đã thêm mã, bạn cần lưu lại. Trong GitHub, hành động này gọi là "Commit".</p>
+                    <ol class="list-decimal list-inside mt-2 space-y-1">
+                        <li>Kéo xuống cuối trang, bạn sẽ thấy phần <strong>"Commit new file"</strong>.</li>
+                        <li>Bạn có thể để mô tả mặc định hoặc viết mô tả của riêng mình.</li>
+                        <li>Nhấn nút màu xanh <strong>"Commit new file"</strong>.</li>
+                    </ol>
+                </div>
+
+                <!-- Bước 5 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium mb-2">Bước 5: Kích hoạt và truy cập trang web</h3>
+                    <p>Với repository có tên đặc biệt như trên, GitHub Pages thường được kích hoạt tự động.</p>
+                     <div class="note">
+                        <p class="font-semibold">Chờ một chút!</p>
+                        <p>Quá trình xuất bản trang web có thể mất từ 1 đến 5 phút. Đừng lo lắng nếu nó chưa hoạt động ngay lập tức.</p>
+                    </div>
+                    <p>Sau vài phút, bạn có thể truy cập trang web của mình tại địa chỉ:</p>
+                    <div class="code-block my-2 text-center">
+                        https://ten-dang-nhap.github.io
+                    </div>
+                    <p class="mt-2">Nếu trang web không hiển thị, hãy kiểm tra cài đặt: Vào <strong>Settings</strong> > <strong>Pages</strong> trong repository của bạn. Tại mục <strong>"Source"</strong>, đảm bảo bạn đã chọn branch là <code>main</code> (hoặc <code>master</code>) và nhấn <strong>Save</strong>.</p>
+                </div>
+            </section>
+            
+            <!-- Mẹo -->
+            <section>
+                <h2 class="text-2xl font-semibold border-b pb-2 mb-4 text-sky-700">3. Mẹo và thông tin thêm</h2>
+                 <ul class="list-disc list-inside mt-4 space-y-2">
+                    <li><strong>Cập nhật trang web:</strong> Rất đơn giản! Bạn chỉ cần chỉnh sửa các tệp tin trong repository hoặc thêm tệp mới, sau đó "Commit" thay đổi. GitHub sẽ tự động cập nhật lại trang web cho bạn.</li>
+                    <li><strong>Sử dụng Git trên máy tính:</strong> Để làm việc chuyên nghiệp hơn, bạn nên cài đặt Git và học các lệnh cơ bản (<code>clone</code>, <code>add</code>, <code>commit</code>, <code>push</code>) để quản lý mã nguồn từ máy tính cá nhân.</li>
+                     <li><strong>Tên miền riêng:</strong> GitHub Pages cho phép bạn trỏ tên miền riêng (ví dụ: <code>www.ten-mien-cua-ban.com</code>) vào trang web của mình. Bạn có thể cấu hình trong phần <strong>Settings > Pages > Custom domain</strong>.</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer class="text-center mt-8 text-gray-500">
+            <p>Chúc bạn thành công với trang web cá nhân của mình!</p>
+        </footer>
+
+    </div>
+
+</body>
+
+</html>
