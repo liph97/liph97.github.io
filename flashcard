@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Từ Vựng Y Khoa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Cấu hình cho hiệu ứng lật thẻ --- */
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        
+        /* --- Style cho chế độ Nối từ --- */
+        .match-item.selected {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: white;
+            border-color: #2563eb; /* border-blue-700 */
+        }
+        .match-item.correct {
+            background-color: #22c55e; /* bg-green-500 */
+            color: white;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .match-item.incorrect {
+            background-color: #ef4444; /* bg-red-500 */
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">Học Nhanh 20 Từ Vựng Y Khoa</h1>
+            <p class="text-gray-500 mt-1">Luyện tập mỗi ngày để ghi nhớ tốt hơn!</p>
+        </header>
+
+        <!-- Thanh chọn chế độ học -->
+        <div class="flex justify-center border-b mb-6">
+            <button id="mode-flashcard" class="mode-btn px-4 py-2 font-semibold border-b-2 border-blue-500 text-blue-500">Lật Thẻ</button>
+            <button id="mode-quiz" class="mode-btn px-4 py-2 font-semibold text-gray-500 border-b-2 border-transparent">Trắc Nghiệm</button>
+            <button id="mode-match" class="mode-btn px-4 py-2 font-semibold text-gray-500 border-b-2 border-transparent">Nối Từ</button>
+        </div>
+
+        <main id="main-content">
+            <!-- Chế độ Flashcard -->
+            <div id="flashcard-view" class="view-content">
+                <div id="flashcard-container" class="card-container h-64 md:h-72 w-full mx-auto cursor-pointer mb-4">
+                    <div id="flashcard-inner" class="card-inner">
+                        <div class="card-face card-front bg-blue-100 p-6">
+                            <h2 id="card-front-text" class="text-4xl md:text-5xl font-bold text-blue-800 text-center"></h2>
+                        </div>
+                        <div class="card-face card-back bg-green-100 p-6 overflow-y-auto">
+                            <div id="card-back-content" class="text-center text-green-800">
+                                <h3 id="card-back-term" class="text-2xl font-bold mb-2"></h3>
+                                <p id="card-back-pronounce" class="text-lg italic mb-2"></p>
+                                <p id="card-back-meaning" class="text-xl font-semibold mb-4"></p>
+                                <div class="text-left text-sm md:text-base">
+                                    <p class="font-semibold">Ví dụ:</p>
+                                    <p id="card-back-example-en" class="italic"></p>
+                                    <p id="card-back-example-vi"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="progress-container" class="text-center text-gray-500 mb-4">
+                    <span id="progress-text">1 / 20</span>
+                </div>
+                <div class="flex justify-center items-center space-x-4">
+                    <button id="prev-btn" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">&lt; Trước</button>
+                    <button id="flip-btn" class="px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-md">Lật Thẻ</button>
+                    <button id="next-btn" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">Sau &gt;</button>
+                </div>
+            </div>
+
+            <!-- Chế độ Trắc nghiệm -->
+            <div id="quiz-view" class="view-content hidden">
+                 <div class="bg-gray-50 p-6 rounded-lg shadow-inner mb-4 min-h-[120px] flex items-center justify-center">
+                    <h2 id="quiz-question" class="text-2xl font-bold text-center text-gray-700"></h2>
+                </div>
+                <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Các lựa chọn sẽ được thêm vào đây -->
+                </div>
+                <div id="quiz-feedback" class="mt-4 text-center font-semibold h-6"></div>
+                 <div class="flex justify-center mt-4">
+                    <button id="next-question-btn" class="px-6 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors hidden">Câu tiếp theo</button>
+                </div>
+            </div>
+
+            <!-- Chế độ Nối từ -->
+            <div id="match-view" class="view-content hidden">
+                <p class="text-center mb-4 text-gray-600">Nối thuật ngữ Tiếng Anh với định nghĩa Tiếng Việt tương ứng.</p>
+                <div class="flex flex-col md:flex-row justify-between gap-4">
+                    <div id="match-terms" class="w-full md:w-1/2 flex flex-col gap-3"></div>
+                    <div id="match-definitions" class="w-full md:w-1/2 flex flex-col gap-3"></div>
+                </div>
+                <div id="match-feedback" class="mt-4 text-center font-bold text-xl h-8"></div>
+            </div>
+
+        </main>
+        
+        <!-- Nút Reset -->
+        <div class="mt-6 text-center">
+             <button id="reset-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Học lại từ đầu</button>
+        </div>
+
+    </div>
+
+    <script>
+        const vocabulary = [
+            { en: "Anatomy", vi: "Giải phẫu học", pronounce: "/əˈnætəmi/", ex_en: "He is studying the anatomy of the human heart.", ex_vi: "Anh ấy đang nghiên cứu giải phẫu của tim người." },
+            { en: "Physiology", vi: "Sinh lý học", pronounce: "/ˌfɪziˈɒlədʒi/", ex_en: "Physiology is the study of how the body works.", ex_vi: "Sinh lý học là nghiên cứu về cách cơ thể hoạt động." },
+            { en: "Pathology", vi: "Bệnh lý học", pronounce: "/pəˈθɒlədʒi/", ex_en: "The pathology report confirmed the diagnosis.", ex_vi: "Báo cáo bệnh lý học đã xác nhận chẩn đoán." },
+            { en: "Diagnosis", vi: "Chẩn đoán", pronounce: "/ˌdaɪəɡˈnəʊsɪs/", ex_en: "The doctor made a quick diagnosis.", ex_vi: "Bác sĩ đã đưa ra chẩn đoán nhanh chóng." },
+            { en: "Symptom", vi: "Triệu chứng", pronounce: "/ˈsɪmptəm/", ex_en: "A high fever is a common symptom of the flu.", ex_vi: "Sốt cao là một triệu chứng phổ biến của bệnh cúm." },
+            { en: "Treatment", vi: "Điều trị", pronounce: "/ˈtriːtmənt/", ex_en: "She is receiving treatment for cancer.", ex_vi: "Cô ấy đang được điều trị ung thư." },
+            { en: "Prescription", vi: "Đơn thuốc", pronounce: "/prɪˈskrɪpʃn/", ex_en: "The doctor gave me a prescription for antibiotics.", ex_vi: "Bác sĩ đã cho tôi một đơn thuốc kháng sinh." },
+            { en: "Cardiology", vi: "Khoa tim mạch", pronounce: "/ˌkɑːdiˈɒlədʒi/", ex_en: "He is a specialist in cardiology.", ex_vi: "Ông ấy là một chuyên gia về tim mạch học." },
+            { en: "Dermatology", vi: "Khoa da liễu", pronounce: "/ˌdɜːməˈtɒlədʒi/", ex_en: "Dermatology deals with skin diseases.", ex_vi: "Da liễu học xử lý các bệnh về da." },
+            { en: "Neurology", vi: "Khoa thần kinh", pronounce: "/njʊəˈrɒlədʒi/", ex_en: "She works in the neurology department.", ex_vi: "Cô ấy làm việc tại khoa thần kinh." },
+            { en: "Hypertension", vi: "Tăng huyết áp", pronounce: "/ˌhaɪpəˈtenʃn/", ex_en: "Hypertension is another term for high blood pressure.", ex_vi: "Tăng huyết áp là một thuật ngữ khác của huyết áp cao." },
+            { en: "Diabetes", vi: "Đái tháo đường", pronounce: "/ˌdaɪəˈbiːtiːz/", ex_en: "He manages his diabetes with diet and insulin.", ex_vi: "Anh ấy kiểm soát bệnh đái tháo đường bằng chế độ ăn và insulin." },
+            { en: "Vaccine", vi: "Vắc-xin", pronounce: "/ˈvæksiːn/", ex_en: "The measles vaccine is highly effective.", ex_vi: "Vắc-xin sởi có hiệu quả cao." },
+            { en: "Antibiotic", vi: "Kháng sinh", pronounce: "/ˌæntibaɪˈɒtɪk/", ex_en: "Antibiotics are used to treat bacterial infections.", ex_vi: "Kháng sinh được dùng để điều trị nhiễm khuẩn." },
+            { en: "Surgery", vi: "Phẫu thuật", pronounce: "/ˈsɜːdʒəri/", ex_en: "The patient needs emergency surgery.", ex_vi: "Bệnh nhân cần phẫu thuật khẩn cấp." },
+            { en: "Anesthesia", vi: "Gây mê", pronounce: "/ˌænəsˈθiːziə/", ex_en: "The patient was put under general anesthesia before the operation.", ex_vi: "Bệnh nhân được gây mê toàn thân trước ca mổ." },
+            { en: "Emergency", vi: "Cấp cứu", pronounce: "/ɪˈmɜːdʒənsi/", ex_en: "Call an ambulance in an emergency.", ex_vi: "Hãy gọi xe cứu thương trong trường hợp khẩn cấp." },
+            { en: "Chronic", vi: "Mãn tính", pronounce: "/ˈkrɒnɪk/", ex_en: "He suffers from a chronic lung disease.", ex_vi: "Ông ấy bị một bệnh phổi mãn tính." },
+            { en: "Acute", vi: "Cấp tính", pronounce: "/əˈkjuːt/", ex_en: "She had an acute attack of appendicitis.", ex_vi: "Cô ấy bị một cơn viêm ruột thừa cấp tính." },
+            { en: "Prognosis", vi: "Tiên lượng", pronounce: "/prɒɡˈnəʊsɪs/", ex_en: "The prognosis for patients with this disease is good.", ex_vi: "Tiên lượng cho bệnh nhân mắc bệnh này là tốt." }
+        ];
+
+        let currentCardIndex = 0;
+        let currentMode = 'flashcard';
+        let shuffledVocab = [];
+
+        // DOM Elements
+        const mainContent = document.getElementById('main-content');
+        const views = document.querySelectorAll('.view-content');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+
+        // --- Flashcard Elements ---
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const cardFrontText = document.getElementById('card-front-text');
+        const cardBackTerm = document.getElementById('card-back-term');
+        const cardBackPronounce = document.getElementById('card-back-pronounce');
+        const cardBackMeaning = document.getElementById('card-back-meaning');
+        const cardBackExampleEn = document.getElementById('card-back-example-en');
+        const cardBackExampleVi = document.getElementById('card-back-example-vi');
+        const progressText = document.getElementById('progress-text');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const flipBtn = document.getElementById('flip-btn');
+
+        // --- Quiz Elements ---
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizOptionsContainer = document.getElementById('quiz-options');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+
+        // --- Match Elements ---
+        const matchTermsContainer = document.getElementById('match-terms');
+        const matchDefinitionsContainer = document.getElementById('match-definitions');
+        const matchFeedback = document.getElementById('match-feedback');
+        let selectedTerm = null;
+        let selectedDefinition = null;
+        let correctMatches = 0;
+
+        // --- Helper function to shuffle an array ---
+        function shuffleArray(array) {
+            return array.slice().sort(() => Math.random() - 0.5);
+        }
+
+        // --- FLASHCARD MODE FUNCTIONS ---
+        function updateFlashcard() {
+            const card = shuffledVocab[currentCardIndex];
+            cardFrontText.textContent = card.en;
+            cardBackTerm.textContent = card.en;
+            cardBackPronounce.textContent = card.pronounce;
+            cardBackMeaning.textContent = card.vi;
+            cardBackExampleEn.textContent = card.ex_en;
+            cardBackExampleVi.textContent = card.ex_vi;
+            progressText.textContent = `${currentCardIndex + 1} / ${shuffledVocab.length}`;
+            flashcardContainer.classList.remove('flipped');
+        }
+
+        function flipCard() {
+            flashcardContainer.classList.toggle('flipped');
+        }
+
+        // --- QUIZ MODE FUNCTIONS ---
+        function generateQuizQuestion() {
+            quizFeedback.textContent = '';
+            quizOptionsContainer.innerHTML = '';
+            nextQuestionBtn.classList.add('hidden');
+            
+            const correctCard = shuffledVocab[currentCardIndex];
+            const options = [correctCard];
+
+            // Generate 3 wrong options
+            while (options.length < 4) {
+                const randomCard = vocabulary[Math.floor(Math.random() * vocabulary.length)];
+                if (!options.some(opt => opt.en === randomCard.en)) {
+                    options.push(randomCard);
+                }
+            }
+
+            const shuffledOptions = shuffleArray(options);
+            const isQuestionInEnglish = Math.random() > 0.5;
+
+            if (isQuestionInEnglish) {
+                quizQuestion.textContent = correctCard.en;
+                shuffledOptions.forEach(option => createOptionButton(option.vi, option.en === correctCard.en));
+            } else {
+                quizQuestion.textContent = correctCard.vi;
+                shuffledOptions.forEach(option => createOptionButton(option.en, option.en === correctCard.en));
+            }
+        }
+
+        function createOptionButton(text, isCorrect) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.className = "w-full text-left p-4 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-100 hover:border-blue-400 transition-colors";
+            button.dataset.correct = isCorrect;
+            button.addEventListener('click', checkQuizAnswer);
+            quizOptionsContainer.appendChild(button);
+        }
+
+        function checkQuizAnswer(event) {
+            const selectedButton = event.target;
+            const isCorrect = selectedButton.dataset.correct === 'true';
+
+            // Disable all buttons
+            const allButtons = quizOptionsContainer.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                // Highlight correct and incorrect answers
+                if (btn.dataset.correct === 'true') {
+                    btn.classList.remove('border-gray-200');
+                    btn.classList.add('bg-green-100', 'border-green-500');
+                } else if (btn === selectedButton) {
+                    btn.classList.remove('border-gray-200');
+                    btn.classList.add('bg-red-100', 'border-red-500');
+                }
+            });
+
+            if (isCorrect) {
+                quizFeedback.textContent = 'Chính xác!';
+                quizFeedback.className = 'mt-4 text-center font-semibold h-6 text-green-600';
+            } else {
+                quizFeedback.textContent = 'Chưa đúng!';
+                quizFeedback.className = 'mt-4 text-center font-semibold h-6 text-red-600';
+            }
+            nextQuestionBtn.classList.remove('hidden');
+        }
+
+        // --- MATCH MODE FUNCTIONS ---
+        function initMatchMode() {
+            matchTermsContainer.innerHTML = '';
+            matchDefinitionsContainer.innerHTML = '';
+            matchFeedback.textContent = '';
+            selectedTerm = null;
+            selectedDefinition = null;
+            correctMatches = 0;
+            
+            const matchVocab = shuffleArray(vocabulary).slice(0, 5); // Take 5 random words for matching
+            const terms = shuffleArray(matchVocab);
+            const definitions = shuffleArray(matchVocab);
+
+            terms.forEach(item => createMatchItem(item.en, 'term', matchTermsContainer));
+            definitions.forEach(item => createMatchItem(item.vi, 'definition', matchDefinitionsContainer));
+        }
+        
+        function createMatchItem(text, type, container) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.dataset.type = type;
+            div.dataset.text = text;
+            div.className = "match-item p-3 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 text-center";
+            div.addEventListener('click', handleMatchSelection);
+            container.appendChild(div);
+        }
+
+        function handleMatchSelection(e) {
+            const selectedItem = e.target;
+            const type = selectedItem.dataset.type;
+
+            if (selectedItem.classList.contains('correct')) return;
+
+            if (type === 'term') {
+                if (selectedTerm) selectedTerm.classList.remove('selected');
+                selectedTerm = selectedItem;
+                selectedTerm.classList.add('selected');
+            } else {
+                if (selectedDefinition) selectedDefinition.classList.remove('selected');
+                selectedDefinition = selectedItem;
+                selectedDefinition.classList.add('selected');
+            }
+
+            if (selectedTerm && selectedDefinition) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const termData = vocabulary.find(v => v.en === selectedTerm.dataset.text);
+            const defData = vocabulary.find(v => v.vi === selectedDefinition.dataset.text);
+
+            if (termData.vi === defData.vi) {
+                selectedTerm.classList.remove('selected');
+                selectedDefinition.classList.remove('selected');
+                selectedTerm.classList.add('correct');
+                selectedDefinition.classList.add('correct');
+                correctMatches++;
+                if (correctMatches === 5) {
+                    matchFeedback.textContent = 'Hoàn tất!';
+                    matchFeedback.className = 'mt-4 text-center font-bold text-xl h-8 text-green-600';
+                }
+            } else {
+                selectedTerm.classList.add('incorrect');
+                selectedDefinition.classList.add('incorrect');
+                setTimeout(() => {
+                    selectedTerm.classList.remove('selected', 'incorrect');
+                    selectedDefinition.classList.remove('selected', 'incorrect');
+                }, 800);
+            }
+            
+            selectedTerm = null;
+            selectedDefinition = null;
+        }
+
+        // --- GENERAL & INITIALIZATION ---
+        function switchMode(newMode) {
+            currentMode = newMode;
+            views.forEach(view => view.classList.add('hidden'));
+            modeButtons.forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-500');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+            
+            const activeView = document.getElementById(`${newMode}-view`);
+            const activeButton = document.getElementById(`mode-${newMode}`);
+            
+            activeView.classList.remove('hidden');
+            activeButton.classList.add('border-blue-500', 'text-blue-500');
+            activeButton.classList.remove('text-gray-500', 'border-transparent');
+            
+            init();
+        }
+
+        function init() {
+            // Only shuffle once when switching modes or on first load for consistency
+            if (shuffledVocab.length === 0 || currentMode === 'flashcard') {
+                shuffledVocab = shuffleArray(vocabulary);
+            }
+            currentCardIndex = 0;
+            
+            if (currentMode === 'flashcard') {
+                updateFlashcard();
+            } else if (currentMode === 'quiz') {
+                generateQuizQuestion();
+            } else if (currentMode === 'match') {
+                initMatchMode();
+            }
+        }
+        
+        function resetApp() {
+            shuffledVocab = [];
+            switchMode('flashcard');
+        }
+
+        // Event Listeners
+        flipBtn.addEventListener('click', flipCard);
+        flashcardContainer.addEventListener('click', flipCard);
+
+        nextBtn.addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex + 1) % shuffledVocab.length;
+            updateFlashcard();
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex - 1 + shuffledVocab.length) % shuffledVocab.length;
+            updateFlashcard();
+        });
+
+        nextQuestionBtn.addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex + 1) % shuffledVocab.length;
+            generateQuizQuestion();
+        });
+
+        modeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                switchMode(e.target.id.replace('mode-', ''));
+            });
+        });
+        
+        document.getElementById('reset-btn').addEventListener('click', resetApp);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+    </script>
+</body>
+
+</html>
