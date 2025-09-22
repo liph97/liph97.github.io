@@ -68,6 +68,7 @@
                 <nav class="flex flex-wrap space-x-4 sm:space-x-8 px-6" aria-label="Tabs">
                     <button data-tab="dashboard" class="tab-button tab-active py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"><i data-lucide="layout-dashboard"></i><span class="hidden sm:inline">Bảng điều khiển</span></button>
                     <button data-tab="report" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="file-text"></i><span class="hidden sm:inline">Báo cáo</span></button>
+                    <button data-tab="export" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="printer"></i><span class="hidden sm:inline">Xuất danh sách</span></button>
                     <button data-tab="all-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="list-filter"></i><span class="hidden sm:inline">Tổng hợp Lượt khám</span></button>
                     <button data-tab="ncd-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="heart-pulse"></i><span class="hidden sm:inline">Quản lý THA/ĐTĐ</span></button>
                     <button data-tab="patients" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="users-round"></i><span class="hidden sm:inline">Bệnh nhân</span></button>
@@ -141,6 +142,58 @@
                         </div>
                     </div>
                     <div id="report-output" class="space-y-6"></div>
+                </div>
+
+                <!-- Tab Xuất danh sách -->
+                <div id="export-view" class="tab-pane hidden space-y-6">
+                    <div class="info-card">
+                        <h2 class="text-xl font-bold mb-4">Tùy chọn Xuất danh sách Bệnh nhân</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Chọn bệnh</label>
+                                <div class="space-y-1 mt-2">
+                                    <label class="flex items-center"><input type="checkbox" name="export-disease" value="tăng huyết áp" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Tăng huyết áp</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="export-disease" value="đái tháo đường" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Đái tháo đường</span></label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tình trạng điều trị</label>
+                                <div class="space-y-1 mt-2">
+                                    <label class="flex items-center"><input type="checkbox" name="export-status" value="tại trạm" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Điều trị tại trạm</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="export-status" value="nơi khác" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Điều trị nơi khác</span></label>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                     <label for="export-period" class="block text-sm font-medium text-gray-700 mb-1">Kỳ lập danh sách</label>
+                                     <select id="export-period" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                         <option value="month">Tháng cụ thể</option>
+                                         <option value="custom">Tùy chọn ngày</option>
+                                     </select>
+                                </div>
+                                <div id="export-month-selector-container">
+                                     <label for="export-month" class="block text-sm font-medium text-gray-700 mb-1">Chọn tháng/năm</label>
+                                     <input type="month" id="export-month" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                </div>
+                                <div id="export-custom-date-container" class="hidden sm:col-span-2 grid grid-cols-2 gap-4">
+                                     <div>
+                                         <label for="export-start-date" class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                                         <input type="date" id="export-start-date" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                     </div>
+                                     <div>
+                                         <label for="export-end-date" class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                                         <input type="date" id="export-end-date" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                     </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-start-4 flex items-center">
+                                <button id="export-excel-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                                    <i data-lucide="file-down"></i>
+                                    Xuất Excel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                  <!-- Tab Tổng hợp Lượt khám -->
@@ -272,7 +325,7 @@
         <div id="detail-modal" class="modal fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none z-40">
             <div class="modal-content bg-slate-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] transform scale-95 flex flex-col">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0"><h3 id="modal-title" class="text-xl font-bold text-slate-900">Chi tiết Bệnh nhân</h3><button id="close-modal-button" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button></div>
-                <div id="modal-body" class="p-6 overflow-y-auto flex-grow bg-slate-100"></div>
+                <div id="modal-body" class="p-6 overflow-y-auto flex-grow bg-white"></div>
                 <div class="p-4 bg-slate-200 border-t border-slate-300 text-right rounded-b-lg flex-shrink-0"><button id="close-modal-button-footer" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm">Đóng</button></div>
             </div>
         </div>
@@ -377,12 +430,11 @@
             if (!date || !(date instanceof Date) || isNaN(date)) return 'N/A';
             return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
-
+        
+        // Sửa lỗi tính tuổi
         function calculateAge(birthYear, encounterDate) {
-            if (!birthYear || !encounterDate) return 'N/A';
-            const birth = normalizeDate(birthYear);
-            if(!birth) return encounterDate.getFullYear() - parseInt(birthYear);
-            return encounterDate.getFullYear() - birth.getFullYear();
+            if (!birthYear || !encounterDate || isNaN(parseInt(birthYear))) return 'N/A';
+            return encounterDate.getFullYear() - parseInt(birthYear);
         }
 
         function extractVitals(symptoms) {
@@ -403,6 +455,25 @@
             return vitals;
         }
         
+        // Hàm mới để tách chuỗi triệu chứng khỏi sinh hiệu
+        function cleanSymptomsString(symptoms) {
+            if (typeof symptoms !== 'string') return 'N/A';
+            let cleaned = symptoms;
+            const patterns = [
+                /huyết áp:?\s*(\d{2,3}\s*\/\s*\d{2,3})/ig,
+                /mạch:?\s*(\d{2,3})/ig,
+                /nhiệt độ:?\s*(\d{2}(\.\d)?)/ig,
+                /nhịp thở:?\s*(\d{2})/ig,
+                /cân nặng:?\s*(\d{2,3}(\.\d)?)/ig,
+                /chiều cao:?\s*(\d{2,3})/ig,
+            ];
+            patterns.forEach(p => {
+                cleaned = cleaned.replace(p, '');
+            });
+            cleaned = cleaned.replace(/[,;]\s*[,;]/g, ',').replace(/^\s*[,;]\s*|\s*[,;]\s*$/g, '').trim();
+            return cleaned || 'Không có';
+        }
+
         function determineStatus(encounter) {
             const statuses = [];
             const dieuTriLower = (encounter.dieuTri || '').toLowerCase().replace(/[\s\W]/g, '');
@@ -504,6 +575,7 @@
         function renderAllViews() {
             renderDashboard();
             renderReportView();
+            renderExportView();
             renderAllEncountersView();
             renderNcdEncountersView();
             renderPatientsView();
@@ -627,6 +699,18 @@
             oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
             document.getElementById('report-start-date').valueAsDate = oneMonthAgo;
         }
+
+        function renderExportView() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('export-month').value = `${year}-${month}`;
+            document.getElementById('export-end-date').valueAsDate = now;
+            const oneMonthAgo = new Date(now);
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            document.getElementById('export-start-date').valueAsDate = oneMonthAgo;
+        }
+
 
         function renderAllEncountersView() {
             const tableBody = document.getElementById('all-encounters-table-body');
@@ -921,24 +1005,29 @@
                 const mainParts = entry.match(/(\d+):\s*([^x]+)\s*x\s*([\d\.]+\s*\w+)/);
                 if (mainParts) {
                      const [_, num, medName, total] = mainParts.map(m => m ? m.trim() : '');
-                     const doseMatch = entry.match(/Sáng\s*([\d\.]+)\s*trưa\s*([\d\.]+)\s*chiều\s*([\d\.]+)\s*tối\s*([\d\.]+)/i);
+                     
                      const doseParts = [];
-                     if(doseMatch) {
-                         if(parseFloat(doseMatch[1]) > 0) doseParts.push(`Sáng ${doseMatch[1]}`);
-                         if(parseFloat(doseMatch[2]) > 0) doseParts.push(`Trưa ${doseMatch[2]}`);
-                         if(parseFloat(doseMatch[3]) > 0) doseParts.push(`Chiều ${doseMatch[3]}`);
-                         if(parseFloat(doseMatch[4]) > 0) doseParts.push(`Tối ${doseMatch[4]}`);
-                     }
+                     const sangMatch = entry.match(/Sáng:?\s*([\d\.]+)/i);
+                     const truaMatch = entry.match(/Trưa:?\s*([\d\.]+)/i);
+                     const chieuMatch = entry.match(/Chiều:?\s*([\d\.]+)/i);
+                     const toiMatch = entry.match(/Tối:?\s*([\d\.]+)/i);
 
-                     const simpleDoseMatch = entry.match(/Sáng:\s*(\d+)\s*Viên,\s*Chiều:\s*(\d+)/i);
-                     if (simpleDoseMatch && doseParts.length === 0) {
-                         doseParts.push(`Sáng ${simpleDoseMatch[1]}`, `Chiều ${simpleDoseMatch[2]}`);
+                     if (sangMatch && parseFloat(sangMatch[1]) > 0) doseParts.push(`Sáng ${sangMatch[1]}`);
+                     if (truaMatch && parseFloat(truaMatch[1]) > 0) doseParts.push(`Trưa ${truaMatch[1]}`);
+                     if (chieuMatch && parseFloat(chieuMatch[1]) > 0) doseParts.push(`Chiều ${chieuMatch[1]}`);
+                     if (toiMatch && parseFloat(toiMatch[1]) > 0) doseParts.push(`Tối ${toiMatch[1]}`);
+
+                     if (doseParts.length === 0) {
+                         const dailyMatch = entry.match(/(\d+)\s*v/i);
+                         if (dailyMatch) {
+                             doseParts.push(`Ngày ${dailyMatch[1]} viên`);
+                         }
                      }
                      
                      const daysMatch = entry.match(/Số ngày:\s*(\d+)/i);
                      const days = daysMatch ? daysMatch[1] : '';
 
-                     html += `<div class="p-3 bg-slate-100 rounded-md mb-2 border">
+                     html += `<div class="p-3 bg-white rounded-md mb-2 border border-slate-200">
                             <div class="flex justify-between items-center font-semibold">
                                 <p class="text-slate-800">${num}. ${medName}</p>
                                 <p class="text-slate-600">${total}</p>
@@ -949,12 +1038,11 @@
                             </div>
                          </div>`;
                 } else {
-                     html += `<div class="p-3 bg-slate-100 rounded-md mb-2 border text-slate-800">${entry}</div>`;
+                     html += `<div class="p-3 bg-white rounded-md mb-2 border border-slate-200 text-slate-800">${entry}</div>`;
                 }
             });
             return html;
         }
-
 
         function showDetailModal(patientId) {
             const patient = appState.patients[patientId];
@@ -962,44 +1050,63 @@
             
             modalTitle.textContent = `Chi tiết Bệnh nhân: ${patient.hoTen}`;
 
-            let contentHTML = `<div class="info-card mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div><strong class="font-semibold text-slate-600 block">Họ tên:</strong> <span class="text-slate-900">${patient.hoTen}</span></div>
-                <div><strong class="font-semibold text-slate-600 block">Năm sinh:</strong> <span class="text-slate-900">${patient.namSinh}</span></div>
-                <div><strong class="font-semibold text-slate-600 block">Giới tính:</strong> <span class="text-slate-900">${patient.gioiTinh || 'N/A'}</span></div>
-                <div class="md:col-span-3"><strong class="font-semibold text-slate-600 block">Địa chỉ:</strong> <span class="text-slate-900">${patient.diaChi || 'N/A'}</span></div>
+            let contentHTML = `<div class="info-card mb-6 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 text-sm bg-sky-50 border-sky-200">
+                <div><strong class="font-semibold text-slate-600 block">Họ tên:</strong> <span class="text-slate-900 font-bold text-base">${patient.hoTen}</span></div>
+                <div><strong class="font-semibold text-slate-600 block">Năm sinh:</strong> <span class="text-slate-900 font-bold text-base">${patient.namSinh}</span></div>
+                <div><strong class="font-semibold text-slate-600 block">Giới tính:</strong> <span class="text-slate-900 font-bold text-base">${patient.gioiTinh || 'N/A'}</span></div>
             </div>
             <h4 class="text-lg font-semibold text-slate-800 mb-4">Lịch sử các lần khám (${patient.encounters.length} lần)</h4>`;
             
             patient.encounters.forEach(e => {
                 const isTaiTram = e.tinhTrang.includes('tại trạm');
                 const statusColorClass = isTaiTram ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800';
-                const diagnosesHTML = (e.chanDoan || 'N/A').split(';').map(d => `<li class="list-disc ml-4">${d.trim()}</li>`).join('');
+                const diagnosesHTML = (e.chanDoan || 'N/A').split(';').map(d => `<li class="list-disc ml-5">${d.trim()}</li>`).join('');
                 
-                contentHTML += `<div class="info-card mb-4">
-                    <div class="flex justify-between items-start mb-3 pb-3 border-b">
-                        <div class="flex items-center space-x-3">
-                             <i data-lucide="calendar" class="w-6 h-6 text-sky-500"></i>
-                            <h5 class="font-bold text-slate-800 text-md">${formatDate(e.ngayKhamDate)} (Tuổi: ${e.tuoi})</h5>
+                contentHTML += `<div class="bg-slate-50 border border-slate-200 rounded-lg mb-4">
+                    <div class="flex justify-between items-start p-4 bg-slate-100 rounded-t-lg border-b">
+                        <div>
+                            <h5 class="font-bold text-slate-800 text-md flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-5 h-5 text-sky-600"></i>
+                                ${formatDate(e.ngayKhamDate)} (Tuổi: ${e.tuoi})
+                            </h5>
                         </div>
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusColorClass}">${e.tinhTrang}</span>
                     </div>
-                    <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 text-sm mt-3">
-                        <div><p class="text-slate-500 font-semibold mb-1">CCCD:</p><p class="text-slate-800">${e.cccd || 'N/A'}</p></div>
-                        <div><p class="text-slate-500 font-semibold mb-1">BHYT:</p><p class="text-slate-800">${e.bhyt || 'N/A'}</p></div>
-                        <div class="md:col-span-2"><p class="text-slate-500 font-semibold mb-1">Triệu chứng:</p><p class="text-slate-800">${e.trieuChung || 'N/A'}</p></div>
-                        <div class="md:col-span-2">
-                             <p class="text-slate-500 font-semibold mb-1">Chẩn đoán:</p>
-                             <ul class="text-slate-800">${diagnosesHTML}</ul>
+                    <div class="p-4 space-y-4">
+                        <!-- Thông tin cá nhân -->
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <h6 class="font-semibold text-sm text-blue-800 mb-2 flex items-center gap-2"><i data-lucide="user-round-search" class="w-4 h-4"></i>Thông tin hành chính</h6>
+                            <div class="grid md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                <p><strong class="text-slate-500">Địa chỉ:</strong> ${e.diaChi || 'N/A'}</p>
+                                <p><strong class="text-slate-500">CCCD:</strong> ${e.cccd || 'N/A'}</p>
+                                <p><strong class="text-slate-500">BHYT:</strong> ${e.bhyt || 'N/A'}</p>
+                            </div>
                         </div>
-                         <div class="md:col-span-2">
-                             <p class="text-slate-500 font-semibold mb-2">Điều trị:</p>
-                             <div>${formatTreatment(e.dieuTri)}</div>
+
+                        <!-- Triệu chứng -->
+                        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <h6 class="font-semibold text-sm text-yellow-800 mb-2 flex items-center gap-2"><i data-lucide="file-question" class="w-4 h-4"></i>Triệu chứng</h6>
+                            <p class="text-sm text-slate-800">${cleanSymptomsString(e.trieuChung)}</p>
                         </div>
-                    </div>
-                    <div class="pt-3 mt-3 border-t">
-                        <h6 class="font-semibold text-sm text-slate-600 mb-2">Sinh hiệu</h6>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-                        ${Object.entries(e.vitals).map(([key, value]) => `<div><strong class="text-slate-500">${key}:</strong> <span class="text-slate-800 font-medium">${value}</span></div>`).join('')}
+                        
+                        <!-- Sinh hiệu -->
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-md">
+                            <h6 class="font-semibold text-sm text-green-800 mb-2 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4"></i>Sinh hiệu</h6>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                                ${Object.entries(e.vitals).map(([key, value]) => `<div><strong class="text-slate-500">${key}:</strong> <span class="text-slate-800 font-medium">${value}</span></div>`).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Chẩn đoán -->
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+                            <h6 class="font-semibold text-sm text-red-800 mb-2 flex items-center gap-2"><i data-lucide="stethoscope" class="w-4 h-4"></i>Chẩn đoán</h6>
+                            <ul class="text-sm text-slate-800">${diagnosesHTML}</ul>
+                        </div>
+
+                        <!-- Điều trị -->
+                        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-md">
+                            <h6 class="font-semibold text-sm text-indigo-800 mb-2 flex items-center gap-2"><i data-lucide="pilcrow" class="w-4 h-4"></i>Điều trị</h6>
+                            ${formatTreatment(e.dieuTri)}
                         </div>
                     </div>
                 </div>`;
@@ -1064,6 +1171,7 @@
                     const viewRenderers = {
                         'dashboard': renderDashboard,
                         'report': renderReportView,
+                        'export': renderExportView,
                         'all-encounters': renderAllEncountersView,
                         'ncd-encounters': renderNcdEncountersView,
                         'patients': renderPatientsView,
@@ -1161,6 +1269,16 @@
             generateReport(startDate, endDate, population);
         });
 
+        // --- EXPORT PAGE LISTENERS ---
+        document.getElementById('export-period').addEventListener('change', (e) => {
+            const period = e.target.value;
+            document.getElementById('export-month-selector-container').style.display = period === 'month' ? 'block' : 'none';
+            document.getElementById('export-custom-date-container').style.display = period === 'custom' ? 'grid' : 'none';
+        });
+
+        document.getElementById('export-excel-btn').addEventListener('click', generatePatientListExcel);
+
+
         function generateReport(startDate, endDate, population) {
             const outputContainer = document.getElementById('report-output');
             
@@ -1175,7 +1293,6 @@
         }
         
         function getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, diseaseKeyword, statusFilter) {
-            // Metric: Medicated (Có ghi nhận) - a patient who has at least one relevant visit in the period
             const medicatedPatientIds = new Set();
             patientsForStatus.forEach(p => {
                 const hasRecordInPeriod = p.encounters.some(e => 
@@ -1188,11 +1305,10 @@
                 }
             });
 
-            // Metric: Newly Detected (Mới ghi nhận) - a patient whose first-ever relevant visit falls in the period
             let newlyDetected = 0;
             patientsForStatus.forEach(p => {
                 const firstRelevantEncounter = [...p.encounters]
-                    .reverse() // encounters are sorted desc, so reverse to get ascending
+                    .reverse()
                     .find(e => 
                         e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
                         (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
@@ -1203,7 +1319,6 @@
                 }
             });
 
-            // Metric: Under Management (Đang quản lý) - a patient who had a relevant visit in the period or the 2 months prior
             const managementPeriodStart = new Date(periodStart);
             managementPeriodStart.setMonth(managementPeriodStart.getMonth() - 2);
 
@@ -1227,7 +1342,6 @@
                 targetAchieved: Math.round(medicated * 0.20)
             };
         }
-
 
         function calculateReportMetrics(diseaseType, startDate, endDate, population, prevalenceRate) {
             const keyword = diseaseType === 'tha' ? 'tăng huyết áp' : 'đái tháo đường';
@@ -1355,6 +1469,119 @@
                     </div>
                 </div>
             `;
+        }
+
+        // --- HÀM XUẤT EXCEL ---
+        async function generatePatientListExcel() {
+            const exportBtn = document.getElementById('export-excel-btn');
+            const originalBtnHTML = exportBtn.innerHTML;
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Đang xử lý...`;
+            lucide.createIcons();
+            
+            const oldMsg = document.getElementById('export-error-msg');
+            if (oldMsg) oldMsg.remove();
+
+            const selectedDiseases = Array.from(document.querySelectorAll('#export-view input[name="export-disease"]:checked')).map(cb => cb.value);
+            const selectedStatuses = Array.from(document.querySelectorAll('#export-view input[name="export-status"]:checked')).map(cb => cb.value);
+            const period = document.getElementById('export-period').value;
+
+            let startDate, endDate;
+            if (period === 'month') {
+                const [year, month] = document.getElementById('export-month').value.split('-').map(Number);
+                startDate = new Date(year, month - 1, 1);
+                endDate = new Date(year, month, 0, 23, 59, 59, 999);
+            } else {
+                startDate = new Date(document.getElementById('export-start-date').value);
+                endDate = new Date(document.getElementById('export-end-date').value);
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(23, 59, 59, 999);
+            }
+
+            const patientData = {};
+            appState.encounters.forEach(e => {
+                if (e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate) {
+                    const statusLower = e.tinhTrang.toLowerCase();
+                    const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.some(d => statusLower.includes(d));
+                    const statusMatch = selectedStatuses.length === 0 || selectedStatuses.some(s => statusLower.includes(s));
+
+                    if (diseaseMatch && statusMatch) {
+                        const patientId = `${e.hoTen.trim()}_${e.namSinhNum}`;
+                        if (!patientData[patientId]) {
+                            const patientInfo = appState.patients[patientId];
+                            patientData[patientId] = {
+                                hoTen: patientInfo.hoTen,
+                                gioiTinh: patientInfo.gioiTinh,
+                                namSinh: patientInfo.namSinh,
+                                diaChi: patientInfo.diaChi,
+                                encounters: []
+                            };
+                        }
+                        patientData[patientId].encounters.push(e);
+                    }
+                }
+            });
+            
+            const tableData = Object.values(patientData).map((p, index) => {
+                const visitDates = p.encounters.map(e => formatDate(e.ngayKhamDate)).join('; ');
+                return [
+                    index + 1,
+                    p.hoTen,
+                    p.gioiTinh || 'N/A',
+                    p.namSinh,
+                    p.diaChi || 'N/A',
+                    p.encounters.length,
+                    visitDates
+                ];
+            });
+
+            if (tableData.length === 0) {
+                 const msgEl = document.createElement('p');
+                 msgEl.id = 'export-error-msg';
+                 msgEl.className = 'text-red-500 text-sm ml-4 absolute bottom-0 mb-[-25px]';
+                 msgEl.textContent = 'Không có dữ liệu phù hợp.';
+                 exportBtn.parentElement.style.position = 'relative';
+                 exportBtn.parentElement.appendChild(msgEl);
+
+                 exportBtn.disabled = false;
+                 exportBtn.innerHTML = originalBtnHTML;
+                 lucide.createIcons();
+                 setTimeout(() => msgEl.remove(), 3000);
+                 return;
+            }
+
+            try {
+                const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Năm sinh', 'Địa chỉ', 'Số lần khám', 'Ghi chú (ngày khám)'];
+                const dataToExport = [headers, ...tableData];
+                
+                const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
+
+                worksheet['!cols'] = [
+                    { wch: 5 },  // STT
+                    { wch: 25 }, // Họ và Tên
+                    { wch: 10 }, // Giới tính
+                    { wch: 10 }, // Năm sinh
+                    { wch: 40 }, // Địa chỉ
+                    { wch: 15 }, // Số lần khám
+                    { wch: 40 }  // Ghi chú
+                ];
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
+                XLSX.writeFile(workbook, `Danh_sach_benh_nhan_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+            } catch(err) {
+                console.error("Error generating Excel file:", err);
+                const msgEl = document.createElement('p');
+                msgEl.id = 'export-error-msg';
+                msgEl.className = 'text-red-500 text-sm ml-4';
+                msgEl.textContent = 'Lỗi khi tạo tệp Excel.';
+                exportBtn.parentElement.appendChild(msgEl);
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = originalBtnHTML;
+                lucide.createIcons();
+            }
         }
 
 
