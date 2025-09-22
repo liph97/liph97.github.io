@@ -143,7 +143,8 @@
                                 <label for="treatmentAnd" class="cursor-pointer">Và</label>
                             </div>
                         </div>
-                        <div id="filterTreatmentContainer" class="w-full border border-gray-300 rounded-md shadow-sm p-2 h-40 overflow-y-auto bg-white"></div>
+                        <input type="text" id="treatmentSearchInput" placeholder="Tìm kiếm thuốc..." class="w-full border-gray-300 rounded-md shadow-sm p-2 mb-2 focus:border-blue-500 focus:ring-blue-500 text-sm">
+                        <div id="filterTreatmentContainer" class="w-full border border-gray-300 rounded-md shadow-sm p-2 h-64 overflow-y-auto bg-white"></div>
                     </div>
                  </div>
                  <div class="mt-4 flex justify-end gap-3">
@@ -473,7 +474,7 @@
             if (!data) return '<p>Không có dữ liệu</p>';
             const cleanData = data.toString().trim().replace(/^"/, '').replace(/"$/, '');
 
-            if (cleanData.toLowerCase().includes('chuyển viện')) {
+            if (/(chuyển viện|chuyển đến bệnh viện)/i.test(cleanData)) {
                 return `<p class="py-2 text-lg font-semibold text-blue-600">${cleanData}</p>`;
             }
 
@@ -525,7 +526,7 @@
             }
 
             const timelineHtml = patient.visits.map((v, index) => {
-                const isChuyenVien = (v.treatment || '').toString().toLowerCase().includes('chuyển viện');
+                const isChuyenVien = /(chuyển viện|chuyển đến bệnh viện)/i.test((v.treatment || '').toString());
                 const colorClass = isChuyenVien ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-orange-100 text-orange-800 border-orange-300';
                 const activeClass = index === currentVisitIndex ? 'active border-2' : 'border';
                 return `
@@ -635,6 +636,21 @@
             nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
             prevButton.addEventListener('click', () => { if (currentIndexInList > 0) { currentIndexInList--; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
             
+            // Search functionality for treatment filter
+            const treatmentSearchInput = document.getElementById('treatmentSearchInput');
+            treatmentSearchInput.addEventListener('keyup', () => {
+                const searchTerm = treatmentSearchInput.value.toLowerCase().trim();
+                const treatmentItems = filterTreatmentContainer.querySelectorAll(':scope > div'); 
+                treatmentItems.forEach(item => {
+                    const label = item.querySelector('label');
+                    if (label && label.textContent.toLowerCase().includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else if (label) {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+
             fileInput.addEventListener('change', e => {
                 const file = e.target.files[0]; if (!file) return;
                 showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
@@ -803,7 +819,7 @@
 
                 p.visits.forEach(v => {
                     if(v.diagnosis) {
-                        const isChuyenVien = (v.treatment || '').toString().toLowerCase().includes('chuyển viện');
+                        const isChuyenVien = /(chuyển viện|chuyển đến bệnh viện)/i.test((v.treatment || '').toString());
                         v.diagnosis.toString().replace(/^"/, '').replace(/"$/, '').split(';').forEach(d => { 
                             const trimmed = d.trim(); 
                             if(trimmed) { 
@@ -843,7 +859,7 @@
                     if(v.treatment) {
                         const treatmentText = v.treatment.toString().trim().replace(/^"/, '').replace(/"$/, '');
                         
-                        if (treatmentText.toLowerCase().includes('chuyển viện')) {
+                        if (/(chuyển viện|chuyển đến bệnh viện)/i.test(treatmentText)) {
                             unique.treatments.add('Chuyển viện');
                         } else if (/\d+:/.test(treatmentText)) { // Check for numbered list format
                             const prescriptions = treatmentText.split(/,\s*(?=\d+:)/g);
@@ -906,6 +922,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
