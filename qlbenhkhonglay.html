@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình quản lý Bệnh không lây nhiễm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom-color: #0ea5e9; color: #0ea5e9; font-weight: 600; }
+        .modal { transition: opacity 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        .info-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); padding: 24px; border: 1px solid #e2e8f0; }
+        #history-table-container th.month-header, 
+        #history-table-container td.month-cell { min-width: 6rem; max-width: 6rem; text-align: center; }
+        #history-table-container td.month-cell { height: 3rem; padding: 0; }
+        #history-table-container .sticky-name { min-width: 200px; }
+        .tag-input-container { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; background-color: white; }
+        .tag { display: inline-flex; align-items: center; background-color: #e0f2fe; color: #0c4a6e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; }
+        .tag-remove { margin-left: 0.5rem; cursor: pointer; color: #38bdf8; font-weight: bold; }
+        .history-sub-tab-active { background-color: #0ea5e9; color: white; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app" class="max-w-screen-2xl mx-auto p-4 md:p-6 lg:p-8">
+        <header class="mb-8 pb-4 border-b border-slate-200 flex items-center gap-4">
+             <div class="flex-shrink-0 bg-sky-500 text-white rounded-full h-16 w-16 flex items-center justify-center">
+                <i data-lucide="heart-pulse" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Trình quản lý Bệnh không lây nhiễm</h1>
+                <p class="text-slate-500 mt-1">Phân tích và theo dõi bệnh nhân Tăng huyết áp & Đái tháo đường tại Trạm Y tế</p>
+            </div>
+        </header>
+
+        <!-- Vùng tải tệp lên -->
+        <div id="upload-container" class="text-center p-8 border-2 border-dashed border-slate-300 rounded-lg bg-white shadow-sm">
+             <i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-slate-400"></i>
+            <h2 class="text-xl font-semibold mt-4 mb-2">Bắt đầu phân tích</h2>
+            <p class="text-slate-500 mb-4">Vui lòng tải lên tệp Excel chứa dữ liệu khám bệnh của bạn.</p>
+            <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls, .csv">
+            <button id="upload-button" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-full transition-colors shadow hover:shadow-lg flex items-center gap-2 mx-auto">
+                <i data-lucide="file-up"></i>
+                Chọn tệp từ máy tính
+            </button>
+            <p id="file-name" class="mt-3 text-slate-600"></p>
+        </div>
+
+        <!-- Vùng hiển thị chính sau khi tải tệp -->
+        <main id="main-content" class="hidden">
+            <!-- Thanh điều hướng các tab -->
+            <div class="mb-6 bg-white rounded-lg shadow-sm border border-slate-200">
+                <nav class="flex space-x-4 sm:space-x-8 px-6" aria-label="Tabs">
+                    <button data-tab="dashboard" class="tab-button tab-active py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"><i data-lucide="layout-dashboard"></i><span class="hidden sm:inline">Bảng điều khiển</span></button>
+                    <button data-tab="all-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="list-filter"></i><span class="hidden sm:inline">Tổng hợp Lượt khám</span></button>
+                    <button data-tab="ncd-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="heart-pulse"></i><span class="hidden sm:inline">Quản lý THA/ĐTĐ</span></button>
+                    <button data-tab="patients" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="users-round"></i><span class="hidden sm:inline">Bệnh nhân</span></button>
+                    <button data-tab="history" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="calendar-days"></i><span class="hidden sm:inline">Lịch sử</span></button>
+                    <button data-tab="reference" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="book-marked"></i><span class="hidden sm:inline">Tham chiếu</span></button>
+                </nav>
+            </div>
+
+            <!-- Nội dung các tab -->
+            <div id="tab-content">
+                <!-- Tab Bảng điều khiển -->
+                 <div id="dashboard-view" class="tab-pane space-y-6">
+                    <div class="info-card">
+                        <div class="flex items-center justify-center space-x-2" id="dashboard-filters">
+                             <button data-filter="all" class="dashboard-filter-btn history-sub-tab-active font-semibold px-4 py-2 rounded-full text-sm transition">Tổng hợp chung</button>
+                             <button data-filter="tha" class="dashboard-filter-btn bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold px-4 py-2 rounded-full text-sm transition">Tăng huyết áp</button>
+                             <button data-filter="dtd" class="dashboard-filter-btn bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold px-4 py-2 rounded-full text-sm transition">Đái tháo đường</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng số bệnh nhân</p><p id="totalNcdPatients" class="text-4xl font-bold text-sky-600">0</p></div>
+                        <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng lượt khám</p><p id="totalNcdVisits" class="text-4xl font-bold text-sky-600">0</p></div>
+                        <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Bệnh nhân mới</p><p id="newNcdPatients" class="text-3xl font-bold text-sky-600">0</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div class="info-card lg:col-span-2"><h3 class="font-bold text-center mb-2">Phân bố giới tính</h3><div class="relative h-64 md:h-72"><canvas id="genderChart"></canvas></div></div>
+                        <div class="info-card lg:col-span-3"><h3 class="font-bold text-center mb-2">Phân bố nhóm tuổi</h3><div class="relative h-72"><canvas id="ageChart"></canvas></div></div>
+                    </div>
+                     <div class="info-card"><h3 class="font-bold text-center mb-2">Xu hướng điều trị theo thời gian</h3><div class="relative h-96"><canvas id="treatmentTrendChart"></canvas></div></div>
+                     <div class="info-card"><h3 class="font-bold text-left mb-4 text-xl">Thống kê sử dụng thuốc</h3><div id="meds-stats-container" class="overflow-auto max-h-[60vh]"></div></div>
+                 </div>
+
+                 <!-- Tab Tổng hợp Lượt khám -->
+                <div id="all-encounters-view" class="tab-pane hidden">
+                    <div class="info-card mb-4">
+                        <input type="text" id="all-encounters-search" placeholder="Tìm theo tên, địa chỉ, tình trạng, chẩn đoán..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                        <p id="all-encounters-count" class="text-sm text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày khám</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tình trạng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-encounters-table-body" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Quản lý THA/ĐTĐ -->
+                <div id="ncd-encounters-view" class="tab-pane hidden">
+                    <div class="info-card mb-4">
+                        <input type="text" id="ncd-encounters-search" placeholder="Tìm theo tên, địa chỉ, tình trạng..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                        <p id="ncd-encounters-count" class="text-sm text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày khám</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tình trạng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ncd-encounters-table-body" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Danh sách bệnh nhân -->
+                <div id="patients-view" class="tab-pane hidden">
+                    <div class="info-card mb-4">
+                        <input type="text" id="patients-search" placeholder="Tìm theo tên, địa chỉ..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                        <p id="patients-count" class="text-sm text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Khám gần nhất</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tổng số lần khám</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Số lần điều trị tại trạm</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patients-table-body" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Lịch sử điều trị -->
+                <div id="history-view" class="tab-pane hidden">
+                    <div class="info-card">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                            <div id="history-filters" class="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center">
+                                 <input type="text" id="history-search" placeholder="Tìm theo tên bệnh nhân..." class="p-2 border border-slate-300 rounded-md md:w-auto w-full focus:ring-sky-500 focus:border-sky-500">
+                                <div class="flex items-center space-x-4">
+                                    <h4 class="font-semibold text-sm">Bệnh:</h4>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="disease" value="tha" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"><span>THA</span></label>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="disease" value="dtd" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"><span>ĐTĐ</span></label>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <h4 class="font-semibold text-sm">Tình trạng:</h4>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="status" value="tai tram" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"><span>Tại trạm</span></label>
+                                    <label class="flex items-center space-x-2"><input type="checkbox" name="status" value="noi khac" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"><span>Nơi khác</span></label>
+                                </div>
+                            </div>
+                            <p id="history-count" class="text-sm text-slate-500 flex-shrink-0"></p>
+                        </div>
+
+                        <div class="bg-gray-100 p-2 rounded-lg inline-flex space-x-1 mb-4" id="history-sub-tabs">
+                           <button data-mode="C" class="history-sub-tab history-sub-tab-active font-semibold px-3 py-1.5 rounded-md text-sm transition">Có ghi nhận</button>
+                           <button data-mode="M" class="history-sub-tab bg-transparent text-gray-600 hover:bg-gray-200 font-semibold px-3 py-1.5 rounded-md text-sm transition">Mới ghi nhận</button>
+                           <button data-mode="B" class="history-sub-tab bg-transparent text-gray-600 hover:bg-gray-200 font-semibold px-3 py-1.5 rounded-md text-sm transition">Bỏ ghi nhận</button>
+                           <button data-mode="Q" class="history-sub-tab bg-transparent text-gray-600 hover:bg-gray-200 font-semibold px-3 py-1.5 rounded-md text-sm transition">Quay lại</button>
+                           <button data-mode="QL" class="history-sub-tab bg-transparent text-gray-600 hover:bg-gray-200 font-semibold px-3 py-1.5 rounded-md text-sm transition">Đang quản lý</button>
+                        </div>
+
+                        <div id="history-table-container" class="overflow-auto border border-slate-200 rounded-lg max-h-[70vh]"></div>
+                    </div>
+                </div>
+                
+                 <!-- Tab Điều trị tham chiếu -->
+                <div id="reference-view" class="tab-pane hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="info-card">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">Danh mục thuốc Tăng huyết áp</h3>
+                            <p class="text-sm text-slate-500 mb-3">Thêm tên thuốc hoặc hoạt chất (viết liền, không dấu) để ứng dụng nhận diện. Nhấn Enter để thêm.</p>
+                            <div id="tha-meds-container"></div>
+                        </div>
+                        <div class="info-card">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">Danh mục thuốc Đái tháo đường</h3>
+                             <p class="text-sm text-slate-500 mb-3">Thêm tên thuốc hoặc hoạt chất (viết liền, không dấu) để ứng dụng nhận diện. Nhấn Enter để thêm.</p>
+                            <div id="dtd-meds-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center hidden z-50">
+            <div class="flex items-center space-x-3"><svg class="animate-spin h-8 w-8 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="text-lg font-medium text-slate-700">Đang phân tích dữ liệu...</span></div>
+        </div>
+
+        <div id="detail-modal" class="modal fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none z-40">
+            <div class="modal-content bg-slate-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] transform scale-95 flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0"><h3 id="modal-title" class="text-xl font-bold text-slate-900">Chi tiết Bệnh nhân</h3><button id="close-modal-button" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button></div>
+                <div id="modal-body" class="p-6 overflow-y-auto flex-grow bg-slate-100"></div>
+                <div class="p-4 bg-slate-200 border-t border-slate-300 text-right rounded-b-lg flex-shrink-0"><button id="close-modal-button-footer" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm">Đóng</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- KHỞI TẠO VÀ DOM ELEMENTS ---
+        const uploadContainer = document.getElementById('upload-container');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const mainContent = document.getElementById('main-content');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        const modal = document.getElementById('detail-modal');
+        const modalBody = document.getElementById('modal-body');
+        const modalTitle = document.getElementById('modal-title');
+        const closeModalButtons = [document.getElementById('close-modal-button'), document.getElementById('close-modal-button-footer')];
+        let chartInstances = {};
+        
+        let appState = {
+            rawData: [],
+            encounters: [],
+            patients: {},
+            activeTab: 'dashboard',
+            dashboardFilter: 'all',
+            historySubTab: 'C',
+            thaMeds: [],
+            dtdMeds: [],
+            filters: {
+                allEncounters: { searchText: '' },
+                ncdEncounters: { searchText: '' },
+                patients: { searchText: '' },
+                history: { searchText: '', diseases: [], statuses: [] }
+            }
+        };
+
+        const DEFAULT_THA_MEDS = ['amlodipin', 'nifedipin', 'losartan', 'telmisartan', 'irbesartan', 'valsartan', 'candesartan', 'perindopril', 'enalapril', 'lisinopril', 'ramipril', 'metoprolol', 'bisoprolol', 'carvedilol', 'atenolol', 'hydrochlorothiazide', 'indapamide', 'furosemide', 'spironolactone', 'coveram', 'coversyl', 'amlodac', 'amcardia', 'cozaar', 'diovan', 'micardis', 'aprovel', 'atacand', 'coversyl', 'renitec', 'zestril', 'concor', 'betaloc', 'dilatrend', 'tenormin', 'lasix'];
+        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu', 'golddicron', 'golddicron'];
+        const CHUYEN_VIEN_KEYWORDS = ['chuyển viện', 'chuyển đến bệnh viện'];
+
+        const COLUMN_MAPPINGS = {
+            ngayKham: ['ngay kham', 'ngày khám'],
+            hoTen: ['họ và tên', 'họ tên', 'hoten'],
+            namSinh: ['năm sinh', 'namsinh', 'ns'],
+            gioiTinh: ['giới', 'giới tính', 'gioi'],
+            diaChi: ['địa chỉ', 'diachi'],
+            trieuChung: ['triệu chứng', 'trieuchung'],
+            chanDoan: ['chẩn đoán', 'chandoan'],
+            dieuTri: ['phương pháp điều trị', 'dieu tri', 'điều trị']
+        };
+
+        function findHeader(headers, potentialNames) {
+            const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
+            for (const name of potentialNames) {
+                const index = lowerHeaders.indexOf(name.toLowerCase().trim());
+                if (index !== -1) return headers[index];
+            }
+            return null;
+        }
+
+        function normalizeDate(dateValue) {
+            if (!dateValue) return null;
+            if (dateValue instanceof Date) return dateValue;
+             if (typeof dateValue === 'number') {
+                return new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+            }
+            if (typeof dateValue === 'string') {
+                const parts = dateValue.split(/[/.-]/);
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10);
+                    let year = parseInt(parts[2], 10);
+                    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                        if (year < 100) year += 2000;
+                        const date = new Date(Date.UTC(year, month - 1, day));
+                        if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
+                            return date;
+                        }
+                    }
+                }
+            }
+            const parsedDate = new Date(dateValue);
+            return isNaN(parsedDate.getTime()) ? null : parsedDate;
+        }
+
+        function formatDate(date) {
+            if (!date || !(date instanceof Date) || isNaN(date)) return 'N/A';
+            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function calculateAge(birthYear, encounterDate) {
+            if (!birthYear || !encounterDate) return 'N/A';
+            return encounterDate.getFullYear() - birthYear;
+        }
+
+        function extractVitals(symptoms) {
+            if (typeof symptoms !== 'string') return {};
+            const vitals = {};
+            const patterns = {
+                'Huyết áp': /huyết áp:?\s*(\d{2,3}\s*\/\s*\d{2,3})/i,
+                'Mạch': /mạch:?\s*(\d{2,3})/i,
+                'Nhiệt độ': /nhiệt độ:?\s*(\d{2}(\.\d)?)/i,
+                'Nhịp thở': /nhịp thở:?\s*(\d{2})/i,
+                'Cân nặng': /cân nặng:?\s*(\d{2,3}(\.\d)?)/i,
+                'Chiều cao': /chiều cao:?\s*(\d{2,3})/i,
+            };
+            for (const key in patterns) {
+                const match = symptoms.match(patterns[key]);
+                vitals[key] = match ? match[1].trim() : 'N/A';
+            }
+            return vitals;
+        }
+        
+        function determineStatus(encounter) {
+            const statuses = [];
+            const dieuTriLower = (encounter.dieuTri || '').toLowerCase().replace(/[\s\W]/g, '');
+            const chanDoanLower = (encounter.chanDoan || '').toLowerCase();
+            
+            const hasTHAMeds = appState.thaMeds.some(k => dieuTriLower.includes(k));
+            const hasDTDMeds = appState.dtdMeds.some(k => dieuTriLower.includes(k));
+            const isChuyenVien = CHUYEN_VIEN_KEYWORDS.some(k => (encounter.dieuTri || '').toLowerCase().includes(k)) || !(encounter.dieuTri || '').trim();
+            
+            if (hasTHAMeds) {
+                statuses.push('Tăng huyết áp điều trị tại trạm');
+            } else if (chanDoanLower.includes('tăng huyết áp') && isChuyenVien) {
+                statuses.push('Tăng huyết áp điều trị nơi khác');
+            }
+
+            if (hasDTDMeds) {
+                statuses.push('Đái tháo đường điều trị tại trạm');
+            } else if ((chanDoanLower.includes('đái tháo đường') || chanDoanLower.includes('tiểu đường')) && isChuyenVien) {
+                statuses.push('Đái tháo đường điều trị nơi khác');
+            }
+            
+            return statuses.length > 0 ? statuses.join('; ') : 'Không xác định';
+        }
+
+        function processData(data) {
+            appState.patients = {};
+            appState.encounters = data.map((row, index) => {
+                const encounter = { id: `enc-${index}` };
+                const headers = Object.keys(data[0]);
+                const headerMap = {};
+                for (const key in COLUMN_MAPPINGS) {
+                    headerMap[key] = findHeader(headers, COLUMN_MAPPINGS[key]);
+                }
+                for(const key in headerMap) {
+                    encounter[key] = row[headerMap[key]];
+                }
+                
+                encounter.ngayKhamDate = normalizeDate(encounter.ngayKham);
+                encounter.namSinhNum = parseInt(String(encounter.namSinh).trim(), 10);
+                
+                if (!encounter.hoTen || !encounter.namSinhNum || isNaN(encounter.namSinhNum) || !encounter.ngayKhamDate) return null;
+
+                encounter.tuoi = calculateAge(encounter.namSinhNum, encounter.ngayKhamDate);
+                encounter.vitals = extractVitals(encounter.trieuChung);
+                encounter.tinhTrang = determineStatus(encounter);
+                
+                const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                if (!appState.patients[patientId]) {
+                    appState.patients[patientId] = {
+                        id: patientId, hoTen: String(encounter.hoTen).trim(), namSinh: encounter.namSinhNum,
+                        gioiTinh: encounter.gioiTinh, diaChi: encounter.diaChi, encounters: [], monthlyRecords: {}
+                    };
+                }
+                appState.patients[patientId].encounters.push(encounter);
+                return encounter;
+            }).filter(e => e); 
+
+            Object.values(appState.patients).forEach(p => {
+                p.encounters.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
+                if(p.encounters.length > 0) {
+                    p.gioiTinh = p.encounters[0].gioiTinh;
+                    p.diaChi = p.encounters[0].diaChi;
+                }
+            });
+        }
+        
+        function renderAllViews() {
+            renderDashboard();
+            renderAllEncountersView();
+            renderNcdEncountersView();
+            renderPatientsView();
+            renderHistoryView();
+            renderReferenceView();
+        }
+
+        function renderDashboard() {
+            const filter = appState.dashboardFilter;
+            const encounters = appState.encounters.filter(e => {
+                const statusLower = e.tinhTrang.toLowerCase();
+                if (filter === 'tha') return statusLower.includes('tăng huyết áp');
+                if (filter === 'dtd') return statusLower.includes('đái tháo đường');
+                return statusLower.includes('tăng huyết áp') || statusLower.includes('đái tháo đường');
+            });
+            const patientIds = new Set(encounters.map(e => `${e.hoTen.trim()}_${e.namSinhNum}`));
+            const patients = Array.from(patientIds).map(id => appState.patients[id]).filter(Boolean);
+            
+            const firstVisitMonths = {};
+            patients.forEach(p => {
+                const firstVisit = p.encounters[p.encounters.length-1];
+                const monthKey = `${firstVisit.ngayKhamDate.getFullYear()}-${firstVisit.ngayKhamDate.getMonth()}`;
+                if(!firstVisitMonths[p.id]) firstVisitMonths[p.id] = monthKey;
+            });
+            const newPatientsCount = patients.filter(p => {
+                const firstVisit = p.encounters[p.encounters.length-1];
+                const currentMonth = new Date();
+                return firstVisit.ngayKhamDate.getFullYear() === currentMonth.getFullYear() && firstVisit.ngayKhamDate.getMonth() === currentMonth.getMonth();
+            }).length;
+
+
+            document.getElementById('totalNcdPatients').textContent = patients.length;
+            document.getElementById('totalNcdVisits').textContent = encounters.length;
+            document.getElementById('newNcdPatients').textContent = newPatientsCount;
+
+            // --- Chart Data Calculation ---
+            const genderData = { 'Nam': 0, 'Nữ': 0, 'Khác': 0 };
+            const ageGroups = { 'Dưới 40': 0, '40-60': 0, 'Trên 60': 0 };
+            
+            patients.forEach(p => {
+                const gender = p.gioiTinh ? p.gioiTinh.toLowerCase() : 'khác';
+                if (gender === 'nam') genderData.Nam++;
+                else if (gender === 'nữ') genderData.Nữ++;
+                else genderData.Khác++;
+
+                const age = new Date().getFullYear() - p.namSinh;
+                if (age < 40) ageGroups['Dưới 40']++;
+                else if (age <= 60) ageGroups['40-60']++;
+                else ageGroups['Trên 60']++;
+            });
+
+            const trendData = {};
+            encounters.forEach(e => {
+                const monthKey = e.ngayKhamDate.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' });
+                if (!trendData[monthKey]) trendData[monthKey] = { taiTram: 0, noiKhac: 0 };
+                if (e.tinhTrang.includes('tại trạm')) trendData[monthKey].taiTram++;
+                if (e.tinhTrang.includes('nơi khác')) trendData[monthKey].noiKhac++;
+            });
+            
+            const sortedMonths = Object.keys(trendData).sort((a,b) => {
+                const [mA, yA] = a.split('/');
+                const [mB, yB] = b.split('/');
+                return new Date(yA, mA - 1) - new Date(yB, mB-1);
+            });
+
+            // --- Meds Stats Calculation ---
+            const medsStats = {};
+            const medList = filter === 'tha' ? appState.thaMeds : (filter === 'dtd' ? appState.dtdMeds : [...appState.thaMeds, ...appState.dtdMeds]);
+            encounters.forEach(e => {
+                const dieuTriLower = (e.dieuTri || '').toLowerCase();
+                const monthKey = e.ngayKhamDate.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' });
+
+                medList.forEach(med => {
+                    if (dieuTriLower.includes(med)) {
+                         if (!medsStats[med]) medsStats[med] = { total: 0, months: {} };
+                         const match = dieuTriLower.match(new RegExp(med + '[^x]*x\\s*(\\d+)'));
+                         const quantity = match ? parseInt(match[1], 10) : 0;
+                         medsStats[med].total += quantity;
+                         medsStats[med].months[monthKey] = (medsStats[med].months[monthKey] || 0) + quantity;
+                    }
+                });
+            });
+            const sortedMeds = Object.entries(medsStats).sort(([,a], [,b]) => b.total - a.total);
+            
+            // --- Render Meds Stats Table ---
+            const medsContainer = document.getElementById('meds-stats-container');
+            if(sortedMeds.length === 0){
+                 medsContainer.innerHTML = `<p class="text-center text-slate-500 py-4">Không có dữ liệu thuốc để hiển thị cho lựa chọn này.</p>`;
+            } else {
+                 let medsTableHtml = `<table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 sticky top-0"><tr>
+                        <th class="px-4 py-2 text-left font-semibold">Tên thuốc</th>
+                        <th class="px-4 py-2 text-center font-semibold">Tổng cộng</th>`;
+                 sortedMonths.forEach(m => medsTableHtml += `<th class="px-4 py-2 text-center font-semibold">${m}</th>`);
+                 medsTableHtml += `</tr></thead><tbody class="divide-y divide-slate-100">`;
+                 sortedMeds.forEach(([med, data]) => {
+                    medsTableHtml += `<tr><td class="px-4 py-2 font-medium">${med}</td><td class="px-4 py-2 text-center font-bold">${data.total}</td>`;
+                    sortedMonths.forEach(m => {
+                        medsTableHtml += `<td class="px-4 py-2 text-center">${data.months[m] || 0}</td>`;
+                    });
+                    medsTableHtml += `</tr>`;
+                 });
+                 medsTableHtml += `</tbody></table>`;
+                 medsContainer.innerHTML = medsTableHtml;
+            }
+
+            // --- Render Charts ---
+            Object.values(chartInstances).forEach(chart => chart.destroy());
+            chartInstances.gender = new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: Object.keys(genderData), datasets: [{ data: Object.values(genderData), backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartInstances.age = new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: Object.keys(ageGroups), datasets: [{ label: 'Số lượng bệnh nhân', data: Object.values(ageGroups), backgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+            chartInstances.trend = new Chart(document.getElementById('treatmentTrendChart'), { type: 'line', data: { labels: sortedMonths, datasets: [{ label: 'Tại trạm', data: sortedMonths.map(m => trendData[m].taiTram), borderColor: '#0ea5e9', tension: 0.1, fill: false }, { label: 'Nơi khác', data: sortedMonths.map(m => trendData[m].noiKhac), borderColor: '#f97316', tension: 0.1, fill: false }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+        }
+
+        function renderAllEncountersView() {
+            const tableBody = document.getElementById('all-encounters-table-body');
+            const filterText = appState.filters.allEncounters.searchText.toLowerCase();
+
+            const filteredEncounters = appState.encounters.filter(e => {
+                const searchString = `${e.hoTen || ''} ${e.diaChi || ''} ${e.tinhTrang || ''} ${e.chanDoan || ''}`.toLowerCase();
+                return searchString.includes(filterText);
+            });
+            
+            tableBody.innerHTML = filteredEncounters.map(e => {
+                const isTaiTram = e.tinhTrang.includes('tại trạm');
+                const isNoiKhac = e.tinhTrang.includes('nơi khác');
+                let rowClass = '';
+                if (isTaiTram) rowClass = 'bg-sky-50/50';
+                else if (isNoiKhac) rowClass = 'bg-amber-50/50';
+
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" data-patient-id="${e.hoTen.trim()}_${e.namSinhNum}">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.diaChi || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tinhTrang}</td>
+                </tr>`;
+            }).join('');
+
+            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
+            document.getElementById('all-encounters-count').textContent = `Hiển thị ${filteredEncounters.length} trên tổng số ${appState.encounters.length} lượt khám.`;
+        }
+        
+        function renderNcdEncountersView() {
+            const tableBody = document.getElementById('ncd-encounters-table-body');
+            const filterText = appState.filters.ncdEncounters.searchText.toLowerCase();
+
+            const ncdEncounters = appState.encounters.filter(e => e.tinhTrang !== 'Không xác định');
+            const filteredEncounters = ncdEncounters.filter(e => {
+                const searchString = `${e.hoTen || ''} ${e.diaChi || ''} ${e.tinhTrang || ''}`.toLowerCase();
+                return searchString.includes(filterText);
+            });
+
+            const sortedEncounters = filteredEncounters.sort((a, b) => {
+                const idA = `${a.hoTen}_${a.namSinhNum}`; const idB = `${b.hoTen}_${b.namSinhNum}`;
+                if (idA < idB) return -1; if (idA > idB) return 1;
+                return b.ngayKhamDate - a.ngayKhamDate;
+            });
+            
+            tableBody.innerHTML = sortedEncounters.map(e => {
+                const isTaiTram = e.tinhTrang.includes('tại trạm');
+                let rowClass = isTaiTram ? 'bg-sky-50/50' : 'bg-amber-50/50';
+
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" data-patient-id="${e.hoTen.trim()}_${e.namSinhNum}">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.diaChi || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tinhTrang}</td>
+                </tr>`;
+            }).join('');
+
+            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
+            document.getElementById('ncd-encounters-count').textContent = `Hiển thị ${sortedEncounters.length} trên tổng số ${ncdEncounters.length} lượt khám THA/ĐTĐ.`;
+        }
+
+        function renderPatientsView() {
+            const tableBody = document.getElementById('patients-table-body');
+            const filterText = appState.filters.patients.searchText.toLowerCase();
+            const ncdPatients = Object.values(appState.patients).filter(p => p.encounters.some(e => e.tinhTrang !== 'Không xác định'));
+            const filteredPatients = ncdPatients.filter(p => `${p.hoTen || ''} ${p.diaChi || ''}`.toLowerCase().includes(filterText));
+
+            tableBody.innerHTML = filteredPatients.map(p => {
+                const latestEncounter = p.encounters[0];
+                const atStationCount = p.encounters.filter(e => e.tinhTrang.includes('tại trạm')).length;
+                return `<tr class="hover:bg-slate-100 cursor-pointer" data-patient-id="${p.id}">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${p.hoTen}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.namSinh}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.gioiTinh}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.diaChi || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(latestEncounter.ngayKhamDate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${p.encounters.length}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${atStationCount}</td>
+                </tr>`;
+            }).join('');
+
+            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
+            document.getElementById('patients-count').textContent = `Hiển thị ${filteredPatients.length} trên tổng số ${ncdPatients.length} bệnh nhân THA/ĐTĐ.`;
+        }
+
+        function renderHistoryView() {
+            const container = document.getElementById('history-table-container');
+            const { searchText, diseases, statuses } = appState.filters.history;
+            const mode = appState.historySubTab;
+
+            const relevantPatients = Object.values(appState.patients).filter(p => p.encounters.some(e => e.tinhTrang !== 'Không xác định'));
+            if (relevantPatients.length === 0) {
+                container.innerHTML = '<p class="p-4 text-center text-slate-500">Không có dữ liệu để hiển thị.</p>'; 
+                document.getElementById('history-count').textContent = 'Hiển thị 0 bệnh nhân.';
+                return;
+            }
+
+            const patientsToDisplay = relevantPatients.filter(patient => {
+                return !searchText || patient.hoTen.toLowerCase().includes(searchText);
+            });
+
+            document.getElementById('history-count').textContent = `Hiển thị ${patientsToDisplay.length} bệnh nhân phù hợp.`;
+            if (patientsToDisplay.length === 0) {
+                container.innerHTML = '<p class="p-4 text-center text-slate-500">Không có bệnh nhân nào phù hợp với bộ lọc.</p>'; 
+                return;
+            }
+
+            const allDates = relevantPatients.flatMap(p => p.encounters.map(e => e.ngayKhamDate));
+            const minDate = new Date(Math.min.apply(null, allDates));
+            const maxDate = new Date(Math.max.apply(null, allDates));
+
+            const months = [];
+            let currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+            while (currentDate <= maxDate) {
+                months.push(new Date(currentDate));
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+            const monthTimestamps = months.map(m => m.getTime());
+
+            // Pre-calculate monthly records for all patients
+            patientsToDisplay.forEach(p => {
+                p.monthlyRecords = {};
+                monthTimestamps.forEach(ts => p.monthlyRecords[ts] = false);
+                p.encounters.forEach(e => {
+                    const tinhTrangLower = e.tinhTrang.toLowerCase();
+                    const diseaseMatch = diseases.length === 0 || diseases.some(d => (d === 'tha' && tinhTrangLower.includes('tăng huyết áp')) || (d === 'dtd' && tinhTrangLower.includes('đái tháo đường')));
+                    const statusMatch = statuses.length === 0 || statuses.some(s => (s === 'tai tram' && tinhTrangLower.includes('tại trạm')) || (s === 'noi khac' && tinhTrangLower.includes('nơi khác')));
+                    if(diseaseMatch && statusMatch) {
+                        const monthStart = new Date(e.ngayKhamDate.getFullYear(), e.ngayKhamDate.getMonth(), 1).getTime();
+                        p.monthlyRecords[monthStart] = true;
+                    }
+                });
+            });
+
+            const monthlyTotals = months.reduce((acc, m) => ({ ...acc, [m.getTime()]: 0 }), {});
+
+            let tableHTML = `<table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 sticky top-0 z-10">
+                    <tr>
+                        <th class="sticky-name px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-20">Họ và Tên</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>`;
+            months.forEach(m => tableHTML += `<th class="month-header px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">${m.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })}</th>`);
+            tableHTML += `</tr><tr class="bg-slate-100"><th class="sticky left-0 bg-slate-100 z-20"></th><th></th>`;
+            months.forEach(m => tableHTML += `<th id="total-${m.getTime()}" class="font-bold text-sky-600">0</th>`);
+            tableHTML += `</tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
+            
+            patientsToDisplay.forEach(patient => {
+                tableHTML += `<tr>
+                    <td class="sticky-name px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900 sticky left-0 bg-white">${patient.hoTen}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-800">${patient.namSinh}</td>`;
+
+                let lastRecordIndex = -1, firstRecordIndex = -1;
+                const recordIndices = monthTimestamps.map((ts, i) => patient.monthlyRecords[ts] ? i : -1).filter(i => i !== -1);
+                if (recordIndices.length > 0) firstRecordIndex = recordIndices[0];
+
+                let dropped = false;
+                let returned = false;
+                let consecutiveEmpty = 0;
+
+                monthTimestamps.forEach((ts, index) => {
+                    let cellContent = '';
+                    const hasRecord = patient.monthlyRecords[ts];
+
+                    if (mode === 'C' && hasRecord) {
+                         cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">C</span>`;
+                         monthlyTotals[ts]++;
+                    } else if (mode === 'M' && index === firstRecordIndex) {
+                        cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-sky-100 text-sky-800 font-bold rounded-md">M</span>`;
+                        monthlyTotals[ts]++;
+                    } else if (mode === 'B') {
+                        if(hasRecord) { consecutiveEmpty = 0; } else { consecutiveEmpty++; }
+                        if (consecutiveEmpty === 3) {
+                             cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-amber-100 text-amber-800 font-bold rounded-md">B</span>`;
+                             monthlyTotals[ts]++;
+                             dropped = true;
+                        }
+                    } else if (mode === 'Q') {
+                         if(hasRecord) { consecutiveEmpty = 0; if(dropped && !returned){ cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-pink-100 text-pink-800 font-bold rounded-md">Q</span>`; monthlyTotals[ts]++; returned = true; } } else { consecutiveEmpty++; }
+                         if (consecutiveEmpty >= 3) { dropped = true; returned = false; }
+                    } else if (mode === 'QL') {
+                        const isManaged = recordIndices.some(r_idx => index >= r_idx && index <= r_idx + 2);
+                        if(isManaged){
+                            cellContent = `<span class="flex items-center justify-center w-full h-full mx-auto ${hasRecord ? 'bg-sky-100' : 'bg-slate-100'}"></span>`;
+                             monthlyTotals[ts]++;
+                        }
+                    }
+                    tableHTML += `<td class="month-cell align-middle">${cellContent}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            
+            tableHTML += `</tbody></table>`;
+            container.innerHTML = tableHTML;
+            // Update totals in the header
+            for(const ts in monthlyTotals) {
+                const totalEl = document.getElementById(`total-${ts}`);
+                if (totalEl) totalEl.textContent = monthlyTotals[ts];
+            }
+        }
+        
+        function renderReferenceView() {
+            createTagInput('tha-meds-container', appState.thaMeds, 'tha');
+            createTagInput('dtd-meds-container', appState.dtdMeds, 'dtd');
+        }
+
+        function createTagInput(containerId, tags, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const tagContainer = document.createElement('div');
+            tagContainer.className = 'tag-input-container';
+
+            tags.forEach(tag => {
+                const tagEl = document.createElement('span'); tagEl.className = 'tag'; tagEl.textContent = tag;
+                const removeEl = document.createElement('span'); removeEl.className = 'tag-remove'; removeEl.textContent = 'x';
+                removeEl.onclick = () => {
+                    if (type === 'tha') appState.thaMeds = appState.thaMeds.filter(t => t !== tag);
+                    else appState.dtdMeds = appState.dtdMeds.filter(t => t !== tag);
+                    saveReferenceMeds();
+                    renderReferenceView();
+                    processData(appState.rawData);
+                    renderAllViews();
+                };
+                tagEl.appendChild(removeEl);
+                tagContainer.appendChild(tagEl);
+            });
+
+            const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'Thêm thuốc...';
+            input.className = 'flex-grow p-1 focus:outline-none bg-transparent';
+            input.onkeyup = (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    const newMed = input.value.trim().toLowerCase().replace(/[\s\W]/g, '');
+                    if (type === 'tha' && !appState.thaMeds.includes(newMed)) appState.thaMeds.push(newMed);
+                    else if (type === 'dtd' && !appState.dtdMeds.includes(newMed)) appState.dtdMeds.push(newMed);
+                    saveReferenceMeds();
+                    renderReferenceView();
+                    input.value = '';
+                    processData(appState.rawData);
+                    renderAllViews();
+                }
+            };
+            tagContainer.appendChild(input);
+            container.appendChild(tagContainer);
+        }
+
+        function loadReferenceMeds() {
+            const storedThaMeds = localStorage.getItem('thaMeds');
+            const storedDtdMeds = localStorage.getItem('dtdMeds');
+            appState.thaMeds = storedThaMeds ? JSON.parse(storedThaMeds) : [...DEFAULT_THA_MEDS];
+            appState.dtdMeds = storedDtdMeds ? JSON.parse(storedDtdMeds) : [...DEFAULT_DTD_MEDS];
+        }
+
+        function saveReferenceMeds() {
+            localStorage.setItem('thaMeds', JSON.stringify(appState.thaMeds));
+            localStorage.setItem('dtdMeds', JSON.stringify(appState.dtdMeds));
+        }
+
+        function showDetailModal(patientId) {
+            const patient = appState.patients[patientId];
+            if (!patient) return;
+            
+            modalTitle.textContent = `Chi tiết Bệnh nhân: ${patient.hoTen}`;
+
+            let contentHTML = `<div class="info-card mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div><strong class="font-semibold text-slate-600 block">Họ tên:</strong> <span class="text-slate-900">${patient.hoTen}</span></div>
+                <div><strong class="font-semibold text-slate-600 block">Năm sinh:</strong> <span class="text-slate-900">${patient.namSinh}</span></div>
+                <div><strong class="font-semibold text-slate-600 block">Giới tính:</strong> <span class="text-slate-900">${patient.gioiTinh || 'N/A'}</span></div>
+                <div class="md:col-span-3"><strong class="font-semibold text-slate-600 block">Địa chỉ:</strong> <span class="text-slate-900">${patient.diaChi || 'N/A'}</span></div>
+            </div>
+            <h4 class="text-lg font-semibold text-slate-800 mb-4">Lịch sử các lần khám (${patient.encounters.length} lần)</h4>`;
+            
+            patient.encounters.forEach(e => {
+                const isTaiTram = e.tinhTrang.includes('tại trạm');
+                const statusColorClass = isTaiTram ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800';
+                
+                contentHTML += `<div class="info-card mb-4">
+                    <div class="flex justify-between items-start mb-3 pb-3 border-b">
+                        <div class="flex items-center space-x-3">
+                             <i data-lucide="calendar" class="w-6 h-6 text-sky-500"></i>
+                            <h5 class="font-bold text-slate-800 text-md">${formatDate(e.ngayKhamDate)} (Tuổi: ${e.tuoi})</h5>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusColorClass}">${e.tinhTrang}</span>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-x-6 gap-y-3 text-sm mt-3">
+                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Chẩn đoán:</p><p class="text-slate-800">${e.chanDoan || 'N/A'}</p></div>
+                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Điều trị:</p><p class="text-slate-800">${e.dieuTri || 'N/A'}</p></div>
+                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Triệu chứng:</p><p class="text-slate-800">${e.trieuChung || 'N/A'}</p></div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t">
+                        <h6 class="font-semibold text-sm text-slate-600 mb-2">Sinh hiệu</h6>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                        ${Object.entries(e.vitals).map(([key, value]) => `<div><strong class="text-slate-500">${key}:</strong> <span class="text-slate-800 font-medium">${value}</span></div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            modalBody.innerHTML = contentHTML;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+            lucide.createIcons();
+        }
+
+        // --- EVENT LISTENERS ---
+        uploadButton.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            fileNameDisplay.textContent = `Tệp đã chọn: ${file.name}`;
+            loadingOverlay.classList.remove('hidden');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    appState.rawData = jsonData;
+                    setTimeout(() => {
+                        processData(jsonData);
+                        loadingOverlay.classList.add('hidden');
+                        uploadContainer.classList.add('hidden');
+                        mainContent.classList.remove('hidden');
+                        
+                        const firstTab = document.querySelector('.tab-button[data-tab="dashboard"]');
+                        firstTab.click();
+                        fileInput.value = '';
+                    }, 500);
+                } catch(err) {
+                    loadingOverlay.classList.add('hidden');
+                    fileNameDisplay.textContent = 'Lỗi: Không thể đọc tệp. Vui lòng kiểm tra định dạng.';
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+                appState.activeTab = targetTab;
+                tabButtons.forEach(btn => { 
+                    btn.classList.remove('tab-active'); 
+                    btn.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:border-slate-300');
+                });
+                button.classList.add('tab-active'); 
+                button.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:border-slate-300');
+
+                tabPanes.forEach(pane => pane.id === `${targetTab}-view` ? pane.classList.remove('hidden') : pane.classList.add('hidden'));
+                
+                if (appState.rawData.length > 0) {
+                    const viewRenderers = {
+                        'dashboard': renderDashboard,
+                        'all-encounters': renderAllEncountersView,
+                        'ncd-encounters': renderNcdEncountersView,
+                        'patients': renderPatientsView,
+                        'history': renderHistoryView,
+                        'reference': renderReferenceView,
+                    };
+                    if(viewRenderers[targetTab]) viewRenderers[targetTab]();
+                }
+            });
+        });
+        
+        document.getElementById('dashboard-filters').addEventListener('click', (e) => {
+            if (e.target.classList.contains('dashboard-filter-btn')) {
+                appState.dashboardFilter = e.target.dataset.filter;
+                document.querySelectorAll('.dashboard-filter-btn').forEach(btn => {
+                    btn.classList.remove('history-sub-tab-active');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                });
+                e.target.classList.add('history-sub-tab-active');
+                e.target.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                renderDashboard();
+            }
+        });
+        
+        document.getElementById('history-sub-tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('history-sub-tab')) {
+                appState.historySubTab = e.target.dataset.mode;
+                document.querySelectorAll('.history-sub-tab').forEach(btn => {
+                    btn.classList.remove('history-sub-tab-active');
+                    btn.classList.add('bg-transparent', 'text-gray-600', 'hover:bg-gray-200');
+                });
+                e.target.classList.add('history-sub-tab-active');
+                e.target.classList.remove('bg-transparent', 'text-gray-600', 'hover:bg-gray-200');
+                renderHistoryView();
+            }
+        });
+
+        closeModalButtons.forEach(btn => btn.addEventListener('click', () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+        }));
+
+        document.getElementById('all-encounters-search').addEventListener('input', (e) => { appState.filters.allEncounters.searchText = e.target.value; renderAllEncountersView(); });
+        document.getElementById('ncd-encounters-search').addEventListener('input', (e) => { appState.filters.ncdEncounters.searchText = e.target.value; renderNcdEncountersView(); });
+        document.getElementById('patients-search').addEventListener('input', (e) => { appState.filters.patients.searchText = e.target.value; renderPatientsView(); });
+        document.getElementById('history-filters').addEventListener('input', (e) => { 
+            if (e.target.id === 'history-search') appState.filters.history.searchText = e.target.value;
+            else {
+                 appState.filters.history.diseases = Array.from(document.querySelectorAll('#history-filters input[name="disease"]:checked')).map(cb => cb.value);
+                 appState.filters.history.statuses = Array.from(document.querySelectorAll('#history-filters input[name="status"]:checked')).map(cb => cb.value);
+            }
+            renderHistoryView();
+        });
+
+        // --- KHỞI ĐỘNG ỨNG DỤNG ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReferenceMeds();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+
