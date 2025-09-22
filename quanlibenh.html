@@ -53,6 +53,50 @@
             max-height: 500px; /* Increased height to accommodate the new filter */
             overflow: visible;
         }
+        /* Timeline Styles */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 12px;
+            bottom: 12px;
+            width: 2px;
+            background-color: #e2e8f0; /* gray-200 */
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: #94a3b8; /* gray-400 */
+            border: 2px solid white;
+        }
+        .timeline-capsule {
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        .timeline-capsule.active {
+            font-weight: 700;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -323,10 +367,8 @@
                 const birthDate = parseDate(patient.birthDate);
                 const yearOfBirth = birthDate ? birthDate.getFullYear().toString() : null;
                 
-                // Patient-level filter (Year of Birth) must be true
                 if (filters.year && yearOfBirth !== filters.year) return false;
                 
-                // Then, check if ANY visit matches all other filters
                 return patient.visits.some(visit => {
                     if (filters.gender && visit.gender !== filters.gender) return false;
                     if (filters.doctor && visit.doctor !== filters.doctor) return false;
@@ -379,6 +421,70 @@
                 patientTableBody.appendChild(row);
             });
         }
+        
+        function parseTreatmentString(treatment) {
+            const parsed = {};
+            const numberMatch = treatment.match(/^(\d+):/);
+            if (numberMatch) {
+                parsed.number = numberMatch[1].trim();
+                treatment = treatment.replace(/^(\d+):\s*/, '');
+            }
+
+            const durationMatch = treatment.match(/Số ngày:(\d+)/i);
+            parsed.duration = durationMatch ? durationMatch[1].trim() : '';
+
+            const sangMatch = treatment.match(/Sáng:\s*([^,]+)/i);
+            parsed.sang = sangMatch ? `Sáng: ${sangMatch[1].trim()}` : '';
+
+            const chieuMatch = treatment.match(/Chiều:\s*([^,]+)/i);
+            parsed.chieu = chieuMatch ? `Chiều: ${chieuMatch[1].trim()}` : '';
+
+            const toiMatch = treatment.match(/Tối:\s*([^,]+)/i);
+            parsed.toi = toiMatch ? `Tối: ${toiMatch[1].trim()}` : '';
+
+            const mainPart = treatment.split(' - ')[0];
+            const quantityMatch = mainPart.match(/(x\s*\d+\s*\w+)/);
+            if (quantityMatch) {
+                parsed.totalQuantity = quantityMatch[1].replace('x ', '').trim();
+                parsed.name = mainPart.replace(quantityMatch[0], '').trim();
+            } else {
+                parsed.totalQuantity = '';
+                parsed.name = mainPart.trim();
+            }
+            return parsed;
+        }
+
+        function formatTreatments_new(data) {
+            if (!data) return '<p>Không có dữ liệu</p>';
+            const cleanData = data.toString().trim().replace(/^"/, '').replace(/"$/, '');
+
+            if (cleanData.toLowerCase().includes('chuyển viện')) {
+                return `<p class="py-2 text-lg font-semibold text-blue-600">${cleanData}</p>`;
+            }
+
+            const treatments = cleanData.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
+            if (!treatments) {
+                return `<p class="py-2">${cleanData}</p>`;
+            }
+
+            return treatments.map(item => {
+                const p = parseTreatmentString(item.trim());
+                return `
+                    <div class="py-3 border-b border-gray-100 last:border-b-0">
+                        <div class="flex justify-between items-baseline">
+                            <p class="font-semibold text-gray-800 text-base">${p.number || '•'}. ${p.name}</p>
+                            <p class="text-gray-700 font-medium whitespace-nowrap pl-4">${p.totalQuantity}</p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-x-4 items-baseline text-sm text-gray-600 mt-1 pl-4">
+                            <span>${p.sang}</span>
+                            <span>${p.chieu}</span>
+                            <span class="font-medium text-right">${p.duration ? `x ${p.duration} ngày` : ''}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
         function displayPatientDetail(patientId) {
             const patient = allPatients.find(p => p.patientId === patientId);
             if (!patient || !patient.visits.length) return;
@@ -386,12 +492,99 @@
             const visit = patient.visits[currentVisitIndex];
             const birthDate = parseDate(patient.birthDate);
             const age = birthDate ? (new Date().getFullYear() - birthDate.getFullYear()) : 'N/A';
-            const historyHtml = patient.visits.map((v, index) => `<button data-visit-index="${index}" class="visit-link px-4 py-2 rounded-full text-sm font-semibold transition ${index === currentVisitIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${formatDate(v.examDate)}</button>`).join('');
+
+            const gender = (patient.visits.find(v => v.gender) || {}).gender || 'Khác';
+            let iconHtml;
+            if (gender.toLowerCase() === 'nam') {
+                iconHtml = `<div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-9 h-9"></i></div>`;
+            } else if (gender.toLowerCase() === 'nữ') {
+                iconHtml = `<div class="flex-shrink-0 bg-pink-100 text-pink-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-9 h-9"></i></div>`;
+            } else {
+                iconHtml = `<div class="flex-shrink-0 bg-gray-100 text-gray-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-9 h-9"></i></div>`;
+            }
+
+            const timelineHtml = patient.visits.map((v, index) => {
+                const isChuyenVien = (v.treatment || '').toString().toLowerCase().includes('chuyển viện');
+                const colorClass = isChuyenVien ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-orange-100 text-orange-800 border-orange-300';
+                const activeClass = index === currentVisitIndex ? 'active border-2' : 'border';
+                return `
+                    <div class="timeline-item">
+                        <div data-visit-index="${index}" class="timeline-capsule visit-link ${colorClass} ${activeClass}">
+                            ${formatDate(v.examDate)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const mainContentHtml = `
+                <div class="info-card">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-4 border-b">
+                        ${iconHtml}
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold text-gray-800">${patient.fullName || 'N/A'}</h2>
+                            <p class="text-gray-500 text-lg">${visit.occupation || 'Chưa rõ'}</p>
+                        </div>
+                        <div class="ml-auto text-right flex-shrink-0">
+                            <p class="font-semibold text-gray-500 text-sm">Ngày khám</p>
+                            <p class="text-lg font-bold text-blue-600">${formatDate(visit.examDate)}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700">
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Ngày sinh / Tuổi</label><p class="text-lg font-medium">${patient.birthDate} - ${age} tuổi</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Giới tính</label><p class="text-lg font-medium">${visit.gender || 'N/A'}</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">CCCD/Tùy thân</label><p class="text-lg font-medium">${visit.cccd || 'Không có'}</p></div>
+                        <div class="highlight-field border-blue-500 col-span-1 md:col-span-2"><label class="font-semibold text-gray-500 text-sm">Địa chỉ</label><p class="text-lg font-medium">${visit.address || 'N/A'}</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Số thẻ BHYT</label><p class="text-lg font-medium">${visit.bhyt || 'Không có'}</p></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="info-card">
+                        <h3 class="text-xl font-bold text-green-600 mb-4">Sinh hiệu & Triệu chứng</h3>
+                        <div class="highlight-field border-green-500 mb-4"><label class="font-semibold text-gray-500 text-sm">Triệu chứng chính</label><p>${(visit.symptoms || '').split(/, Mạch:| Mạch:/i)[0]}</p></div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">${['Mạch:l/p', 'Nhiệt độ:°C', 'Huyết áp:mmHg', 'Nhịp thở:l/p', 'Cân nặng:kg', 'Chiều cao:cm'].map(v => { const [key, unit] = v.split(':'); return `<div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">${key}</p><p class="text-xl font-bold text-green-900">${getVital(visit.symptoms, key, unit)}</p></div>`; }).join('')}</div>
+                    </div>
+                    <div class="info-card">
+                        <h3 class="text-xl font-bold text-orange-600 mb-4">Chẩn đoán</h3>
+                        <ul class="highlight-field border-orange-500 list-disc list-inside space-y-1 text-gray-800">${formatList(visit.diagnosis)}</ul>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3 class="text-xl font-bold text-purple-600 mb-4">Phương pháp điều trị</h3>
+                    <div class="highlight-field border-purple-500">
+                        ${formatTreatments_new(visit.treatment)}
+                    </div>
+                    <div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${visit.doctor || 'N/A'}</p></div>
+                </div>
+            `;
+
+            detailContainer.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-9 space-y-6">
+                        ${mainContentHtml}
+                    </div>
+                    <div class="lg:col-span-3">
+                        <div class="info-card sticky top-8">
+                            <h3 class="text-xl font-bold text-gray-700 mb-4 text-center">Lịch sử khám</h3>
+                            <div class="timeline">
+                                ${timelineHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            detailContainer.innerHTML = `<div class="info-card"><h3 class="text-xl font-bold text-gray-700 mb-4">Lịch sử khám bệnh</h3><div class="flex flex-wrap gap-2">${historyHtml}</div></div><div class="info-card"><div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-4 border-b"><div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-8 h-8"></i></div><div><h2 class="text-2xl md:text-3xl font-bold text-gray-800">${patient.fullName || 'N/A'}</h2><p class="text-gray-500 text-lg">${visit.occupation || 'Chưa rõ'}</p></div><div class="ml-auto text-right"><p class="font-semibold text-gray-500 text-sm">Ngày khám</p><p class="text-lg font-bold text-blue-600">${formatDate(visit.examDate)}</p></div></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700"><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Ngày sinh / Tuổi</label><p class="text-lg font-medium">${patient.birthDate} - ${age} tuổi</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Giới tính</label><p class="text-lg font-medium">${visit.gender || 'N/A'}</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">CCCD/Tùy thân</label><p class="text-lg font-medium">${visit.cccd || 'Không có'}</p></div><div class="highlight-field border-blue-500 col-span-1 md:col-span-2"><label class="font-semibold text-gray-500 text-sm">Địa chỉ</label><p class="text-lg font-medium">${visit.address || 'N/A'}</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Số thẻ BHYT</label><p class="text-lg font-medium">${visit.bhyt || 'Không có'}</p></div></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="info-card"><h3 class="text-xl font-bold text-green-600 mb-4">Sinh hiệu & Triệu chứng</h3><div class="highlight-field border-green-500 mb-4"><label class="font-semibold text-gray-500 text-sm">Triệu chứng chính</label><p>${(visit.symptoms || '').split(/, Mạch:| Mạch:/i)[0]}</p></div><div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">${['Mạch:l/p', 'Nhiệt độ:°C', 'Huyết áp:mmHg', 'Nhịp thở:l/p', 'Cân nặng:kg', 'Chiều cao:cm'].map(v => { const [key, unit] = v.split(':'); return `<div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">${key}</p><p class="text-xl font-bold text-green-900">${getVital(visit.symptoms, key, unit)}</p></div>`; }).join('')}</div></div><div class="info-card"><h3 class="text-xl font-bold text-orange-600 mb-4">Chẩn đoán</h3><ul class="highlight-field border-orange-500 list-disc list-inside space-y-1 text-gray-800">${formatList(visit.diagnosis)}</ul></div></div><div class="info-card"><h3 class="text-xl font-bold text-purple-600 mb-4">Phương pháp điều trị</h3><div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatTreatments(visit.treatment)}</ul></div><div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${visit.doctor || 'N/A'}</p></div></div>`;
             lucide.createIcons();
             updateDetailControls();
-            document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => { currentVisitIndex = parseInt(e.target.dataset.visitIndex, 10); displayPatientDetail(patientId); }));
+            document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => { 
+                let target = e.target;
+                while (target && !target.dataset.visitIndex) {
+                    target = target.parentElement;
+                }
+                if (target) {
+                    currentVisitIndex = parseInt(target.dataset.visitIndex, 10); 
+                    displayPatientDetail(patientId); 
+                }
+            }));
         }
 
         const showView = (viewToShow) => { [listView, detailView, dashboardView].forEach(view => view.classList.toggle('hidden', view !== viewToShow)); };
@@ -399,15 +592,6 @@
         function showModal({ title, text, icon, iconColor, isLoading = false }) { notificationModal.querySelector('#modalTitle').textContent = title; notificationModal.querySelector('#modalText').textContent = text; notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none'; const modalIcon = notificationModal.querySelector('#modalIcon'); const modalButton = notificationModal.querySelector('#modalButton'); modalIcon.style.display = isLoading ? 'none' : 'block'; modalButton.style.display = isLoading ? 'none' : 'block'; if (!isLoading) { modalIcon.setAttribute('data-lucide', icon); modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`; } notificationModal.classList.remove('hidden'); notificationModal.classList.add('flex'); lucide.createIcons(); }
         function getVital(symptoms, key, unit = '') { const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i')); return match ? `${match[1]} ${unit}`.trim() : 'N/A'; }
         function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.toString().replace(/^"/, '').replace(/"$/, '').split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
-        function formatTreatments(data) {
-            if (!data) return '<li>Không có dữ liệu</li>';
-            const cleanData = data.toString().replace(/^"/, '').replace(/"$/, '');
-            const treatments = cleanData.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
-            if (!treatments) {
-                return cleanData.split(',').map(item => item.trim()).filter(Boolean).map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item}</li>`).join('')
-            };
-            return treatments.map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item.trim()}</li>`).join('');
-        }
         
         function setupEventListeners() {
             goToDashboardButton.addEventListener('click', () => showView(dashboardView));
