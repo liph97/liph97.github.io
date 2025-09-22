@@ -63,6 +63,7 @@
             <p class="text-gray-500">Phân tích, lọc dữ liệu và quản lý lịch sử khám</p>
         </header>
 
+        <!-- TRANG DANH SÁCH BỆNH NHÂN -->
         <div id="listView">
             <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center">
                 <div class="relative flex-grow w-full sm:w-auto">
@@ -77,26 +78,12 @@
                         <i data-lucide="upload-cloud"></i> Tải lên File
                     </label>
                 </div>
+                 <button id="goToDashboardButton" class="bg-indigo-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-indigo-700 transition shadow-md flex items-center gap-2 w-full sm:w-auto hidden"><i data-lucide="layout-dashboard"></i> Xem Bảng điều khiển</button>
             </div>
             
-            <!-- DASHBOARD THỐNG KÊ -->
-            <div id="dashboardSection" class="mb-6 hidden">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Bảng điều khiển tổng quan</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng số bệnh nhân</p><p id="totalPatients" class="text-4xl font-bold text-blue-600">0</p></div>
-                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng lượt khám</p><p id="totalVisits" class="text-4xl font-bold text-blue-600">0</p></div>
-                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Bệnh nhân mới</p><p id="newPatients" class="text-4xl font-bold text-blue-600">0</p></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="info-card lg:col-span-1"><h3 class="font-bold text-center mb-2">Phân bố giới tính</h3><canvas id="genderChart"></canvas></div>
-                    <div class="info-card lg:col-span-2"><h3 class="font-bold text-center mb-2">Phân bố nhóm tuổi</h3><canvas id="ageChart"></canvas></div>
-                    <div class="info-card lg:col-span-3"><h3 class="font-bold text-center mb-2">Top 5 Chẩn đoán phổ biến</h3><canvas id="diagnosisChart"></canvas></div>
-                </div>
-            </div>
-
             <!-- BỘ LỌC -->
             <div id="filterSection" class="bg-white p-4 rounded-lg shadow-md mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div><label for="filterGender" class="block text-sm font-medium text-gray-700 mb-1">Giới tính</label><select id="filterGender" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Năm sinh</label><select id="filterYear" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterDoctor" class="block text-sm font-medium text-gray-700 mb-1">Bác sĩ</label><select id="filterDoctor" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
@@ -126,6 +113,27 @@
             </div>
         </div>
 
+        <!-- TRANG DASHBOARD -->
+        <div id="dashboardView" class="hidden">
+            <div class="mb-6 flex justify-end">
+                <button id="goToListViewButton" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition shadow-md flex items-center gap-2 w-full sm:w-auto"><i data-lucide="list"></i> Xem danh sách chi tiết</button>
+            </div>
+            <div id="dashboardSection" class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Bảng điều khiển tổng quan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng số bệnh nhân</p><p id="totalPatients" class="text-4xl font-bold text-blue-600">0</p></div>
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng lượt khám</p><p id="totalVisits" class="text-4xl font-bold text-blue-600">0</p></div>
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Bệnh nhân mới</p><p id="newPatients" class="text-4xl font-bold text-blue-600">0</p></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="info-card lg:col-span-1"><h3 class="font-bold text-center mb-2">Phân bố giới tính</h3><div class="relative h-64 md:h-72"><canvas id="genderChart"></canvas></div></div>
+                    <div class="info-card lg:col-span-2"><h3 class="font-bold text-center mb-2">Phân bố nhóm tuổi</h3><div class="relative h-72"><canvas id="ageChart"></canvas></div></div>
+                    <div class="info-card lg:col-span-3"><h3 class="font-bold text-center mb-2">Top 5 Chẩn đoán phổ biến</h3><div class="relative h-96"><canvas id="diagnosisChart"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TRANG CHI TIẾT BỆNH NHÂN -->
         <div id="detailView" class="hidden">
             <div class="mb-6">
                  <button id="backToListButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow"><i data-lucide="arrow-left" class="w-5 h-5"></i> Quay lại danh sách</button>
@@ -138,6 +146,7 @@
             </footer>
         </div>
         
+        <!-- MODAL THÔNG BÁO -->
         <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
             <div class="bg-white rounded-lg p-8 text-center shadow-xl max-w-sm w-full" id="modalContent">
                 <div class="loader mx-auto mb-4" id="modalLoader"></div>
@@ -157,29 +166,31 @@
         let chartInstances = {};
 
         const [
-            listView, detailView, searchInput, searchButton, fileInput, patientTableBody,
+            listView, detailView, dashboardView, searchInput, searchButton, fileInput, patientTableBody,
             detailContainer, backToListButton, prevButton, nextButton, pageIndicator, notificationModal,
             toggleFilterButton, filterSection, applyFiltersButton, clearFiltersButton,
-            filterGender, filterYear, filterDoctor, filterDiagnosis, filterAddress, dashboardSection
+            filterGender, filterYear, filterDoctor, filterDiagnosis, filterAddress, 
+            goToDashboardButton, goToListViewButton
         ] = [
-            'listView', 'detailView', 'searchInput', 'searchButton', 'fileInput', '#patientTable tbody',
+            'listView', 'detailView', 'dashboardView', 'searchInput', 'searchButton', 'fileInput', '#patientTable tbody',
             'patient-info-container', 'backToListButton', 'prevButton', 'nextButton', 'pageIndicator', 'notificationModal',
             'toggleFilterButton', 'filterSection', 'applyFiltersButton', 'clearFiltersButton',
-            'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress', 'dashboardSection'
+            'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress',
+            'goToDashboardButton', 'goToListViewButton'
         ].map(id => id.startsWith('#') ? document.querySelector(id) : document.getElementById(id));
 
         // --- CORE AI & DATA PROCESSING (No changes) ---
-        function createHeaderMapping(headers) { /* No changes */
+        function createHeaderMapping(headers) {
             const standardFields = { stt: ['stt'], examDate: ['ngay kham', 'ngày khám'], fullName: ['họ và tên', 'họ tên'], yearOfBirth: ['năm sinh'], birthDate: ['ngày sinh'], gender: ['giới'], cccd: ['cccd'], bhyt: ['số thẻ bhyt', 'bhyt'], address: ['địa chỉ'], occupation: ['nghề nghiệp'], symptoms: ['triệu chứng'], diagnosis: ['chẩn đoán'], treatment: ['phương pháp điều trị', 'điều trị'], doctor: ['bác sĩ', 'bác sỹ'] };
             const mapping = {};
             headers.forEach(header => { const lowerHeader = header.toLowerCase().trim(); for (const key in standardFields) { if (standardFields[key].some(alias => lowerHeader.includes(alias))) { if (!mapping[key]) mapping[key] = header; } } });
             return mapping;
         }
-        function detectIfHeaderless(firstRowCells) { /* No changes */
+        function detectIfHeaderless(firstRowCells) {
             const numericCells = firstRowCells.filter(cell => /^\d+(\.\d+)?$/.test(cell.trim())).length;
             return (numericCells / firstRowCells.length) > 0.3 || (firstRowCells.length - numericCells) < 3;
         }
-        function inferHeaderlessMapping(sampleRows) { /* No changes */
+        function inferHeaderlessMapping(sampleRows) {
             const mapping = {}; if (!sampleRows.length) return mapping;
             const numCols = sampleRows[0].length;
             const columnData = Array.from({ length: numCols }, (_, i) => sampleRows.map(row => (row[i] || '').trim()));
@@ -194,7 +205,7 @@
             });
             return mapping;
         }
-        function parseDate(dateInput) { /* No changes */
+        function parseDate(dateInput) {
             if (!dateInput) return null;
             if (/^\d{5}$/.test(dateInput) && parseInt(dateInput) > 30000) { return new Date(1899, 11, 30, 0, 0, 0, 0 + dateInput * 86400000); }
             let parts = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
@@ -203,11 +214,11 @@
             if (!isNaN(directDate) && directDate.getFullYear() > 1900) { return directDate; }
             return null;
         }
-        function formatDate(date) { /* No changes */
+        function formatDate(date) {
             if (!date || isNaN(date)) return 'Không rõ';
             return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
         }
-        async function processDataWithAI(csvString) { /* No changes */
+        async function processDataWithAI(csvString) {
             return new Promise(resolve => {
                 setTimeout(() => {
                     const rows = csvString.trim().replace(/\r\n/g, '\n').split('\n');
@@ -241,201 +252,40 @@
             const stats = {
                 totalPatients: allPatients.length,
                 totalVisits: 0,
-                newPatients: 0,
                 gender: { 'Nam': 0, 'Nữ': 0, 'Khác': 0 },
                 ageGroups: { '<18': 0, '18-40': 0, '41-60': 0, '>60': 0 },
                 diagnoses: {}
             };
             const currentYear = new Date().getFullYear();
-            
             allPatients.forEach(p => {
                 stats.totalVisits += p.visits.length;
-                
-                // Gender: use latest available gender
                 const gender = (p.visits.find(v => v.gender) || {}).gender;
-                if (gender === 'Nam') stats.gender.Nam++;
-                else if (gender === 'Nữ') stats.gender.Nữ++;
-                else if(gender) stats.gender.Khác++;
-
-                // Age group
+                if (gender === 'Nam') stats.gender.Nam++; else if (gender === 'Nữ') stats.gender.Nữ++; else if(gender) stats.gender.Khác++;
                 if (p.yearOfBirth) {
                     const age = currentYear - parseInt(p.yearOfBirth);
-                    if (age < 18) stats.ageGroups['<18']++;
-                    else if (age <= 40) stats.ageGroups['18-40']++;
-                    else if (age <= 60) stats.ageGroups['41-60']++;
-                    else stats.ageGroups['>60']++;
+                    if (age < 18) stats.ageGroups['<18']++; else if (age <= 40) stats.ageGroups['18-40']++; else if (age <= 60) stats.ageGroups['41-60']++; else stats.ageGroups['>60']++;
                 }
-                
-                // Diagnoses
                 p.visits.forEach(v => {
-                    if(v.diagnosis) {
-                        v.diagnosis.split(';').forEach(d => {
-                            const trimmed = d.trim();
-                            if(trimmed) {
-                                stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1;
-                            }
-                        });
-                    }
+                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
                 });
             });
-
-            const topDiagnoses = Object.entries(stats.diagnoses)
-                .sort(([,a],[,b]) => b-a)
-                .slice(0, 5);
-
+            const topDiagnoses = Object.entries(stats.diagnoses).sort(([,a],[,b]) => b-a).slice(0, 5);
+            // Simple new patient calculation (placeholder)
+            stats.newPatients = allPatients.filter(p => p.visits.length === 1).length;
             return { ...stats, topDiagnoses };
         }
 
         function renderDashboard(stats) {
-            dashboardSection.classList.remove('hidden');
-
             document.getElementById('totalPatients').textContent = stats.totalPatients;
             document.getElementById('totalVisits').textContent = stats.totalVisits;
-            document.getElementById('newPatients').textContent = 'N/A'; // Placeholder
-
-            // Destroy old charts if they exist
+            document.getElementById('newPatients').textContent = stats.newPatients;
             Object.values(chartInstances).forEach(chart => chart.destroy());
-
-            // Gender Chart
-            chartInstances.gender = new Chart(document.getElementById('genderChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Nam', 'Nữ', 'Khác'],
-                    datasets: [{
-                        label: 'Phân bố giới tính',
-                        data: [stats.gender.Nam, stats.gender.Nữ, stats.gender.Khác],
-                        backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'],
-                        hoverOffset: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // Age Chart
-            chartInstances.age = new Chart(document.getElementById('ageChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(stats.ageGroups),
-                    datasets: [{
-                        label: 'Số lượng bệnh nhân',
-                        data: Object.values(stats.ageGroups),
-                        backgroundColor: '#34d399',
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-            
-            // Diagnosis Chart
-            chartInstances.diagnosis = new Chart(document.getElementById('diagnosisChart'), {
-                type: 'bar',
-                data: {
-                    labels: stats.topDiagnoses.map(d => d[0]),
-                    datasets: [{
-                        label: 'Số lượt chẩn đoán',
-                        data: stats.topDiagnoses.map(d => d[1]),
-                        backgroundColor: '#f97316',
-                    }]
-                },
-                options: { 
-                    indexAxis: 'y', // Horizontal bar chart
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    scales: { x: { beginAtZero: true } } 
-                }
-            });
+            chartInstances.gender = new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: ['Nam', 'Nữ', 'Khác'], datasets: [{ data: [stats.gender.Nam, stats.gender.Nữ, stats.gender.Khác], backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartInstances.age = new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: Object.keys(stats.ageGroups), datasets: [{ label: 'Số lượng bệnh nhân', data: Object.values(stats.ageGroups), backgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            chartInstances.diagnosis = new Chart(document.getElementById('diagnosisChart'), { type: 'bar', data: { labels: stats.topDiagnoses.map(d => d[0]), datasets: [{ label: 'Số lượt chẩn đoán', data: stats.topDiagnoses.map(d => d[1]), backgroundColor: '#f97316' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } } });
         }
 
-        // --- FILTERING LOGIC (No changes) ---
-        function populateFilterOptions(patients) { /* ... */ }
-        function applyFilters() { /* ... */ }
-
-        // --- UI RENDERING (No changes) ---
-        function renderPatientList(patients) { /* ... */ }
-        function displayPatientDetail(patientId) { /* ... */ }
-
-        // --- UTILITY & EVENT HANDLERS ---
-        const showListView = () => { listView.classList.remove('hidden'); detailView.classList.add('hidden'); };
-        const showDetailView = () => { listView.classList.add('hidden'); detailView.classList.remove('hidden'); };
-        function updateDetailControls() { /* ... */ }
-        function showModal({ title, text, icon, iconColor, isLoading = false }) { /* ... */ }
-        function getVital(symptoms, key, unit = '') { /* ... */ }
-        function formatList(data, separator = ';') { /* ... */ }
-        function formatTreatments(data) { /* ... */ }
-        
-        // --- EVENT LISTENERS ---
-        searchButton.addEventListener('click', () => { /* ... */ });
-        searchInput.addEventListener('keyup', e => { /* ... */ });
-        backToListButton.addEventListener('click', showListView);
-        prevButton.addEventListener('click', () => { /* ... */ });
-        nextButton.addEventListener('click', () => { /* ... */ });
-
-        fileInput.addEventListener('change', e => {
-            const file = e.target.files[0]; 
-            if (!file) return;
-
-            showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
-            
-            const reader = new FileReader();
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-
-            reader.onload = async (event) => {
-                let csvString = '';
-                try {
-                    if (fileExtension === 'csv') {
-                        csvString = event.target.result;
-                    } else if (['xlsx', 'xls'].includes(fileExtension)) {
-                        const data = new Uint8Array(event.target.result);
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        csvString = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
-                    } else {
-                        throw new Error('Định dạng file không được hỗ trợ.');
-                    }
-
-                    showModal({ title: 'Đang phân tích...', text: 'Trí tuệ nhân tạo đang xử lý dữ liệu của bạn. Vui lòng đợi.', isLoading: true });
-                    await processDataWithAI(csvString);
-                    
-                    if (allPatients.length > 0) {
-                        const stats = analyzeDataForDashboard();
-                        renderDashboard(stats);
-                        populateFilterOptions(allPatients);
-                    } else {
-                        dashboardSection.classList.add('hidden');
-                    }
-
-                    currentPatientList = [...allPatients];
-                    renderPatientList(currentPatientList);
-                    showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
-
-                } catch (error) {
-                    console.error("Lỗi xử lý file: ", error);
-                    showModal({ title: "Lỗi xử lý file!", text: error.message || "Không thể đọc dữ liệu từ file đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
-                }
-            };
-            
-            reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp.", icon: "alert-triangle", iconColor: "text-red-500" });
-
-            if (['xlsx', 'xls'].includes(fileExtension)) {
-                reader.readAsArrayBuffer(file);
-            } else {
-                reader.readAsText(file, 'UTF-8');
-            }
-            
-            e.target.value = ''; // Reset input
-        });
-
-        toggleFilterButton.addEventListener('click', () => { /* ... */ });
-        applyFiltersButton.addEventListener('click', applyFilters);
-        clearFiltersButton.addEventListener('click', () => { /* ... */ });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderPatientList([]);
-            lucide.createIcons();
-        });
-        
-        // Populate and Apply Filters logic needs to be defined from previous versions
-        // Duplicating them here for completeness from previous snippet
+        // --- FILTERING LOGIC ---
         function populateFilterOptions(patients) {
             const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set() };
             patients.forEach(p => { p.visits.forEach(v => {
@@ -458,8 +308,6 @@
                 if (filters.address && (!visit.address || !visit.address.toLowerCase().includes(filters.address))) return false;
                 return true;
             }));
-            
-            // After filtering, also apply search query if any
             const query = searchInput.value.toLowerCase().trim();
             if (query) {
                 currentPatientList = currentPatientList.filter(p => (p.fullName || '').toLowerCase().includes(query) || (p.visits.some(v => v.cccd && v.cccd.includes(query))));
@@ -467,7 +315,7 @@
             renderPatientList(currentPatientList);
         }
 
-        // Functions from previous versions that are needed
+        // --- UI RENDERING ---
         function renderPatientList(patients) { 
             patientTableBody.innerHTML = '';
             if (patients.length === 0) {
@@ -496,7 +344,7 @@
         function displayPatientDetail(patientId) {
             const patient = allPatients.find(p => p.patientId === patientId);
             if (!patient || !patient.visits.length) return;
-            showDetailView();
+            showView(detailView);
             const visit = patient.visits[currentVisitIndex];
             const age = patient.yearOfBirth ? (new Date().getFullYear() - parseInt(patient.yearOfBirth)) : 'N/A';
             const symptomsText = (visit.symptoms || '').split(/, Mạch:| Mạch:/i)[0];
@@ -508,17 +356,81 @@
             updateDetailControls();
             document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => { currentVisitIndex = parseInt(e.target.dataset.visitIndex, 10); displayPatientDetail(patientId); }));
         }
+
+        // --- UTILITY & EVENT HANDLERS ---
+        const showView = (viewToShow) => {
+            [listView, detailView, dashboardView].forEach(view => {
+                if (view === viewToShow) view.classList.remove('hidden');
+                else view.classList.add('hidden');
+            });
+        };
         function updateDetailControls() { pageIndicator.textContent = `Bệnh nhân ${currentIndexInList + 1} / ${currentPatientList.length}`; prevButton.disabled = currentIndexInList <= 0; nextButton.disabled = currentIndexInList >= currentPatientList.length - 1; prevButton.classList.toggle('opacity-50', prevButton.disabled); nextButton.classList.toggle('opacity-50', nextButton.disabled); }
         function showModal({ title, text, icon, iconColor, isLoading = false }) { notificationModal.querySelector('#modalTitle').textContent = title; notificationModal.querySelector('#modalText').textContent = text; notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none'; const modalIcon = notificationModal.querySelector('#modalIcon'); const modalButton = notificationModal.querySelector('#modalButton'); modalIcon.style.display = isLoading ? 'none' : 'block'; modalButton.style.display = isLoading ? 'none' : 'block'; if (!isLoading) { modalIcon.setAttribute('data-lucide', icon); modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`; } notificationModal.classList.remove('hidden'); notificationModal.classList.add('flex'); lucide.createIcons(); }
         function getVital(symptoms, key, unit = '') { const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i')); return match ? `${match[1]} ${unit}`.trim() : 'N/A'; }
         function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
         function formatTreatments(data) { if (!data) return '<li>Không có dữ liệu</li>'; const treatments = data.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g); if (!treatments) return `<li>${data}</li>`; return treatments.map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item.trim()}</li>`).join(''); }
-        toggleFilterButton.addEventListener('click', () => { filterSection.classList.toggle('open'); });
-        clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; applyFilters(); });
-        searchButton.addEventListener('click', () => { applyFilters(); });
+        
+        // --- EVENT LISTENERS ---
+        fileInput.addEventListener('change', e => {
+            const file = e.target.files[0]; if (!file) return;
+            showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
+            const reader = new FileReader();
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            reader.onload = async (event) => {
+                let csvString = '';
+                try {
+                    if (fileExtension === 'csv') { csvString = event.target.result; } 
+                    else if (['xlsx', 'xls'].includes(fileExtension)) {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        csvString = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
+                    } else { throw new Error('Định dạng file không được hỗ trợ.'); }
+                    showModal({ title: 'Đang phân tích...', text: 'Trí tuệ nhân tạo đang xử lý dữ liệu của bạn. Vui lòng đợi.', isLoading: true });
+                    await processDataWithAI(csvString);
+                    if (allPatients.length > 0) {
+                        const stats = analyzeDataForDashboard();
+                        renderDashboard(stats);
+                        populateFilterOptions(allPatients);
+                        goToDashboardButton.classList.remove('hidden');
+                    } else {
+                        goToDashboardButton.classList.add('hidden');
+                    }
+                    currentPatientList = [...allPatients];
+                    renderPatientList(currentPatientList);
+                    showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
+                    showView(dashboardView); // Show dashboard first after upload
+                } catch (error) {
+                    console.error("Lỗi xử lý file: ", error);
+                    showModal({ title: "Lỗi xử lý file!", text: error.message || "Không thể đọc dữ liệu từ file đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
+                }
+            };
+            reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp.", icon: "alert-triangle", iconColor: "text-red-500" });
+            if (['xlsx', 'xls'].includes(fileExtension)) { reader.readAsArrayBuffer(file); } 
+            else { reader.readAsText(file, 'UTF-8'); }
+            e.target.value = '';
+        });
+
+        goToDashboardButton.addEventListener('click', () => showView(dashboardView));
+        goToListViewButton.addEventListener('click', () => showView(listView));
+        backToListButton.addEventListener('click', () => showView(listView));
+        
+        toggleFilterButton.addEventListener('click', () => filterSection.classList.toggle('open'));
+        applyFiltersButton.addEventListener('click', applyFilters);
+        clearFiltersButton.addEventListener('click', () => {
+            filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = '';
+            applyFilters();
+        });
+        searchButton.addEventListener('click', applyFilters);
+        searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') applyFilters(); });
         nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
         prevButton.addEventListener('click', () => { if (currentIndexInList > 0) { currentIndexInList--; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
 
+        document.addEventListener('DOMContentLoaded', () => {
+            showView(listView);
+            renderPatientList([]);
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>
