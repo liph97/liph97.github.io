@@ -140,19 +140,16 @@
         function detectIfHeaderless(firstRowCells) {
             const numericCells = firstRowCells.filter(cell => /^\d+(\.\d+)?$/.test(cell.trim())).length;
             const textCells = firstRowCells.length - numericCells;
-            // If more than 30% of cells are numeric, or there are very few text cells, assume no header.
             return (numericCells / firstRowCells.length) > 0.3 || textCells < 3;
         }
         
         function inferHeaderlessMapping(sampleRows) {
             const mapping = {};
             if (!sampleRows.length) return mapping;
-            
             const numCols = sampleRows[0].length;
             const columnData = Array.from({ length: numCols }, (_, i) => sampleRows.map(row => (row[i] || '').trim()));
-
             const testers = {
-                examDate: (d) => /^\d{5}$/.test(d) && parseInt(d) > 30000, // Excel serial date
+                examDate: (d) => (/^\d{5}$/.test(d) && parseInt(d) > 30000) || /^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/.test(d),
                 yearOfBirth: (d) => /^\d{4}$/.test(d) && parseInt(d) > 1900 && parseInt(d) <= new Date().getFullYear(),
                 gender: (d) => /^(nam|nữ)$/i.test(d),
                 fullName: (d) => d.includes(' ') && d.length > 5 && d.length < 35 && !/\d/.test(d),
@@ -163,24 +160,17 @@
                 diagnosis: (d) => d.length > 10 && /(bệnh|viêm|rối loạn|suy|tăng)/i.test(d),
                 treatment: (d) => d.length > 20 && /(viên|uống|sáng|chiều|mg|lần)/i.test(d)
             };
-
             const scores = Array.from({ length: numCols }, () => ({}));
-
             for (let i = 0; i < numCols; i++) {
                 for (const key in testers) {
                     const score = columnData[i].reduce((acc, cell) => acc + (testers[key](cell) ? 1 : 0), 0) / columnData[i].length;
-                    if (score > 0.6) { // Confidence threshold
-                        scores[i][key] = score;
-                    }
+                    if (score > 0.6) { scores[i][key] = score; }
                 }
             }
-
             const assignedCols = new Set();
             const fieldPriority = ['examDate', 'yearOfBirth', 'gender', 'fullName', 'cccd', 'bhyt', 'address', 'symptoms', 'treatment', 'diagnosis'];
-
             fieldPriority.forEach(key => {
-                let bestCol = -1;
-                let maxScore = 0;
+                let bestCol = -1, maxScore = 0;
                 for (let i = 0; i < numCols; i++) {
                     if (!assignedCols.has(i) && scores[i][key] > maxScore) {
                         maxScore = scores[i][key];
@@ -192,13 +182,24 @@
                     assignedCols.add(bestCol);
                 }
             });
-
             return mapping;
         }
         
-        function excelSerialDateToJSDate(serial) {
-            if (!serial || isNaN(serial)) return null;
-            return new Date(1899, 11, 30, 0, 0, 0, 0 + serial * 86400000);
+        function parseDate(dateInput) {
+            if (!dateInput) return null;
+            if (/^\d{5}$/.test(dateInput) && parseInt(dateInput) > 30000) {
+                return new Date(1899, 11, 30, 0, 0, 0, 0 + dateInput * 86400000);
+            }
+            let parts = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (parts) {
+                const date = new Date(parts[3], parts[2] - 1, parts[1]);
+                if (!isNaN(date)) return date;
+            }
+            let directDate = new Date(dateInput);
+            if (!isNaN(directDate) && directDate.getFullYear() > 1900) {
+                return directDate;
+            }
+            return null;
         }
 
         function formatDate(date) {
@@ -211,13 +212,8 @@
                 setTimeout(() => {
                     const rows = csvString.trim().replace(/\r\n/g, '\n').split('\n');
                     const firstRowCells = rows[0].split(';').map(h => h.trim());
-                    
                     const isHeaderless = detectIfHeaderless(firstRowCells);
-                    
-                    let mapping;
-                    let dataRows;
-                    let headers;
-
+                    let mapping, dataRows, headers;
                     if (isHeaderless) {
                         const sampleData = rows.slice(0, 20).map(row => row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/));
                         mapping = inferHeaderlessMapping(sampleData);
@@ -227,7 +223,6 @@
                         mapping = createHeaderMapping(headers);
                         dataRows = rows.slice(1);
                     }
-
                     const standardizedData = dataRows.map((rowStr, index) => {
                         if (!rowStr) return null;
                         const values = rowStr.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
@@ -235,7 +230,7 @@
                         for (const key in mapping) {
                             const mapValue = mapping[key];
                             let cellValue = '';
-                            if(isHeaderless) {
+                            if (isHeaderless) {
                                 cellValue = (values[mapValue] || '');
                             } else {
                                 const headerIndex = headers.indexOf(mapValue);
@@ -245,21 +240,18 @@
                         }
                         return record;
                     }).filter(Boolean);
-
                     const patientGroups = {};
                     standardizedData.forEach(visit => {
                         const patientKey = `${(visit.fullName || 'N/A').trim()}_${visit.yearOfBirth || 'N/A'}`;
                         if (!patientGroups[patientKey]) {
                             patientGroups[patientKey] = {
-                                patientId: patientKey, fullName: visit.fullName, yearOfBirth: visit.yearOfBirth,
-                                visits: []
+                                patientId: patientKey, fullName: visit.fullName, yearOfBirth: visit.yearOfBirth, visits: []
                             };
                         }
                         patientGroups[patientKey].visits.push(visit);
                     });
-
                     for (const key in patientGroups) {
-                        patientGroups[key].visits.sort((a, b) => (excelSerialDateToJSDate(b.examDate) || 0) - (excelSerialDateToJSDate(a.examDate) || 0));
+                        patientGroups[key].visits.sort((a, b) => (parseDate(b.examDate) || 0) - (parseDate(a.examDate) || 0));
                     }
                     allPatients = Object.values(patientGroups);
                     resolve();
@@ -267,7 +259,7 @@
             });
         }
 
-        // --- UI RENDERING (No changes from here) ---
+        // --- UI RENDERING ---
 
         function renderPatientList(patients) {
             patientTableBody.innerHTML = '';
@@ -287,7 +279,7 @@
                     <td class="px-6 py-4">${patient.yearOfBirth || 'N/A'}</td>
                     <td class="px-6 py-4">${latestVisit.gender || (patient.visits[1] || {}).gender || 'N/A'}</td>
                     <td class="px-6 py-4">${latestVisit.address || (patient.visits[1] || {}).address || 'N/A'}</td>
-                    <td class="px-6 py-4">${formatDate(excelSerialDateToJSDate(latestVisit.examDate))}</td>
+                    <td class="px-6 py-4">${formatDate(parseDate(latestVisit.examDate))}</td>
                     <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${patient.visits.length}</span></td>
                 `;
                 row.addEventListener('click', () => {
@@ -311,7 +303,7 @@
 
             const historyHtml = patient.visits.map((v, index) => {
                 const isActive = index === currentVisitIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
-                return `<button data-visit-index="${index}" class="visit-link px-4 py-2 rounded-full text-sm font-semibold transition ${isActive}">${formatDate(excelSerialDateToJSDate(v.examDate))}</button>`;
+                return `<button data-visit-index="${index}" class="visit-link px-4 py-2 rounded-full text-sm font-semibold transition ${isActive}">${formatDate(parseDate(v.examDate))}</button>`;
             }).join('');
             
             detailContainer.innerHTML = `
@@ -328,7 +320,7 @@
                         </div>
                         <div class="ml-auto text-right">
                            <p class="font-semibold text-gray-500 text-sm">Ngày khám</p>
-                           <p class="text-lg font-bold text-blue-600">${formatDate(excelSerialDateToJSDate(visit.examDate))}</p>
+                           <p class="text-lg font-bold text-blue-600">${formatDate(parseDate(visit.examDate))}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700">
