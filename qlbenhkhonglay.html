@@ -65,8 +65,9 @@
         <main id="main-content" class="hidden">
             <!-- Thanh điều hướng các tab -->
             <div class="mb-6 bg-white rounded-lg shadow-sm border border-slate-200">
-                <nav class="flex space-x-4 sm:space-x-8 px-6" aria-label="Tabs">
+                <nav class="flex flex-wrap space-x-4 sm:space-x-8 px-6" aria-label="Tabs">
                     <button data-tab="dashboard" class="tab-button tab-active py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"><i data-lucide="layout-dashboard"></i><span class="hidden sm:inline">Bảng điều khiển</span></button>
+                    <button data-tab="report" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="file-text"></i><span class="hidden sm:inline">Báo cáo</span></button>
                     <button data-tab="all-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="list-filter"></i><span class="hidden sm:inline">Tổng hợp Lượt khám</span></button>
                     <button data-tab="ncd-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="heart-pulse"></i><span class="hidden sm:inline">Quản lý THA/ĐTĐ</span></button>
                     <button data-tab="patients" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="users-round"></i><span class="hidden sm:inline">Bệnh nhân</span></button>
@@ -98,6 +99,49 @@
                      <div class="info-card"><h3 class="font-bold text-center mb-2">Xu hướng điều trị theo thời gian</h3><div class="relative h-96"><canvas id="treatmentTrendChart"></canvas></div></div>
                      <div class="info-card"><h3 class="font-bold text-left mb-4 text-xl">Thống kê sử dụng thuốc</h3><div id="meds-stats-container" class="overflow-auto max-h-[60vh]"></div></div>
                  </div>
+
+                <!-- Tab Báo cáo -->
+                <div id="report-view" class="tab-pane hidden space-y-6">
+                    <div class="info-card">
+                        <h2 class="text-xl font-bold mb-4">Tùy chọn Báo cáo</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                            <div>
+                                <label for="report-population" class="block text-sm font-medium text-gray-700 mb-1">Dân số xã</label>
+                                <input type="number" id="report-population" value="10000" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="report-period" class="block text-sm font-medium text-gray-700 mb-1">Chọn kỳ báo cáo</label>
+                                <select id="report-period" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="month">Tháng cụ thể</option>
+                                    <option value="3months">3 tháng gần nhất</option>
+                                    <option value="6months">6 tháng gần nhất</option>
+                                    <option value="custom">Tùy chọn ngày</option>
+                                </select>
+                            </div>
+                            <div id="month-selector-container">
+                                <label for="report-month" class="block text-sm font-medium text-gray-700 mb-1">Chọn tháng/năm</label>
+                                <input type="month" id="report-month" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div id="custom-date-container" class="hidden md:col-span-2 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="report-start-date" class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                                    <input type="date" id="report-start-date" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                </div>
+                                <div>
+                                    <label for="report-end-date" class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                                    <input type="date" id="report-end-date" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                </div>
+                            </div>
+                            <div class="lg:col-start-4">
+                                <button id="generate-report-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                                    <i data-lucide="play"></i>
+                                    Tạo Báo cáo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="report-output" class="space-y-6"></div>
+                </div>
 
                  <!-- Tab Tổng hợp Lượt khám -->
                 <div id="all-encounters-view" class="tab-pane hidden">
@@ -271,7 +315,7 @@
         };
 
         const DEFAULT_THA_MEDS = ['amlodipin', 'nifedipin', 'losartan', 'telmisartan', 'irbesartan', 'valsartan', 'candesartan', 'perindopril', 'enalapril', 'lisinopril', 'ramipril', 'metoprolol', 'bisoprolol', 'carvedilol', 'atenolol', 'hydrochlorothiazide', 'indapamide', 'furosemide', 'spironolactone', 'coveram', 'coversyl', 'amlodac', 'amcardia', 'cozaar', 'diovan', 'micardis', 'aprovel', 'atacand', 'coversyl', 'renitec', 'zestril', 'concor', 'betaloc', 'dilatrend', 'tenormin', 'lasix'];
-        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu', 'golddicron', 'golddicron'];
+        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu'];
         const CHUYEN_VIEN_KEYWORDS = ['chuyển viện', 'chuyển đến bệnh viện'];
 
         const COLUMN_MAPPINGS = {
@@ -415,6 +459,7 @@
         
         function renderAllViews() {
             renderDashboard();
+            renderReportView();
             renderAllEncountersView();
             renderNcdEncountersView();
             renderPatientsView();
@@ -526,6 +571,17 @@
             chartInstances.gender = new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: Object.keys(genderData), datasets: [{ data: Object.values(genderData), backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartInstances.age = new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: Object.keys(ageGroups), datasets: [{ label: 'Số lượng bệnh nhân', data: Object.values(ageGroups), backgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
             chartInstances.trend = new Chart(document.getElementById('treatmentTrendChart'), { type: 'line', data: { labels: sortedMonths, datasets: [{ label: 'Tại trạm', data: sortedMonths.map(m => trendData[m].taiTram), borderColor: '#0ea5e9', tension: 0.1, fill: false }, { label: 'Nơi khác', data: sortedMonths.map(m => trendData[m].noiKhac), borderColor: '#f97316', tension: 0.1, fill: false }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+        }
+
+        function renderReportView() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('report-month').value = `${year}-${month}`;
+            document.getElementById('report-end-date').valueAsDate = now;
+            const oneMonthAgo = new Date(now);
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            document.getElementById('report-start-date').valueAsDate = oneMonthAgo;
         }
 
         function renderAllEncountersView() {
@@ -903,6 +959,7 @@
                 if (appState.rawData.length > 0) {
                     const viewRenderers = {
                         'dashboard': renderDashboard,
+                        'report': renderReportView,
                         'all-encounters': renderAllEncountersView,
                         'ncd-encounters': renderNcdEncountersView,
                         'patients': renderPatientsView,
@@ -956,6 +1013,145 @@
             }
             renderHistoryView();
         });
+
+        // --- REPORT PAGE LISTENERS ---
+        document.getElementById('report-period').addEventListener('change', (e) => {
+            const period = e.target.value;
+            document.getElementById('month-selector-container').style.display = period === 'month' ? 'block' : 'none';
+            document.getElementById('custom-date-container').style.display = period === 'custom' ? 'grid' : 'none';
+        });
+
+        document.getElementById('generate-report-btn').addEventListener('click', () => {
+            const period = document.getElementById('report-period').value;
+            const population = parseInt(document.getElementById('report-population').value, 10) || 0;
+            let startDate, endDate;
+            const now = new Date();
+            now.setHours(23, 59, 59, 999); 
+
+            if (period === 'month') {
+                const [year, month] = document.getElementById('report-month').value.split('-').map(Number);
+                startDate = new Date(year, month - 1, 1);
+                endDate = new Date(year, month, 0, 23, 59, 59, 999);
+            } else if (period === '3months') {
+                endDate = new Date(now);
+                startDate = new Date(now);
+                startDate.setMonth(startDate.getMonth() - 3);
+                startDate.setDate(1);
+            } else if (period === '6months') {
+                endDate = new Date(now);
+                startDate = new Date(now);
+                startDate.setMonth(startDate.getMonth() - 6);
+                startDate.setDate(1);
+            } else if (period === 'custom') {
+                startDate = new Date(document.getElementById('report-start-date').value);
+                endDate = new Date(document.getElementById('report-end-date').value);
+                endDate.setHours(23, 59, 59, 999);
+            }
+            startDate.setHours(0, 0, 0, 0);
+
+            if (!startDate || !endDate || isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+                 document.getElementById('report-output').innerHTML = `<div class="info-card text-red-600">Vui lòng chọn khoảng thời gian hợp lệ.</div>`;
+                 return;
+            }
+            
+            generateReport(startDate, endDate, population);
+        });
+
+        function generateReport(startDate, endDate, population) {
+            const outputContainer = document.getElementById('report-output');
+            
+            const thaData = calculateReportMetrics('tha', startDate, endDate, population, 0.12);
+            const dtdData = calculateReportMetrics('dtd', startDate, endDate, population, 0.02);
+
+            outputContainer.innerHTML = `
+                ${createReportSectionHTML('Tăng huyết áp', thaData)}
+                ${createReportSectionHTML('Đái tháo đường', dtdData)}
+            `;
+        }
+        
+        function calculateReportMetrics(diseaseType, startDate, endDate, population, prevalenceRate) {
+            const keyword = diseaseType === 'tha' ? 'tăng huyết áp' : 'đái tháo đường';
+            
+            const periodEncounters = appState.encounters.filter(e => e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate && e.tinhTrang.toLowerCase().includes(keyword));
+            const allDiseaseEncounters = appState.encounters.filter(e => e.tinhTrang.toLowerCase().includes(keyword));
+
+            // Helper function
+            const getMetricsFor = (statusFilter) => {
+                const filteredEncounters = periodEncounters.filter(e => statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter));
+                const patientIdsInPeriod = new Set(filteredEncounters.map(e => e.id.split('_')[0]));
+
+                // Số mới phát hiện
+                const newPatients = Array.from(new Set(allDiseaseEncounters.map(e => e.id.split('_')[0])))
+                    .map(id => appState.patients[id])
+                    .filter(p => {
+                        if (!p) return false;
+                        const firstEncounterDate = p.encounters[p.encounters.length - 1].ngayKhamDate;
+                        return firstEncounterDate >= startDate && firstEncounterDate <= endDate;
+                    });
+                const newCount = newPatients.filter(p => p.encounters.some(e => filteredEncounters.map(f=>f.id).includes(e.id))).length;
+
+                // Số đang quản lí
+                const managementStartDate = new Date(startDate);
+                managementStartDate.setMonth(managementStartDate.getMonth() - 2);
+                const managedPatients = new Set();
+                appState.encounters.forEach(e => {
+                   if(e.ngayKhamDate >= managementStartDate && e.ngayKhamDate <= endDate && e.tinhTrang.toLowerCase().includes(keyword) && (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))) {
+                       managedPatients.add(e.id.split('_')[0]);
+                   }
+                });
+
+
+                const recordedCount = new Set(filteredEncounters.map(e=>e.id.split('_')[0])).size;
+
+                return {
+                    detected: Math.round(population * prevalenceRate),
+                    newlyDetected: newCount,
+                    underManagement: managedPatients.size,
+                    medicated: recordedCount,
+                    targetAchieved: Math.round(recordedCount * 0.20)
+                };
+            };
+            
+            return {
+                taiTram: getMetricsFor('tại trạm'),
+                noiKhac: getMetricsFor('nơi khác'),
+                tongHop: getMetricsFor('all')
+            };
+        }
+
+        function createReportSectionHTML(title, data) {
+            const createSubSection = (subTitle, metrics, note) => `
+                <div class="p-4 bg-slate-50 rounded-lg border">
+                    <h4 class="font-semibold text-slate-700 mb-3">${subTitle}</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
+                        <div class="bg-white p-3 rounded-md border">
+                            <p class="text-slate-500">Tổng số phát hiện</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.detected}</p>
+                            <p class="text-xs text-slate-400">${note}</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số mới phát hiện</p><p class="text-xl font-bold text-sky-600">${metrics.newlyDetected}</p></div>
+                        <div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số đang quản lí</p><p class="text-xl font-bold text-sky-600">${metrics.underManagement}</p></div>
+                        <div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số khám cấp thuốc</p><p class="text-xl font-bold text-sky-600">${metrics.medicated}</p></div>
+                        <div class="bg-white p-3 rounded-md border">
+                            <p class="text-slate-500">Điều trị đạt mục tiêu</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.targetAchieved}</p>
+                            <p class="text-xs text-slate-400">(Ước tính 20% số cấp thuốc)</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const note = title === 'Tăng huyết áp' ? '(Ước tính 12% dân số)' : '(Ước tính 2% dân số)';
+            return `
+                <div class="info-card">
+                    <h3 class="text-xl font-bold mb-4 text-sky-700">${title}</h3>
+                    <div class="space-y-4">
+                        ${createSubSection('Điều trị tại trạm', data.taiTram, note)}
+                        ${createSubSection('Điều trị nơi khác', data.noiKhac, note)}
+                        ${createSubSection('Tổng hợp', data.tongHop, note)}
+                    </div>
+                </div>
+            `;
+        }
 
         // --- KHỞI ĐỘNG ỨNG DỤNG ---
         document.addEventListener('DOMContentLoaded', () => {
