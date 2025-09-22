@@ -447,7 +447,19 @@
                 try {
                     const data = event.target.result;
                     const workbook = XLSX.read(data, {type: 'array'});
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    
+                    // --- MODIFICATION START ---
+                    // Find the specific sheet named "Sổ khám bệnh" case-insensitively
+                    let sheetName = workbook.SheetNames[0]; // Default to the first sheet
+                    const targetSheetName = "sổ khám bệnh";
+                    const foundSheet = workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName);
+                    
+                    if (foundSheet) {
+                        sheetName = foundSheet;
+                    }
+                    // --- MODIFICATION END ---
+                    
+                    const worksheet = workbook.Sheets[sheetName];
                     rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                     showModal({ title: 'Đang phân tích...', text: 'Trí tuệ nhân tạo đang xử lý dữ liệu của bạn. Vui lòng đợi.', isLoading: true });
@@ -494,3 +506,4 @@
     </script>
 </body>
 </html>
+
