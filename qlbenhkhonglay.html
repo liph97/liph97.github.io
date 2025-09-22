@@ -321,21 +321,31 @@
         const COLUMN_MAPPINGS = {
             ngayKham: ['ngay kham', 'ngày khám'],
             hoTen: ['họ và tên', 'họ tên', 'hoten'],
-            namSinh: ['năm sinh', 'namsinh', 'ns'],
+            namSinh: ['năm sinh', 'namsinh', 'ns', 'ngày tháng năm sinh'],
             gioiTinh: ['giới', 'giới tính', 'gioi'],
             diaChi: ['địa chỉ', 'diachi'],
             trieuChung: ['triệu chứng', 'trieuchung'],
             chanDoan: ['chẩn đoán', 'chandoan'],
-            dieuTri: ['phương pháp điều trị', 'dieu tri', 'điều trị']
+            dieuTri: ['phương pháp điều trị', 'dieu tri', 'điều trị'],
+            cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'],
+            bhyt: ['số thẻ bhyt']
         };
 
-        function findHeader(headers, potentialNames) {
-            const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
-            for (const name of potentialNames) {
-                const index = lowerHeaders.indexOf(name.toLowerCase().trim());
-                if (index !== -1) return headers[index];
-            }
-            return null;
+        function findHeaderRow(rows) {
+            const keywords = ['họ và tên', 'giới tính', 'địa chỉ', 'chẩn đoán', 'sinh', 'triệu chứng'];
+            let bestMatchIndex = -1, maxScore = 0;
+            
+            rows.slice(0, 10).forEach((row, index) => {
+                if (!Array.isArray(row) || row.length < 5) return;
+                const lowerRow = row.join(';').toLowerCase();
+                let score = 0;
+                keywords.forEach(kw => { if (lowerRow.includes(kw)) score++; });
+                if (score > maxScore) { 
+                    maxScore = score; 
+                    bestMatchIndex = index; 
+                }
+            });
+            return maxScore >= 3 ? bestMatchIndex : -1;
         }
 
         function normalizeDate(dateValue) {
@@ -345,12 +355,12 @@
                 return new Date(Math.round((dateValue - 25569) * 86400 * 1000));
             }
             if (typeof dateValue === 'string') {
-                const parts = dateValue.split(/[/.-]/);
-                if (parts.length === 3) {
-                    const day = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10);
-                    let year = parseInt(parts[2], 10);
-                    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                const parts = dateValue.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
+                if (parts) {
+                    const day = parseInt(parts[1], 10);
+                    const month = parseInt(parts[2], 10);
+                    let year = parseInt(parts[3], 10);
+                     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                         if (year < 100) year += 2000;
                         const date = new Date(Date.UTC(year, month - 1, day));
                         if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
@@ -370,7 +380,9 @@
 
         function calculateAge(birthYear, encounterDate) {
             if (!birthYear || !encounterDate) return 'N/A';
-            return encounterDate.getFullYear() - birthYear;
+            const birth = normalizeDate(birthYear);
+            if(!birth) return encounterDate.getFullYear() - parseInt(birthYear);
+            return encounterDate.getFullYear() - birth.getFullYear();
         }
 
         function extractVitals(symptoms) {
@@ -415,38 +427,68 @@
             return statuses.length > 0 ? statuses.join('; ') : 'Không xác định';
         }
 
-        function processData(data) {
+        function processData(jsonData) {
             appState.patients = {};
-            appState.encounters = data.map((row, index) => {
-                const encounter = { id: `enc-${index}` };
-                const headers = Object.keys(data[0]);
-                const headerMap = {};
-                for (const key in COLUMN_MAPPINGS) {
-                    headerMap[key] = findHeader(headers, COLUMN_MAPPINGS[key]);
+            const headerRowIndex = findHeaderRow(jsonData);
+            if (headerRowIndex === -1) {
+                console.error("Could not find a valid header row.");
+                return;
+            }
+
+            const headers = jsonData[headerRowIndex].map(h => String(h || '').toLowerCase().trim());
+            const dataRows = jsonData.slice(headerRowIndex + 1);
+
+            const headerMap = {};
+            for (const key in COLUMN_MAPPINGS) {
+                const aliases = COLUMN_MAPPINGS[key];
+                const foundIndex = headers.findIndex(h => aliases.some(alias => h.includes(alias)));
+                if (foundIndex !== -1) headerMap[key] = foundIndex;
+            }
+
+            let currentDate = null;
+            let encountersList = [];
+
+            dataRows.forEach((row, index) => {
+                if (!row || !Array.isArray(row) || row.every(cell => !cell)) return;
+
+                const firstCell = String(row[0] || '').trim();
+                const dateMatch = firstCell.match(/^ngày\s+(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/i);
+
+                if (dateMatch) {
+                    currentDate = normalizeDate(dateMatch[1]);
+                    return;
                 }
-                for(const key in headerMap) {
+                
+                const hoTen = row[headerMap.hoTen];
+                const namSinh = row[headerMap.namSinh];
+
+                if (!hoTen || !namSinh) return;
+
+                const encounter = { id: `enc-${index}` };
+                for (const key in headerMap) {
                     encounter[key] = row[headerMap[key]];
                 }
                 
-                encounter.ngayKhamDate = normalizeDate(encounter.ngayKham);
-                encounter.namSinhNum = parseInt(String(encounter.namSinh).trim(), 10);
-                
-                if (!encounter.hoTen || !encounter.namSinhNum || isNaN(encounter.namSinhNum) || !encounter.ngayKhamDate) return null;
+                encounter.ngayKhamDate = normalizeDate(encounter.ngayKham) || currentDate;
+                const namSinhClean = String(namSinh).split(/[\/\.-]/).pop().trim();
+                encounter.namSinhNum = parseInt(namSinhClean, 10);
+
+                if (!encounter.hoTen || !encounter.namSinhNum || isNaN(encounter.namSinhNum) || !encounter.ngayKhamDate) return;
 
                 encounter.tuoi = calculateAge(encounter.namSinhNum, encounter.ngayKhamDate);
                 encounter.vitals = extractVitals(encounter.trieuChung);
                 encounter.tinhTrang = determineStatus(encounter);
-                
+
                 const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
                 if (!appState.patients[patientId]) {
                     appState.patients[patientId] = {
                         id: patientId, hoTen: String(encounter.hoTen).trim(), namSinh: encounter.namSinhNum,
-                        gioiTinh: encounter.gioiTinh, diaChi: encounter.diaChi, encounters: [], monthlyRecords: {}
+                        encounters: []
                     };
                 }
                 appState.patients[patientId].encounters.push(encounter);
-                return encounter;
-            }).filter(e => e); 
+                encountersList.push(encounter);
+            });
 
             Object.values(appState.patients).forEach(p => {
                 p.encounters.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
@@ -455,6 +497,8 @@
                     p.diaChi = p.encounters[0].diaChi;
                 }
             });
+
+            appState.encounters = encountersList;
         }
         
         function renderAllViews() {
@@ -862,6 +906,56 @@
             localStorage.setItem('dtdMeds', JSON.stringify(appState.dtdMeds));
         }
 
+        function formatTreatment(dieuTri) {
+            if (!dieuTri) return 'Không có dữ liệu';
+            let html = '';
+            const rawString = String(dieuTri);
+            
+            const entries = rawString.split(/(?=\d+:)/).filter(Boolean);
+
+            if (entries.length === 0) {
+                 return `<div class="p-3 bg-slate-50 rounded-md border text-slate-800">${rawString}</div>`;
+            }
+
+            entries.forEach(entry => {
+                const mainParts = entry.match(/(\d+):\s*([^x]+)\s*x\s*([\d\.]+\s*\w+)/);
+                if (mainParts) {
+                     const [_, num, medName, total] = mainParts.map(m => m ? m.trim() : '');
+                     const doseMatch = entry.match(/Sáng\s*([\d\.]+)\s*trưa\s*([\d\.]+)\s*chiều\s*([\d\.]+)\s*tối\s*([\d\.]+)/i);
+                     const doseParts = [];
+                     if(doseMatch) {
+                         if(parseFloat(doseMatch[1]) > 0) doseParts.push(`Sáng ${doseMatch[1]}`);
+                         if(parseFloat(doseMatch[2]) > 0) doseParts.push(`Trưa ${doseMatch[2]}`);
+                         if(parseFloat(doseMatch[3]) > 0) doseParts.push(`Chiều ${doseMatch[3]}`);
+                         if(parseFloat(doseMatch[4]) > 0) doseParts.push(`Tối ${doseMatch[4]}`);
+                     }
+
+                     const simpleDoseMatch = entry.match(/Sáng:\s*(\d+)\s*Viên,\s*Chiều:\s*(\d+)/i);
+                     if (simpleDoseMatch && doseParts.length === 0) {
+                         doseParts.push(`Sáng ${simpleDoseMatch[1]}`, `Chiều ${simpleDoseMatch[2]}`);
+                     }
+                     
+                     const daysMatch = entry.match(/Số ngày:\s*(\d+)/i);
+                     const days = daysMatch ? daysMatch[1] : '';
+
+                     html += `<div class="p-3 bg-slate-100 rounded-md mb-2 border">
+                            <div class="flex justify-between items-center font-semibold">
+                                <p class="text-slate-800">${num}. ${medName}</p>
+                                <p class="text-slate-600">${total}</p>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-slate-500 mt-1">
+                                <p>${doseParts.join(' - ') || 'Không rõ liều'}</p>
+                                <p>${days ? `x ${days} ngày` : ''}</p>
+                            </div>
+                         </div>`;
+                } else {
+                     html += `<div class="p-3 bg-slate-100 rounded-md mb-2 border text-slate-800">${entry}</div>`;
+                }
+            });
+            return html;
+        }
+
+
         function showDetailModal(patientId) {
             const patient = appState.patients[patientId];
             if (!patient) return;
@@ -879,6 +973,7 @@
             patient.encounters.forEach(e => {
                 const isTaiTram = e.tinhTrang.includes('tại trạm');
                 const statusColorClass = isTaiTram ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800';
+                const diagnosesHTML = (e.chanDoan || 'N/A').split(';').map(d => `<li class="list-disc ml-4">${d.trim()}</li>`).join('');
                 
                 contentHTML += `<div class="info-card mb-4">
                     <div class="flex justify-between items-start mb-3 pb-3 border-b">
@@ -888,10 +983,18 @@
                         </div>
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusColorClass}">${e.tinhTrang}</span>
                     </div>
-                    <div class="grid md:grid-cols-2 gap-x-6 gap-y-3 text-sm mt-3">
-                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Chẩn đoán:</p><p class="text-slate-800">${e.chanDoan || 'N/A'}</p></div>
-                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Điều trị:</p><p class="text-slate-800">${e.dieuTri || 'N/A'}</p></div>
-                        <div class="md:col-span-2 flex items-start space-x-2"><p class="text-slate-500 w-28 flex-shrink-0 font-semibold">Triệu chứng:</p><p class="text-slate-800">${e.trieuChung || 'N/A'}</p></div>
+                    <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 text-sm mt-3">
+                        <div><p class="text-slate-500 font-semibold mb-1">CCCD:</p><p class="text-slate-800">${e.cccd || 'N/A'}</p></div>
+                        <div><p class="text-slate-500 font-semibold mb-1">BHYT:</p><p class="text-slate-800">${e.bhyt || 'N/A'}</p></div>
+                        <div class="md:col-span-2"><p class="text-slate-500 font-semibold mb-1">Triệu chứng:</p><p class="text-slate-800">${e.trieuChung || 'N/A'}</p></div>
+                        <div class="md:col-span-2">
+                             <p class="text-slate-500 font-semibold mb-1">Chẩn đoán:</p>
+                             <ul class="text-slate-800">${diagnosesHTML}</ul>
+                        </div>
+                         <div class="md:col-span-2">
+                             <p class="text-slate-500 font-semibold mb-2">Điều trị:</p>
+                             <div>${formatTreatment(e.dieuTri)}</div>
+                        </div>
                     </div>
                     <div class="pt-3 mt-3 border-t">
                         <h6 class="font-semibold text-sm text-slate-600 mb-2">Sinh hiệu</h6>
@@ -919,9 +1022,10 @@
             reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('sổ khám')) || workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                     
                     appState.rawData = jsonData;
                     setTimeout(() => {
@@ -1187,10 +1291,13 @@
         }
 
         function createReportSectionHTML(title, data) {
-            const createMetricComparisonHTML = (metric) => {
+             const createMetricComparisonHTML = (metric) => {
                 let comparisonText = `<p class="text-xs text-slate-500 mt-1">Cùng kỳ: ${metric.lastYearValue}</p>`;
                 
                 if (metric.change === null || isNaN(metric.change)) {
+                     if (metric.value > 0 && metric.lastYearValue === 0) {
+                         return comparisonText + `<p class="text-xs font-semibold text-green-500">Mới</p>`;
+                     }
                     return comparisonText; 
                 }
                 const color = metric.change >= 0 ? 'text-green-500' : 'text-red-500';
@@ -1259,3 +1366,4 @@
     </script>
 </body>
 </html>
+
