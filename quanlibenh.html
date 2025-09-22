@@ -303,12 +303,14 @@
         function updateDetailControls() { pageIndicator.textContent = `Bệnh nhân ${currentIndexInList + 1} / ${currentPatientList.length}`; prevButton.disabled = currentIndexInList <= 0; nextButton.disabled = currentIndexInList >= currentPatientList.length - 1; prevButton.classList.toggle('opacity-50', prevButton.disabled); nextButton.classList.toggle('opacity-50', nextButton.disabled); }
         function showModal({ title, text, icon, iconColor, isLoading = false }) { notificationModal.querySelector('#modalTitle').textContent = title; notificationModal.querySelector('#modalText').textContent = text; notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none'; const modalIcon = notificationModal.querySelector('#modalIcon'); const modalButton = notificationModal.querySelector('#modalButton'); modalIcon.style.display = isLoading ? 'none' : 'block'; modalButton.style.display = isLoading ? 'none' : 'block'; if (!isLoading) { modalIcon.setAttribute('data-lucide', icon); modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`; } notificationModal.classList.remove('hidden'); notificationModal.classList.add('flex'); lucide.createIcons(); }
         function getVital(symptoms, key, unit = '') { const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i')); return match ? `${match[1]} ${unit}`.trim() : 'N/A'; }
-        function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
+        function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.toString().replace(/^"/, '').replace(/"$/, '').split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
         function formatTreatments(data) {
             if (!data) return '<li>Không có dữ liệu</li>';
             const cleanData = data.toString().replace(/^"/, '').replace(/"$/, '');
             const treatments = cleanData.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
-            if (!treatments) return `<li>${cleanData}</li>`;
+            if (!treatments) {
+                return cleanData.split(',').map(item => item.trim()).filter(Boolean).map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item}</li>`).join('')
+            };
             return treatments.map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item.trim()}</li>`).join('');
         }
         
@@ -433,7 +435,7 @@
 
             let allVisits = [], currentDate = null;
             dataRows.forEach(row => {
-                if (!row || !Array.isArray(row) || row.every(cell => !cell)) return;
+                if (!row || !Array.isArray(row) || row.every(cell => !cell || cell.toString().trim() === '')) return;
                 
                 const firstCell = row[0] ? row[0].toString().trim() : '';
                 if (firstCell.toLowerCase().startsWith('ngày')) {
@@ -445,8 +447,7 @@
                 const sttValue = row[mapping.stt];
                 const fullNameValue = row[mapping.fullName];
                 
-                // --- FIX: Stricter row validation ---
-                const isValidPatient = sttValue && !isNaN(parseInt(sttValue)) && fullNameValue && !/^\d+$/.test(fullNameValue.toString().trim());
+                const isValidPatient = sttValue && !isNaN(parseInt(sttValue)) && fullNameValue && fullNameValue.toString().trim() && !/^\d+$/.test(fullNameValue.toString().trim());
 
                 if (isValidPatient) {
                     const visit = { examDate: currentDate };
@@ -483,7 +484,7 @@
                     if (age < 18) stats.ageGroups['<18']++; else if (age <= 40) stats.ageGroups['18-40']++; else if (age <= 60) stats.ageGroups['41-60']++; else stats.ageGroups['>60']++;
                 }
                 p.visits.forEach(v => {
-                    if(v.diagnosis) v.diagnosis.toString().split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
+                    if(v.diagnosis) v.diagnosis.toString().replace(/^"/, '').replace(/"$/, '').split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
                 });
             });
             stats.topDiagnoses = Object.entries(stats.diagnoses).sort(([,a],[,b]) => b-a).slice(0, 5);
@@ -499,7 +500,7 @@
                 p.visits.forEach(v => {
                     if(v.gender) unique.genders.add(v.gender);
                     if(v.doctor) unique.doctors.add(v.doctor);
-                    if(v.diagnosis) v.diagnosis.toString().split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
+                    if(v.diagnosis) v.diagnosis.toString().replace(/^"/, '').replace(/"$/, '').split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
                 });
             });
             return { genders: [...unique.genders], years: [...unique.years], doctors: [...unique.doctors], diagnoses: [...unique.diagnoses] };
