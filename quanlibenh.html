@@ -306,8 +306,9 @@
         function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
         function formatTreatments(data) {
             if (!data) return '<li>Không có dữ liệu</li>';
-            const treatments = data.toString().match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
-            if (!treatments) return `<li>${data}</li>`;
+            const cleanData = data.toString().replace(/^"/, '').replace(/"$/, '');
+            const treatments = cleanData.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
+            if (!treatments) return `<li>${cleanData}</li>`;
             return treatments.map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item.trim()}</li>`).join('');
         }
         
@@ -433,14 +434,21 @@
             let allVisits = [], currentDate = null;
             dataRows.forEach(row => {
                 if (!row || !Array.isArray(row) || row.every(cell => !cell)) return;
+                
                 const firstCell = row[0] ? row[0].toString().trim() : '';
                 if (firstCell.toLowerCase().startsWith('ngày')) {
                     const dateMatch = firstCell.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
                     if (dateMatch) currentDate = parseDate(dateMatch[0]);
                     return;
                 }
+                
                 const sttValue = row[mapping.stt];
-                if (sttValue && !isNaN(parseInt(sttValue))) {
+                const fullNameValue = row[mapping.fullName];
+                
+                // --- FIX: Stricter row validation ---
+                const isValidPatient = sttValue && !isNaN(parseInt(sttValue)) && fullNameValue && !/^\d+$/.test(fullNameValue.toString().trim());
+
+                if (isValidPatient) {
                     const visit = { examDate: currentDate };
                     for(const key in mapping) { visit[key] = row[mapping[key]] || ''; }
                     allVisits.push(visit);
