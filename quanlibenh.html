@@ -90,8 +90,16 @@
                      <div><label for="filterDiagnosis" class="block text-sm font-medium text-gray-700 mb-1">Chẩn đoán</label><select id="filterDiagnosis" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                      <div><label for="filterAddress" class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ (từ khóa)</label><input type="text" id="filterAddress" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"></div>
                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phương pháp điều trị</label>
-                        <div id="filterTreatmentContainer" class="w-full border border-gray-300 rounded-md shadow-sm p-2 h-24 overflow-y-auto bg-white"></div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Phương pháp điều trị</label>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <input type="radio" id="treatmentOr" name="treatmentLogic" value="or" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer" checked>
+                                <label for="treatmentOr" class="cursor-pointer">Hoặc</label>
+                                <input type="radio" id="treatmentAnd" name="treatmentLogic" value="and" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer">
+                                <label for="treatmentAnd" class="cursor-pointer">Và</label>
+                            </div>
+                        </div>
+                        <div id="filterTreatmentContainer" class="w-full border border-gray-300 rounded-md shadow-sm p-2 h-40 overflow-y-auto bg-white"></div>
                     </div>
                  </div>
                  <div class="mt-4 flex justify-end gap-3">
@@ -299,21 +307,27 @@
 
         function applyFilters() {
             const selectedTreatments = [...filterTreatmentContainer.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+            const treatmentLogic = document.querySelector('input[name="treatmentLogic"]:checked').value;
+
             const filters = {
                 gender: filterGender.value,
                 year: filterYear.value,
                 doctor: filterDoctor.value,
                 diagnosis: filterDiagnosis.value,
                 address: filterAddress.value.toLowerCase().trim(),
-                treatments: selectedTreatments
+                treatments: selectedTreatments,
+                treatmentLogic: treatmentLogic
             };
 
             currentPatientList = allPatients.filter(patient => {
                 const birthDate = parseDate(patient.birthDate);
                 const yearOfBirth = birthDate ? birthDate.getFullYear().toString() : null;
+                
+                // Patient-level filter (Year of Birth) must be true
                 if (filters.year && yearOfBirth !== filters.year) return false;
                 
-                const matchesVisit = patient.visits.some(visit => {
+                // Then, check if ANY visit matches all other filters
+                return patient.visits.some(visit => {
                     if (filters.gender && visit.gender !== filters.gender) return false;
                     if (filters.doctor && visit.doctor !== filters.doctor) return false;
                     if (filters.diagnosis && (!visit.diagnosis || !visit.diagnosis.includes(filters.diagnosis))) return false;
@@ -321,20 +335,18 @@
                     
                     if (filters.treatments.length > 0) {
                         const visitTreatment = (visit.treatment || '').toString();
-                        const hasTreatment = filters.treatments.every(t => visitTreatment.includes(t));
+                        let hasTreatment;
+                        if (filters.treatmentLogic === 'and') {
+                            hasTreatment = filters.treatments.every(t => visitTreatment.includes(t));
+                        } else { // 'or' logic
+                            hasTreatment = filters.treatments.some(t => visitTreatment.includes(t));
+                        }
                         if (!hasTreatment) return false;
                     }
                     return true;
                 });
-
-                // If no visits match, the patient is filtered out.
-                if (!matchesVisit) return false;
-
-                // For filtering by year of birth, it should apply to the patient, not just a visit
-                if (filters.year && yearOfBirth !== filters.year) return false;
-                
-                return true;
             });
+
             const query = searchInput.value.toLowerCase().trim();
             if (query) {
                 currentPatientList = currentPatientList.filter(p => (p.fullName || '').toLowerCase().includes(query) || (p.visits.some(v => v.cccd && v.cccd.includes(query))));
@@ -410,6 +422,7 @@
                 filterDiagnosis.value = ''; 
                 filterAddress.value = ''; 
                 filterTreatmentContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                document.getElementById('treatmentOr').checked = true;
                 applyFilters(); 
             });
             searchButton.addEventListener('click', applyFilters);
