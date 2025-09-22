@@ -157,12 +157,14 @@
         </div>
     </div>
 
+    <!-- SCRIPT CHÍNH -->
     <script>
         let allPatients = [];
         let currentPatientList = [];
         let currentIndexInList = 0;
         let currentVisitIndex = 0;
         let chartInstances = {};
+        let dataWorker;
 
         const [
             listView, detailView, dashboardView, searchInput, searchButton, fileInput, patientTableBody,
@@ -177,168 +179,8 @@
             'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress',
             'goToDashboardButton', 'goToListViewButton'
         ].map(id => id.startsWith('#') ? document.querySelector(id) : document.getElementById(id));
-
-        // --- CORE AI & DATA PROCESSING ---
-        function findHeaderRow(rows) {
-            const keywords = ['họ và tên', 'giới tính', 'địa chỉ', 'chẩn đoán', 'sinh', 'triệu chứng'];
-            let bestMatchIndex = -1;
-            let maxScore = 0;
-
-            rows.slice(0, 10).forEach((row, index) => {
-                const lowerRow = row.join(';').toLowerCase();
-                let score = 0;
-                keywords.forEach(kw => {
-                    if (lowerRow.includes(kw)) score++;
-                });
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestMatchIndex = index;
-                }
-            });
-            // If we found a row with at least 3 keywords, it's probably the header
-            return maxScore >= 3 ? bestMatchIndex : -1;
-        }
         
-        function parseDate(dateInput) {
-            if (!dateInput) return null;
-            if (typeof dateInput === 'string') {
-                const parts = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-                if (parts) { // dd/mm/yyyy
-                    const date = new Date(parts[3], parts[2] - 1, parts[1]);
-                    if (!isNaN(date)) return date;
-                }
-            }
-            const directDate = new Date(dateInput);
-            if (!isNaN(directDate) && directDate.getFullYear() > 1900) {
-                return directDate;
-            }
-            return null;
-        }
-
-        function formatDate(date) {
-            if (!date || isNaN(date)) return 'Không rõ';
-            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-        }
-        
-        async function processGeneralDataWithAI(rows) {
-             return new Promise(resolve => {
-                setTimeout(() => {
-                    const headerRowIndex = findHeaderRow(rows);
-                    if (headerRowIndex === -1) {
-                        allPatients = [];
-                        resolve();
-                        return;
-                    }
-
-                    const headers = rows[headerRowIndex].map(h => h ? h.toString().toLowerCase().trim() : '');
-                    const dataRows = rows.slice(headerRowIndex + 1);
-
-                    const standardFields = {
-                        stt: ['stt'],
-                        fullName: ['họ và tên'],
-                        gender: ['giới tính'],
-                        birthDate: ['ngày tháng năm sinh', 'năm sinh'],
-                        cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'],
-                        bhyt: ['số thẻ bhyt'],
-                        address: ['địa chỉ'],
-                        occupation: ['nghề nghiệp'],
-                        ethnicity: ['dân tộc'],
-                        symptoms: ['triệu chứng'],
-                        diagnosis: ['chẩn đoán'],
-                        treatment: ['phương pháp điều trị'],
-                        doctor: ['y, bác sĩ khám bệnh'],
-                        notes: ['ghi chú']
-                    };
-
-                    const mapping = {};
-                    for (const key in standardFields) {
-                        const aliases = standardFields[key];
-                        const foundIndex = headers.findIndex(h => aliases.some(alias => h.includes(alias)));
-                        if(foundIndex !== -1) {
-                            mapping[key] = foundIndex;
-                        }
-                    }
-
-                    let allVisits = [];
-                    let currentDate = null;
-
-                    dataRows.forEach(row => {
-                        if (!row || row.every(cell => !cell)) return;
-
-                        const firstCell = row[0] ? row[0].toString().trim() : '';
-                        if (firstCell.toLowerCase().startsWith('ngày')) {
-                            const dateMatch = firstCell.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
-                            if (dateMatch) {
-                                currentDate = parseDate(dateMatch[0]);
-                            }
-                            return;
-                        }
-
-                        // Check if it's a patient row (STT is a number)
-                        const sttValue = row[mapping.stt];
-                        if (sttValue && !isNaN(parseInt(sttValue))) {
-                            const visit = { examDate: currentDate };
-                            for(const key in mapping) {
-                                visit[key] = row[mapping[key]] || '';
-                            }
-                            allVisits.push(visit);
-                        }
-                    });
-                    
-                    const patientGroups = {};
-                    allVisits.forEach(visit => {
-                        const patientKey = `${(visit.fullName || 'N/A').trim()}_${(visit.birthDate || 'N/A').trim()}`;
-                        if (!patientGroups[patientKey]) {
-                            patientGroups[patientKey] = {
-                                patientId: patientKey,
-                                fullName: visit.fullName,
-                                birthDate: visit.birthDate,
-                                visits: []
-                            };
-                        }
-                        patientGroups[patientKey].visits.push(visit);
-                    });
-
-                    for (const key in patientGroups) {
-                        patientGroups[key].visits.sort((a, b) => (b.examDate || 0) - (a.examDate || 0));
-                    }
-                    allPatients = Object.values(patientGroups);
-                    resolve();
-                }, 500);
-            });
-        }
-        
-        // --- DASHBOARD & ANALYSIS ---
-        function analyzeDataForDashboard() {
-            const stats = {
-                totalPatients: allPatients.length,
-                totalVisits: 0,
-                gender: { 'Nam': 0, 'Nữ': 0, 'Khác': 0 },
-                ageGroups: { '<18': 0, '18-40': 0, '41-60': 0, '>60': 0 },
-                diagnoses: {}
-            };
-            const currentYear = new Date().getFullYear();
-            allPatients.forEach(p => {
-                stats.totalVisits += p.visits.length;
-                const gender = (p.visits.find(v => v.gender) || {}).gender;
-                if (gender && gender.toLowerCase() === 'nam') stats.gender.Nam++; 
-                else if (gender && gender.toLowerCase() === 'nữ') stats.gender.Nữ++; 
-                else if(gender) stats.gender.Khác++;
-                
-                const birthDate = parseDate(p.birthDate);
-                if (birthDate) {
-                    const age = currentYear - birthDate.getFullYear();
-                    if (age < 18) stats.ageGroups['<18']++; else if (age <= 40) stats.ageGroups['18-40']++; else if (age <= 60) stats.ageGroups['41-60']++; else stats.ageGroups['>60']++;
-                }
-                p.visits.forEach(v => {
-                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
-                });
-            });
-            const topDiagnoses = Object.entries(stats.diagnoses).sort(([,a],[,b]) => b-a).slice(0, 5);
-            stats.newPatients = allPatients.filter(p => p.visits.length === 1).length;
-            return { ...stats, topDiagnoses };
-        }
-        
+        // --- DASHBOARD & ANALYSIS (UI Part) ---
         function renderDashboard(stats) {
             document.getElementById('totalPatients').textContent = stats.totalPatients;
             document.getElementById('totalVisits').textContent = stats.totalVisits;
@@ -349,19 +191,19 @@
             chartInstances.diagnosis = new Chart(document.getElementById('diagnosisChart'), { type: 'bar', data: { labels: stats.topDiagnoses.map(d => d[0]), datasets: [{ label: 'Số lượt chẩn đoán', data: stats.topDiagnoses.map(d => d[1]), backgroundColor: '#f97316' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } } });
         }
         
-        function populateFilterOptions(patients) {
-            const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set() };
-            patients.forEach(p => {
-                const birthDate = parseDate(p.birthDate);
-                if (birthDate) unique.years.add(birthDate.getFullYear());
-                p.visits.forEach(v => {
-                    if(v.gender) unique.genders.add(v.gender);
-                    if(v.doctor) unique.doctors.add(v.doctor);
-                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
-                });
-            });
-            const populate = (select, items) => { select.innerHTML = '<option value="">Tất cả</option>'; [...items].sort((a,b) => b-a).forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; }); };
-            populate(filterGender, unique.genders); populate(filterYear, unique.years); populate(filterDoctor, unique.doctors); populate(filterDiagnosis, unique.diagnoses);
+        // --- FILTERING (UI Part) ---
+        function populateFilterOptions(unique) {
+            const populate = (select, items, sortFn) => { 
+                select.innerHTML = '<option value="">Tất cả</option>'; 
+                const sortedItems = [...items];
+                if(sortFn) sortedItems.sort(sortFn);
+                else sortedItems.sort();
+                sortedItems.forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; });
+             };
+            populate(filterGender, unique.genders); 
+            populate(filterYear, unique.years, (a,b) => b-a); // Sort years descending
+            populate(filterDoctor, unique.doctors); 
+            populate(filterDiagnosis, unique.diagnoses);
         }
 
         function applyFilters() {
@@ -391,7 +233,8 @@
             }
             renderPatientList(currentPatientList);
         }
-
+        
+        // --- UI RENDERING ---
         function renderPatientList(patients) { 
             patientTableBody.innerHTML = '';
             if (patients.length === 0) {
@@ -432,77 +275,217 @@
             document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => { currentVisitIndex = parseInt(e.target.dataset.visitIndex, 10); displayPatientDetail(patientId); }));
         }
 
+        // --- UTILITY & EVENT HANDLERS ---
         const showView = (viewToShow) => { [listView, detailView, dashboardView].forEach(view => view.classList.toggle('hidden', view !== viewToShow)); };
         function updateDetailControls() { pageIndicator.textContent = `Bệnh nhân ${currentIndexInList + 1} / ${currentPatientList.length}`; prevButton.disabled = currentIndexInList <= 0; nextButton.disabled = currentIndexInList >= currentPatientList.length - 1; prevButton.classList.toggle('opacity-50', prevButton.disabled); nextButton.classList.toggle('opacity-50', nextButton.disabled); }
         function showModal({ title, text, icon, iconColor, isLoading = false }) { notificationModal.querySelector('#modalTitle').textContent = title; notificationModal.querySelector('#modalText').textContent = text; notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none'; const modalIcon = notificationModal.querySelector('#modalIcon'); const modalButton = notificationModal.querySelector('#modalButton'); modalIcon.style.display = isLoading ? 'none' : 'block'; modalButton.style.display = isLoading ? 'none' : 'block'; if (!isLoading) { modalIcon.setAttribute('data-lucide', icon); modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`; } notificationModal.classList.remove('hidden'); notificationModal.classList.add('flex'); lucide.createIcons(); }
         function getVital(symptoms, key, unit = '') { const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i')); return match ? `${match[1]} ${unit}`.trim() : 'N/A'; }
         function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
         
-        fileInput.addEventListener('change', e => {
-            const file = e.target.files[0]; if (!file) return;
-            showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                let rows = [];
-                try {
-                    const data = event.target.result;
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    // --- MODIFICATION START ---
-                    // Find the specific sheet named "Sổ khám bệnh" case-insensitively
-                    let sheetName = workbook.SheetNames[0]; // Default to the first sheet
-                    const targetSheetName = "sổ khám bệnh";
-                    const foundSheet = workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName);
-                    
-                    if (foundSheet) {
-                        sheetName = foundSheet;
-                    }
-                    // --- MODIFICATION END ---
-                    
-                    const worksheet = workbook.Sheets[sheetName];
-                    rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    showModal({ title: 'Đang phân tích...', text: 'Trí tuệ nhân tạo đang xử lý dữ liệu của bạn. Vui lòng đợi.', isLoading: true });
-                    await processGeneralDataWithAI(rows);
-                    
-                    if (allPatients.length > 0) {
-                        const stats = analyzeDataForDashboard();
-                        renderDashboard(stats);
-                        populateFilterOptions(allPatients);
-                        goToDashboardButton.classList.remove('hidden');
-                    } else {
-                        goToDashboardButton.classList.add('hidden');
-                    }
-                    currentPatientList = [...allPatients];
-                    renderPatientList(currentPatientList);
-                    showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
-                    showView(dashboardView);
-                } catch (error) {
-                    console.error("Lỗi xử lý file: ", error);
-                    showModal({ title: "Lỗi xử lý file!", text: error.message || "Không thể đọc dữ liệu từ file đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
+        // --- EVENT LISTENERS SETUP ---
+        function setupEventListeners() {
+            goToDashboardButton.addEventListener('click', () => showView(dashboardView));
+            goToListViewButton.addEventListener('click', () => showView(listView));
+            backToListButton.addEventListener('click', () => showView(listView));
+            toggleFilterButton.addEventListener('click', () => filterSection.classList.toggle('open'));
+            applyFiltersButton.addEventListener('click', applyFilters);
+            clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; applyFilters(); });
+            searchButton.addEventListener('click', applyFilters);
+            searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') applyFilters(); });
+            nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
+            prevButton.addEventListener('click', () => { if (currentIndexInList > 0) { currentIndexInList--; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
+            
+            fileInput.addEventListener('change', e => {
+                const file = e.target.files[0]; if (!file) return;
+                showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
+                
+                if (dataWorker) {
+                    dataWorker.terminate();
                 }
-            };
-            reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp.", icon: "alert-triangle", iconColor: "text-red-500" });
-            reader.readAsArrayBuffer(file);
-            e.target.value = '';
-        });
+                const workerBlob = new Blob([document.getElementById('workerScript').textContent], { type: 'application/javascript' });
+                dataWorker = new Worker(URL.createObjectURL(workerBlob));
+                
+                dataWorker.onmessage = (event) => {
+                    const { type, payload, error } = event.data;
+                    if (type === 'done') {
+                        allPatients = payload.allPatients;
+                        if (allPatients.length > 0) {
+                            renderDashboard(payload.stats);
+                            populateFilterOptions(payload.filterOptions);
+                            goToDashboardButton.classList.remove('hidden');
+                        } else {
+                            goToDashboardButton.classList.add('hidden');
+                        }
+                        currentPatientList = [...allPatients];
+                        renderPatientList(currentPatientList);
+                        showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
+                        showView(dashboardView);
+                    } else if (type === 'error') {
+                         showModal({ title: "Lỗi xử lý file!", text: error || "Không thể đọc dữ liệu từ file đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
+                    }
+                };
 
-        goToDashboardButton.addEventListener('click', () => showView(dashboardView));
-        goToListViewButton.addEventListener('click', () => showView(listView));
-        backToListButton.addEventListener('click', () => showView(listView));
-        toggleFilterButton.addEventListener('click', () => filterSection.classList.toggle('open'));
-        applyFiltersButton.addEventListener('click', applyFilters);
-        clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; applyFilters(); });
-        searchButton.addEventListener('click', applyFilters);
-        searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') applyFilters(); });
-        nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
-        prevButton.addEventListener('click', () => { if (currentIndexInList > 0) { currentIndexInList--; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
-
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    dataWorker.postMessage({ fileBuffer: event.target.result });
+                };
+                reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp.", icon: "alert-triangle", iconColor: "text-red-500" });
+                reader.readAsArrayBuffer(file);
+                e.target.value = '';
+            });
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
             showView(listView);
             renderPatientList([]);
+            setupEventListeners();
             lucide.createIcons();
         });
+    </script>
+    
+    <!-- SCRIPT CHO WEB WORKER (XỬ LÝ NGẦM) -->
+    <script id="workerScript" type="text/js-worker">
+        // Import thư viện XLSX vào worker
+        self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+
+        // --- CÁC HÀM XỬ LÝ DỮ LIỆU (Chạy trong background) ---
+        function findHeaderRow(rows) {
+            const keywords = ['họ và tên', 'giới tính', 'địa chỉ', 'chẩn đoán', 'sinh', 'triệu chứng'];
+            let bestMatchIndex = -1, maxScore = 0;
+            rows.slice(0, 10).forEach((row, index) => {
+                const lowerRow = row.join(';').toLowerCase();
+                let score = 0;
+                keywords.forEach(kw => { if (lowerRow.includes(kw)) score++; });
+                if (score > maxScore) { maxScore = score; bestMatchIndex = index; }
+            });
+            return maxScore >= 3 ? bestMatchIndex : -1;
+        }
+        
+        function parseDate(dateInput) {
+            if (!dateInput) return null;
+            if (typeof dateInput === 'string') {
+                const parts = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (parts) { const date = new Date(parts[3], parts[2] - 1, parts[1]); if (!isNaN(date)) return date; }
+            }
+            const directDate = new Date(dateInput);
+            if (!isNaN(directDate) && directDate.getFullYear() > 1900) return directDate;
+            return null;
+        }
+
+        function processGeneralDataWithAI(rows) {
+            const headerRowIndex = findHeaderRow(rows);
+            if (headerRowIndex === -1) return [];
+            
+            const headers = rows[headerRowIndex].map(h => h ? h.toString().toLowerCase().trim() : '');
+            const dataRows = rows.slice(headerRowIndex + 1);
+
+            const standardFields = {
+                stt: ['stt'], fullName: ['họ và tên'], gender: ['giới tính'], birthDate: ['ngày tháng năm sinh', 'năm sinh'], cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'], bhyt: ['số thẻ bhyt'], address: ['địa chỉ'], occupation: ['nghề nghiệp'], ethnicity: ['dân tộc'], symptoms: ['triệu chứng'], diagnosis: ['chẩn đoán'], treatment: ['phương pháp điều trị'], doctor: ['y, bác sĩ khám bệnh'], notes: ['ghi chú']
+            };
+            const mapping = {};
+            for (const key in standardFields) {
+                const aliases = standardFields[key];
+                const foundIndex = headers.findIndex(h => aliases.some(alias => h.includes(alias)));
+                if (foundIndex !== -1) mapping[key] = foundIndex;
+            }
+
+            let allVisits = [], currentDate = null;
+            dataRows.forEach(row => {
+                if (!row || row.every(cell => !cell)) return;
+                const firstCell = row[0] ? row[0].toString().trim() : '';
+                if (firstCell.toLowerCase().startsWith('ngày')) {
+                    const dateMatch = firstCell.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
+                    if (dateMatch) currentDate = parseDate(dateMatch[0]);
+                    return;
+                }
+                const sttValue = row[mapping.stt];
+                if (sttValue && !isNaN(parseInt(sttValue))) {
+                    const visit = { examDate: currentDate };
+                    for(const key in mapping) { visit[key] = row[mapping[key]] || ''; }
+                    allVisits.push(visit);
+                }
+            });
+            
+            const patientGroups = {};
+            allVisits.forEach(visit => {
+                const patientKey = `${(visit.fullName || 'N/A').trim()}_${(visit.birthDate || 'N/A').trim()}`;
+                if (!patientGroups[patientKey]) {
+                    patientGroups[patientKey] = { patientId: patientKey, fullName: visit.fullName, birthDate: visit.birthDate, visits: [] };
+                }
+                patientGroups[patientKey].visits.push(visit);
+            });
+
+            for (const key in patientGroups) {
+                patientGroups[key].visits.sort((a, b) => (b.examDate || 0) - (a.examDate || 0));
+            }
+            return Object.values(patientGroups);
+        }
+
+        function analyzeDataForDashboard(allPatients) {
+            const stats = { totalPatients: allPatients.length, totalVisits: 0, gender: { 'Nam': 0, 'Nữ': 0, 'Khác': 0 }, ageGroups: { '<18': 0, '18-40': 0, '41-60': 0, '>60': 0 }, diagnoses: {} };
+            const currentYear = new Date().getFullYear();
+            allPatients.forEach(p => {
+                stats.totalVisits += p.visits.length;
+                const gender = (p.visits.find(v => v.gender) || {}).gender;
+                if (gender && gender.toLowerCase() === 'nam') stats.gender.Nam++; else if (gender && gender.toLowerCase() === 'nữ') stats.gender.Nữ++; else if(gender) stats.gender.Khác++;
+                const birthDate = parseDate(p.birthDate);
+                if (birthDate) {
+                    const age = currentYear - birthDate.getFullYear();
+                    if (age < 18) stats.ageGroups['<18']++; else if (age <= 40) stats.ageGroups['18-40']++; else if (age <= 60) stats.ageGroups['41-60']++; else stats.ageGroups['>60']++;
+                }
+                p.visits.forEach(v => {
+                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
+                });
+            });
+            stats.topDiagnoses = Object.entries(stats.diagnoses).sort(([,a],[,b]) => b-a).slice(0, 5);
+            stats.newPatients = allPatients.filter(p => p.visits.length === 1).length;
+            return stats;
+        }
+
+        function generateFilterOptions(allPatients) {
+             const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set() };
+            allPatients.forEach(p => {
+                const birthDate = parseDate(p.birthDate);
+                if (birthDate) unique.years.add(birthDate.getFullYear());
+                p.visits.forEach(v => {
+                    if(v.gender) unique.genders.add(v.gender);
+                    if(v.doctor) unique.doctors.add(v.doctor);
+                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
+                });
+            });
+            return { genders: [...unique.genders], years: [...unique.years], doctors: [...unique.doctors], diagnoses: [...unique.diagnoses] };
+        }
+        
+        // Lắng nghe tin nhắn từ script chính
+        self.onmessage = (event) => {
+            try {
+                const { fileBuffer } = event.data;
+                const workbook = self.XLSX.read(fileBuffer, { type: 'array' });
+                
+                let sheetName = workbook.SheetNames[0];
+                const targetSheetName = "sổ khám bệnh";
+                const foundSheet = workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName);
+                if (foundSheet) {
+                    sheetName = foundSheet;
+                }
+                
+                const worksheet = workbook.Sheets[sheetName];
+                const rows = self.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                const allPatients = processGeneralDataWithAI(rows);
+                const stats = analyzeDataForDashboard(allPatients);
+                const filterOptions = generateFilterOptions(allPatients);
+
+                // Gửi kết quả về
+                self.postMessage({
+                    type: 'done',
+                    payload: { allPatients, stats, filterOptions }
+                });
+            } catch (error) {
+                // Gửi lỗi về
+                self.postMessage({ type: 'error', error: error.message });
+            }
+        };
     </script>
 </body>
 </html>
