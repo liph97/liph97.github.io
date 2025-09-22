@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -25,18 +26,25 @@
         .tag { display: inline-flex; align-items: center; background-color: #e0f2fe; color: #0c4a6e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; }
         .tag-remove { margin-left: 0.5rem; cursor: pointer; color: #38bdf8; font-weight: bold; }
         .history-sub-tab-active { background-color: #0ea5e9; color: white; }
+        .sticky-col { position: sticky; left: 0; z-index: 10; }
+        #meds-stats-container thead .sticky-col { background-color: #f9fafb; } /* Slightly different from bg-slate-50 to ensure visibility */
+        #meds-stats-container tbody .sticky-col { background-color: white; }
     </style>
 </head>
 <body class="text-slate-800">
 
     <div id="app" class="max-w-screen-2xl mx-auto p-4 md:p-6 lg:p-8">
-        <header class="mb-8 pb-4 border-b border-slate-200 flex items-center gap-4">
-             <div class="flex-shrink-0 bg-sky-500 text-white rounded-full h-16 w-16 flex items-center justify-center">
-                <i data-lucide="heart-pulse" class="w-8 h-8"></i>
+        <header class="mb-8 pb-4 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                 <img src="https://scontent.fsgn5-8.fna.fbcdn.net/v/t39.30808-6/524684279_737555955794957_5847460689529437942_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=mJhBo32B7wwQ7kNvwGuj5AV&_nc_oc=Adm_jMHJOkhpKODu0H64YJ6a8EeGzGJPClkJceFcmJTQALZVrrxK50U6nkga1-frXUI&_nc_zt=23&_nc_ht=scontent.fsgn5-8.fna&_nc_gid=GFR1Zmc11nYUEWSQ3IYE9w&oh=00_AfY37HL1n364fcLsWxhLJOtbtjcGva1bmHRBAa5Be9F12w&oe=68D6CA94" alt="Logo TYT" class="w-16 h-16 rounded-full shadow-md object-cover">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">Trình quản lý Bệnh không lây nhiễm</h1>
+                    <p class="text-slate-500 mt-1">Phân tích và theo dõi bệnh nhân Tăng huyết áp & Đái tháo đường</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-3xl font-bold text-slate-900">Trình quản lý Bệnh không lây nhiễm</h1>
-                <p class="text-slate-500 mt-1">Phân tích và theo dõi bệnh nhân Tăng huyết áp & Đái tháo đường tại Trạm Y tế</p>
+             <div class="text-right flex-shrink-0">
+                <p class="font-semibold text-slate-700">BS.Phạm Hải Linh</p>
+                <p class="text-sm text-slate-500">TYT xã Xuân Bắc</p>
             </div>
         </header>
 
@@ -224,6 +232,9 @@
                 <div class="p-4 bg-slate-200 border-t border-slate-300 text-right rounded-b-lg flex-shrink-0"><button id="close-modal-button-footer" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm">Đóng</button></div>
             </div>
         </div>
+        <footer class="fixed bottom-4 right-8 z-50">
+            <p style="font-family: 'Dancing Script', cursive;" class="text-2xl font-bold text-slate-600 select-none">Dr.Liph</p>
+        </footer>
     </div>
 
     <script>
@@ -260,7 +271,7 @@
         };
 
         const DEFAULT_THA_MEDS = ['amlodipin', 'nifedipin', 'losartan', 'telmisartan', 'irbesartan', 'valsartan', 'candesartan', 'perindopril', 'enalapril', 'lisinopril', 'ramipril', 'metoprolol', 'bisoprolol', 'carvedilol', 'atenolol', 'hydrochlorothiazide', 'indapamide', 'furosemide', 'spironolactone', 'coveram', 'coversyl', 'amlodac', 'amcardia', 'cozaar', 'diovan', 'micardis', 'aprovel', 'atacand', 'coversyl', 'renitec', 'zestril', 'concor', 'betaloc', 'dilatrend', 'tenormin', 'lasix'];
-        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu', 'golddicron', 'golddicron'];
+        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay'];
         const CHUYEN_VIEN_KEYWORDS = ['chuyển viện', 'chuyển đến bệnh viện'];
 
         const COLUMN_MAPPINGS = {
@@ -494,13 +505,13 @@
                  medsContainer.innerHTML = `<p class="text-center text-slate-500 py-4">Không có dữ liệu thuốc để hiển thị cho lựa chọn này.</p>`;
             } else {
                  let medsTableHtml = `<table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 sticky top-0"><tr>
-                        <th class="px-4 py-2 text-left font-semibold">Tên thuốc</th>
+                    <thead class="bg-slate-50 sticky top-0 z-20"><tr>
+                        <th class="px-4 py-2 text-left font-semibold sticky-col">Tên thuốc</th>
                         <th class="px-4 py-2 text-center font-semibold">Tổng cộng</th>`;
                  sortedMonths.forEach(m => medsTableHtml += `<th class="px-4 py-2 text-center font-semibold">${m}</th>`);
                  medsTableHtml += `</tr></thead><tbody class="divide-y divide-slate-100">`;
                  sortedMeds.forEach(([med, data]) => {
-                    medsTableHtml += `<tr><td class="px-4 py-2 font-medium">${med}</td><td class="px-4 py-2 text-center font-bold">${data.total}</td>`;
+                    medsTableHtml += `<tr><td class="px-4 py-2 font-medium sticky-col">${med}</td><td class="px-4 py-2 text-center font-bold">${data.total}</td>`;
                     sortedMonths.forEach(m => {
                         medsTableHtml += `<td class="px-4 py-2 text-center">${data.months[m] || 0}</td>`;
                     });
@@ -663,7 +674,7 @@
                     <tr>
                         <th class="sticky-name px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-20">Họ và Tên</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>`;
-            months.forEach(m => tableHTML += `<th class="month-header px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">${m.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })}</th>`);
+            months.forEach((m, index) => tableHTML += `<th data-col-index="${index + 2}" class="month-header px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200">${m.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })}</th>`);
             tableHTML += `</tr><tr class="bg-slate-100"><th class="sticky left-0 bg-slate-100 z-20"></th><th></th>`;
             months.forEach(m => tableHTML += `<th id="total-${m.getTime()}" class="font-bold text-sky-600">0</th>`);
             tableHTML += `</tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
@@ -704,8 +715,8 @@
                     } else if (mode === 'QL') {
                         const isManaged = recordIndices.some(r_idx => index >= r_idx && index <= r_idx + 2);
                         if(isManaged){
-                            cellContent = `<span class="flex items-center justify-center w-full h-full mx-auto ${hasRecord ? 'bg-sky-100' : 'bg-slate-100'}"></span>`;
-                             monthlyTotals[ts]++;
+                            cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">O</span>`;
+                            monthlyTotals[ts]++;
                         }
                     }
                     tableHTML += `<td class="month-cell align-middle">${cellContent}</td>`;
@@ -720,6 +731,23 @@
                 const totalEl = document.getElementById(`total-${ts}`);
                 if (totalEl) totalEl.textContent = monthlyTotals[ts];
             }
+             // Add sorting event listeners to headers
+            container.querySelectorAll('th.month-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const colIndex = parseInt(header.dataset.colIndex);
+                    const tbody = container.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                    rows.sort((trA, trB) => {
+                        const cellA = trA.children[colIndex];
+                        const cellB = trB.children[colIndex];
+                        const aHasMark = cellA && cellA.innerHTML.trim() !== '';
+                        const bHasMark = cellB && cellB.innerHTML.trim() !== '';
+                        return bHasMark - aHasMark;
+                    });
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
         }
         
         function renderReferenceView() {
