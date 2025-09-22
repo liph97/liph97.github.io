@@ -854,7 +854,7 @@
             const storedThaMeds = localStorage.getItem('thaMeds');
             const storedDtdMeds = localStorage.getItem('dtdMeds');
             appState.thaMeds = storedThaMeds ? JSON.parse(storedThaMeds) : [...DEFAULT_THA_MEDS];
-            appState.dtdMeds = storedDtdMeds ? JSON.parse(storedDtdMeds) : [...DEFAULT_DTD_MEDS];
+            appState.dtdMeds = storedDtdMeds ? JSON.parse(storedDtdMeds) : [...new Set(DEFAULT_DTD_MEDS)];
         }
 
         function saveReferenceMeds() {
@@ -1070,56 +1070,79 @@
             lucide.createIcons();
         }
         
+        function getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, diseaseKeyword, statusFilter) {
+            // Metric: Medicated (Có ghi nhận) - a patient who has at least one relevant visit in the period
+            const medicatedPatientIds = new Set();
+            patientsForStatus.forEach(p => {
+                const hasRecordInPeriod = p.encounters.some(e => 
+                    e.ngayKhamDate >= periodStart && e.ngayKhamDate <= periodEnd &&
+                    e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
+                    (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
+                );
+                if (hasRecordInPeriod) {
+                    medicatedPatientIds.add(p.id);
+                }
+            });
+
+            // Metric: Newly Detected (Mới ghi nhận) - a patient whose first-ever relevant visit falls in the period
+            let newlyDetected = 0;
+            patientsForStatus.forEach(p => {
+                const firstRelevantEncounter = [...p.encounters]
+                    .reverse() // encounters are sorted desc, so reverse to get ascending
+                    .find(e => 
+                        e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
+                        (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
+                    );
+                
+                if (firstRelevantEncounter && firstRelevantEncounter.ngayKhamDate >= periodStart && firstRelevantEncounter.ngayKhamDate <= periodEnd) {
+                    newlyDetected++;
+                }
+            });
+
+            // Metric: Under Management (Đang quản lý) - a patient who had a relevant visit in the period or the 2 months prior
+            const managementPeriodStart = new Date(periodStart);
+            managementPeriodStart.setMonth(managementPeriodStart.getMonth() - 2);
+
+            const underManagementPatientIds = new Set();
+            patientsForStatus.forEach(p => {
+                const isManaged = p.encounters.some(e => 
+                    e.ngayKhamDate >= managementPeriodStart && e.ngayKhamDate <= periodEnd &&
+                    e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
+                    (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
+                );
+                if (isManaged) {
+                    underManagementPatientIds.add(p.id);
+                }
+            });
+
+            const medicated = medicatedPatientIds.size;
+            return {
+                newlyDetected: newlyDetected,
+                underManagement: underManagementPatientIds.size,
+                medicated: medicated,
+                targetAchieved: Math.round(medicated * 0.20)
+            };
+        }
+
+
         function calculateReportMetrics(diseaseType, startDate, endDate, population, prevalenceRate) {
             const keyword = diseaseType === 'tha' ? 'tăng huyết áp' : 'đái tháo đường';
 
             const getMetricsForPeriod = (periodStart, periodEnd, statusFilter) => {
-                const allEncountersForDisease = appState.encounters.filter(e => e.tinhTrang.toLowerCase().includes(keyword));
-                
-                const encountersForStatus = allEncountersForDisease.filter(e => statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter));
-
-                const patientIdsForStatus = new Set(encountersForStatus.map(e => `${e.hoTen.trim()}_${e.namSinhNum}`));
-                const patientsForStatus = Array.from(patientIdsForStatus).map(id => appState.patients[id]).filter(Boolean);
-
-                // Metric 1: Newly Detected (Mới ghi nhận)
-                let newlyDetected = 0;
-                patientsForStatus.forEach(p => {
-                    const firstEncounter = [...p.encounters]
-                        .reverse() // encounters are sorted desc, so reverse to get ascending
-                        .find(e => e.tinhTrang.toLowerCase().includes(keyword) && (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter)));
-                    
-                    if (firstEncounter && firstEncounter.ngayKhamDate >= periodStart && firstEncounter.ngayKhamDate <= periodEnd) {
-                        newlyDetected++;
+                const allRelevantPatientIds = new Set();
+                appState.encounters.forEach(e => {
+                    const statusLower = e.tinhTrang.toLowerCase();
+                    if (statusLower.includes(keyword) && (statusFilter === 'all' || statusLower.includes(statusFilter))) {
+                        allRelevantPatientIds.add(`${e.hoTen.trim()}_${e.namSinhNum}`);
                     }
                 });
+                const patientsForStatus = Array.from(allRelevantPatientIds).map(id => appState.patients[id]).filter(Boolean);
 
-                // Metric 2: Medicated (Có ghi nhận)
-                const medicatedPatientIds = new Set();
-                encountersForStatus.forEach(e => {
-                    if (e.ngayKhamDate >= periodStart && e.ngayKhamDate <= periodEnd) {
-                        medicatedPatientIds.add(`${e.hoTen.trim()}_${e.namSinhNum}`);
-                    }
-                });
-                const medicated = medicatedPatientIds.size;
-
-                // Metric 3: Under Management (Đang quản lý)
-                const managementPeriodStart = new Date(periodStart);
-                managementPeriodStart.setMonth(managementPeriodStart.getMonth() - 2);
-
-                const underManagementPatientIds = new Set();
-                encountersForStatus.forEach(e => {
-                    if (e.ngayKhamDate >= managementPeriodStart && e.ngayKhamDate <= periodEnd) {
-                        underManagementPatientIds.add(`${e.hoTen.trim()}_${e.namSinhNum}`);
-                    }
-                });
-                const underManagement = underManagementPatientIds.size;
+                const metrics = getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, keyword, statusFilter);
                 
                 return {
                     detected: Math.round(population * prevalenceRate),
-                    newlyDetected: newlyDetected,
-                    underManagement: underManagement,
-                    medicated: medicated,
-                    targetAchieved: Math.round(medicated * 0.20)
+                    ...metrics
                 };
             };
 
@@ -1149,9 +1172,9 @@
                     if (last > 0) {
                         change = Math.round(((current - last) / last) * 100);
                     } else if (current > 0) {
-                        change = null; // Can't calculate percentage from 0, show as new
+                        change = null; 
                     }
-                    result[key] = { value: current, change: change };
+                    result[key] = { value: current, lastYearValue: last, change: change };
                 }
                 return result;
             };
@@ -1165,15 +1188,20 @@
 
         function createReportSectionHTML(title, data) {
             const createMetricComparisonHTML = (metric) => {
+                let comparisonText = `<p class="text-xs text-slate-500 mt-1">Cùng kỳ: ${metric.lastYearValue}</p>`;
+                
                 if (metric.change === null || isNaN(metric.change)) {
-                    return '';
+                    return comparisonText; 
                 }
                 const color = metric.change >= 0 ? 'text-green-500' : 'text-red-500';
                 const icon = metric.change >= 0 ? 'arrow-up' : 'arrow-down';
                 const sign = metric.change > 0 ? '+' : '';
-                return `<span class="text-xs font-semibold ${color} ml-2 inline-flex items-center">
-                            <i data-lucide="${icon}" class="w-3 h-3"></i> ${sign}${metric.change}%
-                        </span>`;
+                
+                comparisonText += `
+                    <p class="text-xs font-semibold ${color} inline-flex items-center">
+                        <i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${sign}${metric.change}%
+                    </p>`;
+                return comparisonText;
             };
 
             const createSubSection = (subTitle, metrics, note) => `
@@ -1183,24 +1211,28 @@
                         <div class="bg-white p-3 rounded-md border">
                             <p class="text-slate-500">Tổng số phát hiện</p>
                             <p class="text-xl font-bold text-sky-600">${metrics.detected.value}</p>
-                            <p class="text-xs text-slate-400">${note}</p>
+                            <p class="text-xs text-slate-400 mt-1">${note}</p>
                         </div>
                         <div class="bg-white p-3 rounded-md border">
                             <p class="text-slate-500">Số mới phát hiện</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value} ${createMetricComparisonHTML(metrics.newlyDetected)}</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value}</p>
+                            ${createMetricComparisonHTML(metrics.newlyDetected)}
                         </div>
                         <div class="bg-white p-3 rounded-md border">
                             <p class="text-slate-500">Số đang quản lí</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.underManagement.value} ${createMetricComparisonHTML(metrics.underManagement)}</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.underManagement.value}</p>
+                             ${createMetricComparisonHTML(metrics.underManagement)}
                         </div>
                         <div class="bg-white p-3 rounded-md border">
                             <p class="text-slate-500">Số khám cấp thuốc</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.medicated.value} ${createMetricComparisonHTML(metrics.medicated)}</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.medicated.value}</p>
+                             ${createMetricComparisonHTML(metrics.medicated)}
                         </div>
                         <div class="bg-white p-3 rounded-md border">
                             <p class="text-slate-500">Điều trị đạt mục tiêu</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value} ${createMetricComparisonHTML(metrics.targetAchieved)}</p>
-                            <p class="text-xs text-slate-400">(Ước tính 20% số cấp thuốc)</p>
+                            <p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value}</p>
+                             ${createMetricComparisonHTML(metrics.targetAchieved)}
+                            <p class="text-xs text-slate-400 mt-1">(Ước tính 20% số cấp thuốc)</p>
                         </div>
                     </div>
                 </div>
@@ -1217,6 +1249,7 @@
                 </div>
             `;
         }
+
 
         // --- KHỞI ĐỘNG ỨNG DỤNG ---
         document.addEventListener('DOMContentLoaded', () => {
