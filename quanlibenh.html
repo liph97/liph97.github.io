@@ -83,12 +83,13 @@
             </div>
             
             <div id="filterSection" class="bg-white p-4 rounded-lg shadow-md mb-6">
-                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div><label for="filterGender" class="block text-sm font-medium text-gray-700 mb-1">Giới tính</label><select id="filterGender" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Năm sinh</label><select id="filterYear" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterDoctor" class="block text-sm font-medium text-gray-700 mb-1">Bác sĩ</label><select id="filterDoctor" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterDiagnosis" class="block text-sm font-medium text-gray-700 mb-1">Chẩn đoán</label><select id="filterDiagnosis" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                     <div><label for="filterAddress" class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ (từ khóa)</label><input type="text" id="filterAddress" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"></div>
+                    <div><label for="filterTreatment" class="block text-sm font-medium text-gray-700 mb-1">Phương pháp điều trị</label><select id="filterTreatment" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
                 </div>
                 <div class="mt-4 flex justify-end gap-3">
                     <button id="clearFiltersButton" class="bg-gray-200 text-gray-700 font-semibold px-5 py-2 rounded-md hover:bg-gray-300 transition">Xóa bộ lọc</button>
@@ -176,13 +177,13 @@
             listView, detailView, dashboardView, searchInput, searchButton, fileInput, patientTableBody,
             detailContainer, backToListButton, prevButton, nextButton, pageIndicator, notificationModal,
             toggleFilterButton, filterSection, applyFiltersButton, clearFiltersButton,
-            filterGender, filterYear, filterDoctor, filterDiagnosis, filterAddress, 
+            filterGender, filterYear, filterDoctor, filterDiagnosis, filterAddress, filterTreatment,
             goToDashboardButton, goToListViewButton
         ] = [
             'listView', 'detailView', 'dashboardView', 'searchInput', 'searchButton', 'fileInput', '#patientTable tbody',
             'patient-info-container', 'backToListButton', 'prevButton', 'nextButton', 'pageIndicator', 'notificationModal',
             'toggleFilterButton', 'filterSection', 'applyFiltersButton', 'clearFiltersButton',
-            'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress',
+            'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress', 'filterTreatment',
             'goToDashboardButton', 'goToListViewButton'
         ].map(id => id.startsWith('#') ? document.querySelector(id) : document.getElementById(id));
         
@@ -229,6 +230,11 @@
             populate(filterYear, unique.years, (a,b) => b-a);
             populate(filterDoctor, unique.doctors); 
             populate(filterDiagnosis, unique.diagnoses);
+            populate(filterTreatment, unique.treatments, (a, b) => {
+                if (a === 'Chuyển viện') return -1;
+                if (b === 'Chuyển viện') return 1;
+                return a.localeCompare(b);
+            });
         }
 
         function applyFilters() {
@@ -237,7 +243,8 @@
                 year: filterYear.value,
                 doctor: filterDoctor.value,
                 diagnosis: filterDiagnosis.value,
-                address: filterAddress.value.toLowerCase().trim()
+                address: filterAddress.value.toLowerCase().trim(),
+                treatment: filterTreatment.value
             };
             currentPatientList = allPatients.filter(patient => {
                 const birthDate = parseDate(patient.birthDate);
@@ -249,6 +256,15 @@
                     if (filters.doctor && visit.doctor !== filters.doctor) return false;
                     if (filters.diagnosis && (!visit.diagnosis || !visit.diagnosis.includes(filters.diagnosis))) return false;
                     if (filters.address && (!visit.address || !visit.address.toLowerCase().includes(filters.address))) return false;
+                    if (filters.treatment) {
+                        const treatmentText = (visit.treatment || '').toString().toLowerCase();
+                        if (filters.treatment === 'Chuyển viện' && !treatmentText.includes('chuyển viện')) {
+                            return false;
+                        }
+                        if (filters.treatment === 'Điều trị tại trạm' && treatmentText.includes('chuyển viện')) {
+                            return false;
+                        }
+                    }
                     return true;
                 });
             });
@@ -320,7 +336,7 @@
             backToListButton.addEventListener('click', () => showView(listView));
             toggleFilterButton.addEventListener('click', () => filterSection.classList.toggle('open'));
             applyFiltersButton.addEventListener('click', applyFilters);
-            clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; applyFilters(); });
+            clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; filterTreatment.value = ''; applyFilters(); });
             searchButton.addEventListener('click', applyFilters);
             searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') applyFilters(); });
             nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
@@ -493,7 +509,7 @@
         }
 
         function generateFilterOptions(allPatients) {
-             const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set() };
+             const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set(), treatments: new Set() };
             allPatients.forEach(p => {
                 const birthDate = parseDate(p.birthDate);
                 if (birthDate) unique.years.add(birthDate.getFullYear());
@@ -501,9 +517,16 @@
                     if(v.gender) unique.genders.add(v.gender);
                     if(v.doctor) unique.doctors.add(v.doctor);
                     if(v.diagnosis) v.diagnosis.toString().replace(/^"/, '').replace(/"$/, '').split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
+                    if(v.treatment) {
+                        if (v.treatment.toString().toLowerCase().includes('chuyển viện')) {
+                            unique.treatments.add('Chuyển viện');
+                        } else {
+                            unique.treatments.add('Điều trị tại trạm');
+                        }
+                    }
                 });
             });
-            return { genders: [...unique.genders], years: [...unique.years], doctors: [...unique.doctors], diagnoses: [...unique.diagnoses] };
+            return { genders: [...unique.genders], years: [...unique.years], doctors: [...unique.doctors], diagnoses: [...unique.diagnoses], treatments: [...unique.treatments] };
         }
         
         self.onmessage = (event) => {
