@@ -436,6 +436,9 @@
             const sangMatch = treatment.match(/Sáng:\s*([^,]+)/i);
             parsed.sang = sangMatch ? `Sáng: ${sangMatch[1].trim()}` : '';
 
+            const truaMatch = treatment.match(/Trưa:\s*([^,]+)/i);
+            parsed.trua = truaMatch ? `Trưa: ${truaMatch[1].trim()}` : '';
+            
             const chieuMatch = treatment.match(/Chiều:\s*([^,]+)/i);
             parsed.chieu = chieuMatch ? `Chiều: ${chieuMatch[1].trim()}` : '';
 
@@ -469,16 +472,22 @@
 
             return treatments.map(item => {
                 const p = parseTreatmentString(item.trim());
+                 const dosesHtml = [p.sang, p.trua, p.chieu, p.toi]
+                    .filter(Boolean)
+                    .map(dose => `<span>${dose.replace(':', '')}</span>`)
+                    .join('');
+
                 return `
                     <div class="py-3 border-b border-gray-100 last:border-b-0">
                         <div class="flex justify-between items-baseline">
                             <p class="font-semibold text-gray-800 text-base">${p.number || '•'}. ${p.name}</p>
                             <p class="text-gray-700 font-medium whitespace-nowrap pl-4">${p.totalQuantity}</p>
                         </div>
-                        <div class="grid grid-cols-3 gap-x-4 items-baseline text-sm text-gray-600 mt-1 pl-4">
-                            <span>${p.sang}</span>
-                            <span>${p.chieu}</span>
-                            <span class="font-medium text-right">${p.duration ? `x ${p.duration} ngày` : ''}</span>
+                        <div class="flex justify-between items-baseline mt-1 pl-4">
+                            <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600">
+                                ${dosesHtml}
+                            </div>
+                            <span class="font-medium text-sm text-gray-600 text-right whitespace-nowrap pl-4">${p.duration ? `x ${p.duration} ngày` : ''}</span>
                         </div>
                     </div>
                 `;
