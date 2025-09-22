@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Chung các bệnh tại Trạm Y tế</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Thư viện đọc file Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Thư viện vẽ biểu đồ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f0f4f8;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+            padding: 24px;
+        }
+        .highlight-field { border-left: 4px solid; padding-left: 16px; }
+        .border-blue-500 { border-color: #3b82f6; }
+        .border-green-500 { border-color: #22c55e; }
+        .border-orange-500 { border-color: #f97316; }
+        .border-purple-500 { border-color: #8b5cf6; }
+        #patientTable tbody tr { cursor: pointer; transition: background-color 0.2s ease; }
+        #patientTable tbody tr:hover { background-color: #eff6ff; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #filterSection {
+            transition: all 0.3s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        #filterSection.open {
+            max-height: 500px;
+            overflow: visible;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Canvas Quản lý Chung</h1>
+            <p class="text-gray-500">Công cụ quản lý tổng quát các bệnh tại Trạm Y tế</p>
+        </header>
+
+        <!-- TRANG DANH SÁCH BỆNH NHÂN -->
+        <div id="listView">
+            <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center">
+                <div class="relative flex-grow w-full sm:w-auto">
+                    <input type="text" id="searchInput" placeholder="Tìm theo Tên hoặc CCCD..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="text-gray-400"></i></div>
+                </div>
+                <button id="searchButton" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 active:bg-blue-800 transition shadow-md hover:shadow-lg w-full sm:w-auto">Tìm kiếm</button>
+                <button id="toggleFilterButton" class="bg-white text-gray-700 font-semibold px-6 py-3 rounded-full hover:bg-gray-100 transition shadow-md flex items-center gap-2 w-full sm:w-auto"><i data-lucide="filter"></i> Bộ lọc</button>
+                <div>
+                    <input type="file" id="fileInput" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                    <label for="fileInput" class="cursor-pointer bg-green-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-700 active:bg-green-800 transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto">
+                        <i data-lucide="upload-cloud"></i> Tải lên Sổ khám
+                    </label>
+                </div>
+                 <button id="goToDashboardButton" class="bg-indigo-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-indigo-700 transition shadow-md flex items-center gap-2 w-full sm:w-auto hidden"><i data-lucide="layout-dashboard"></i> Xem Bảng điều khiển</button>
+            </div>
+            
+            <div id="filterSection" class="bg-white p-4 rounded-lg shadow-md mb-6">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div><label for="filterGender" class="block text-sm font-medium text-gray-700 mb-1">Giới tính</label><select id="filterGender" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
+                    <div><label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Năm sinh</label><select id="filterYear" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
+                    <div><label for="filterDoctor" class="block text-sm font-medium text-gray-700 mb-1">Bác sĩ</label><select id="filterDoctor" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
+                    <div><label for="filterDiagnosis" class="block text-sm font-medium text-gray-700 mb-1">Chẩn đoán</label><select id="filterDiagnosis" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"><option value="">Tất cả</option></select></div>
+                    <div><label for="filterAddress" class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ (từ khóa)</label><input type="text" id="filterAddress" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"></div>
+                </div>
+                <div class="mt-4 flex justify-end gap-3">
+                    <button id="clearFiltersButton" class="bg-gray-200 text-gray-700 font-semibold px-5 py-2 rounded-md hover:bg-gray-300 transition">Xóa bộ lọc</button>
+                    <button id="applyFiltersButton" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-md hover:bg-blue-700 transition">Áp dụng</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                <table id="patientTable" class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Họ và Tên</th>
+                            <th scope="col" class="px-6 py-3">Ngày sinh</th>
+                            <th scope="col" class="px-6 py-3">Giới tính</th>
+                            <th scope="col" class="px-6 py-3">Địa chỉ</th>
+                            <th scope="col" class="px-6 py-3">Lần khám gần nhất</th>
+                            <th scope="col" class="px-6 py-3">Số lần khám</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TRANG DASHBOARD -->
+        <div id="dashboardView" class="hidden">
+            <div class="mb-6 flex justify-end">
+                <button id="goToListViewButton" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition shadow-md flex items-center gap-2 w-full sm:w-auto"><i data-lucide="list"></i> Xem danh sách chi tiết</button>
+            </div>
+            <div id="dashboardSection" class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Bảng điều khiển tổng quan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng số bệnh nhân</p><p id="totalPatients" class="text-4xl font-bold text-blue-600">0</p></div>
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Tổng lượt khám</p><p id="totalVisits" class="text-4xl font-bold text-blue-600">0</p></div>
+                    <div class="info-card text-center"><p class="text-sm font-medium text-gray-500">Bệnh nhân mới</p><p id="newPatients" class="text-4xl font-bold text-blue-600">0</p></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="info-card lg:col-span-1"><h3 class="font-bold text-center mb-2">Phân bố giới tính</h3><div class="relative h-64 md:h-72"><canvas id="genderChart"></canvas></div></div>
+                    <div class="info-card lg:col-span-2"><h3 class="font-bold text-center mb-2">Phân bố nhóm tuổi</h3><div class="relative h-72"><canvas id="ageChart"></canvas></div></div>
+                    <div class="info-card lg:col-span-3"><h3 class="font-bold text-center mb-2">Top 5 Chẩn đoán phổ biến</h3><div class="relative h-96"><canvas id="diagnosisChart"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TRANG CHI TIẾT BỆNH NHÂN -->
+        <div id="detailView" class="hidden">
+            <div class="mb-6">
+                 <button id="backToListButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow"><i data-lucide="arrow-left" class="w-5 h-5"></i> Quay lại danh sách</button>
+            </div>
+            <main id="patient-info-container" class="space-y-6"></main>
+            <footer class="mt-8 flex justify-between items-center">
+                <button id="prevButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow"><i data-lucide="arrow-left" class="w-5 h-5"></i> Trước</button>
+                <div id="pageIndicator" class="text-gray-600 font-medium"></div>
+                <button id="nextButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow">Sau <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
+            </footer>
+        </div>
+        
+        <!-- MODAL THÔNG BÁO -->
+        <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+             <div class="bg-white rounded-lg p-8 text-center shadow-xl max-w-sm w-full" id="modalContent">
+                <div class="loader mx-auto mb-4" id="modalLoader"></div>
+                <i id="modalIcon" class="mx-auto w-16 h-16 mb-4 hidden"></i>
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-2">Đang xử lý...</h3>
+                <p id="modalText" class="text-gray-600">Trí tuệ nhân tạo đang phân tích dữ liệu của bạn. Vui lòng đợi trong giây lát.</p>
+                <button id="modalButton" onclick="document.getElementById('notificationModal').classList.add('hidden')" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition hidden">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPatients = [];
+        let currentPatientList = [];
+        let currentIndexInList = 0;
+        let currentVisitIndex = 0;
+        let chartInstances = {};
+
+        const [
+            listView, detailView, dashboardView, searchInput, searchButton, fileInput, patientTableBody,
+            detailContainer, backToListButton, prevButton, nextButton, pageIndicator, notificationModal,
+            toggleFilterButton, filterSection, applyFiltersButton, clearFiltersButton,
+            filterGender, filterYear, filterDoctor, filterDiagnosis, filterAddress, 
+            goToDashboardButton, goToListViewButton
+        ] = [
+            'listView', 'detailView', 'dashboardView', 'searchInput', 'searchButton', 'fileInput', '#patientTable tbody',
+            'patient-info-container', 'backToListButton', 'prevButton', 'nextButton', 'pageIndicator', 'notificationModal',
+            'toggleFilterButton', 'filterSection', 'applyFiltersButton', 'clearFiltersButton',
+            'filterGender', 'filterYear', 'filterDoctor', 'filterDiagnosis', 'filterAddress',
+            'goToDashboardButton', 'goToListViewButton'
+        ].map(id => id.startsWith('#') ? document.querySelector(id) : document.getElementById(id));
+
+        // --- CORE AI & DATA PROCESSING ---
+        function findHeaderRow(rows) {
+            const keywords = ['họ và tên', 'giới tính', 'địa chỉ', 'chẩn đoán', 'sinh', 'triệu chứng'];
+            let bestMatchIndex = -1;
+            let maxScore = 0;
+
+            rows.slice(0, 10).forEach((row, index) => {
+                const lowerRow = row.join(';').toLowerCase();
+                let score = 0;
+                keywords.forEach(kw => {
+                    if (lowerRow.includes(kw)) score++;
+                });
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMatchIndex = index;
+                }
+            });
+            // If we found a row with at least 3 keywords, it's probably the header
+            return maxScore >= 3 ? bestMatchIndex : -1;
+        }
+        
+        function parseDate(dateInput) {
+            if (!dateInput) return null;
+            if (typeof dateInput === 'string') {
+                const parts = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (parts) { // dd/mm/yyyy
+                    const date = new Date(parts[3], parts[2] - 1, parts[1]);
+                    if (!isNaN(date)) return date;
+                }
+            }
+            const directDate = new Date(dateInput);
+            if (!isNaN(directDate) && directDate.getFullYear() > 1900) {
+                return directDate;
+            }
+            return null;
+        }
+
+        function formatDate(date) {
+            if (!date || isNaN(date)) return 'Không rõ';
+            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        }
+        
+        async function processGeneralDataWithAI(rows) {
+             return new Promise(resolve => {
+                setTimeout(() => {
+                    const headerRowIndex = findHeaderRow(rows);
+                    if (headerRowIndex === -1) {
+                        allPatients = [];
+                        resolve();
+                        return;
+                    }
+
+                    const headers = rows[headerRowIndex].map(h => h ? h.toString().toLowerCase().trim() : '');
+                    const dataRows = rows.slice(headerRowIndex + 1);
+
+                    const standardFields = {
+                        stt: ['stt'],
+                        fullName: ['họ và tên'],
+                        gender: ['giới tính'],
+                        birthDate: ['ngày tháng năm sinh', 'năm sinh'],
+                        cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'],
+                        bhyt: ['số thẻ bhyt'],
+                        address: ['địa chỉ'],
+                        occupation: ['nghề nghiệp'],
+                        ethnicity: ['dân tộc'],
+                        symptoms: ['triệu chứng'],
+                        diagnosis: ['chẩn đoán'],
+                        treatment: ['phương pháp điều trị'],
+                        doctor: ['y, bác sĩ khám bệnh'],
+                        notes: ['ghi chú']
+                    };
+
+                    const mapping = {};
+                    for (const key in standardFields) {
+                        const aliases = standardFields[key];
+                        const foundIndex = headers.findIndex(h => aliases.some(alias => h.includes(alias)));
+                        if(foundIndex !== -1) {
+                            mapping[key] = foundIndex;
+                        }
+                    }
+
+                    let allVisits = [];
+                    let currentDate = null;
+
+                    dataRows.forEach(row => {
+                        if (!row || row.every(cell => !cell)) return;
+
+                        const firstCell = row[0] ? row[0].toString().trim() : '';
+                        if (firstCell.toLowerCase().startsWith('ngày')) {
+                            const dateMatch = firstCell.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
+                            if (dateMatch) {
+                                currentDate = parseDate(dateMatch[0]);
+                            }
+                            return;
+                        }
+
+                        // Check if it's a patient row (STT is a number)
+                        const sttValue = row[mapping.stt];
+                        if (sttValue && !isNaN(parseInt(sttValue))) {
+                            const visit = { examDate: currentDate };
+                            for(const key in mapping) {
+                                visit[key] = row[mapping[key]] || '';
+                            }
+                            allVisits.push(visit);
+                        }
+                    });
+                    
+                    const patientGroups = {};
+                    allVisits.forEach(visit => {
+                        const patientKey = `${(visit.fullName || 'N/A').trim()}_${(visit.birthDate || 'N/A').trim()}`;
+                        if (!patientGroups[patientKey]) {
+                            patientGroups[patientKey] = {
+                                patientId: patientKey,
+                                fullName: visit.fullName,
+                                birthDate: visit.birthDate,
+                                visits: []
+                            };
+                        }
+                        patientGroups[patientKey].visits.push(visit);
+                    });
+
+                    for (const key in patientGroups) {
+                        patientGroups[key].visits.sort((a, b) => (b.examDate || 0) - (a.examDate || 0));
+                    }
+                    allPatients = Object.values(patientGroups);
+                    resolve();
+                }, 500);
+            });
+        }
+        
+        // --- DASHBOARD & ANALYSIS ---
+        function analyzeDataForDashboard() {
+            const stats = {
+                totalPatients: allPatients.length,
+                totalVisits: 0,
+                gender: { 'Nam': 0, 'Nữ': 0, 'Khác': 0 },
+                ageGroups: { '<18': 0, '18-40': 0, '41-60': 0, '>60': 0 },
+                diagnoses: {}
+            };
+            const currentYear = new Date().getFullYear();
+            allPatients.forEach(p => {
+                stats.totalVisits += p.visits.length;
+                const gender = (p.visits.find(v => v.gender) || {}).gender;
+                if (gender && gender.toLowerCase() === 'nam') stats.gender.Nam++; 
+                else if (gender && gender.toLowerCase() === 'nữ') stats.gender.Nữ++; 
+                else if(gender) stats.gender.Khác++;
+                
+                const birthDate = parseDate(p.birthDate);
+                if (birthDate) {
+                    const age = currentYear - birthDate.getFullYear();
+                    if (age < 18) stats.ageGroups['<18']++; else if (age <= 40) stats.ageGroups['18-40']++; else if (age <= 60) stats.ageGroups['41-60']++; else stats.ageGroups['>60']++;
+                }
+                p.visits.forEach(v => {
+                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { const trimmed = d.trim(); if(trimmed) { stats.diagnoses[trimmed] = (stats.diagnoses[trimmed] || 0) + 1; } });
+                });
+            });
+            const topDiagnoses = Object.entries(stats.diagnoses).sort(([,a],[,b]) => b-a).slice(0, 5);
+            stats.newPatients = allPatients.filter(p => p.visits.length === 1).length;
+            return { ...stats, topDiagnoses };
+        }
+        
+        function renderDashboard(stats) {
+            document.getElementById('totalPatients').textContent = stats.totalPatients;
+            document.getElementById('totalVisits').textContent = stats.totalVisits;
+            document.getElementById('newPatients').textContent = stats.newPatients;
+            Object.values(chartInstances).forEach(chart => chart.destroy());
+            chartInstances.gender = new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: ['Nam', 'Nữ', 'Khác'], datasets: [{ data: [stats.gender.Nam, stats.gender.Nữ, stats.gender.Khác], backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartInstances.age = new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: Object.keys(stats.ageGroups), datasets: [{ label: 'Số lượng bệnh nhân', data: Object.values(stats.ageGroups), backgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            chartInstances.diagnosis = new Chart(document.getElementById('diagnosisChart'), { type: 'bar', data: { labels: stats.topDiagnoses.map(d => d[0]), datasets: [{ label: 'Số lượt chẩn đoán', data: stats.topDiagnoses.map(d => d[1]), backgroundColor: '#f97316' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } } });
+        }
+        
+        function populateFilterOptions(patients) {
+            const unique = { genders: new Set(), years: new Set(), doctors: new Set(), diagnoses: new Set() };
+            patients.forEach(p => {
+                const birthDate = parseDate(p.birthDate);
+                if (birthDate) unique.years.add(birthDate.getFullYear());
+                p.visits.forEach(v => {
+                    if(v.gender) unique.genders.add(v.gender);
+                    if(v.doctor) unique.doctors.add(v.doctor);
+                    if(v.diagnosis) v.diagnosis.split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
+                });
+            });
+            const populate = (select, items) => { select.innerHTML = '<option value="">Tất cả</option>'; [...items].sort((a,b) => b-a).forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; }); };
+            populate(filterGender, unique.genders); populate(filterYear, unique.years); populate(filterDoctor, unique.doctors); populate(filterDiagnosis, unique.diagnoses);
+        }
+
+        function applyFilters() {
+            const filters = {
+                gender: filterGender.value,
+                year: filterYear.value,
+                doctor: filterDoctor.value,
+                diagnosis: filterDiagnosis.value,
+                address: filterAddress.value.toLowerCase().trim()
+            };
+            currentPatientList = allPatients.filter(patient => {
+                const birthDate = parseDate(patient.birthDate);
+                const yearOfBirth = birthDate ? birthDate.getFullYear().toString() : null;
+                if (filters.year && yearOfBirth !== filters.year) return false;
+                
+                return patient.visits.some(visit => {
+                    if (filters.gender && visit.gender !== filters.gender) return false;
+                    if (filters.doctor && visit.doctor !== filters.doctor) return false;
+                    if (filters.diagnosis && (!visit.diagnosis || !visit.diagnosis.includes(filters.diagnosis))) return false;
+                    if (filters.address && (!visit.address || !visit.address.toLowerCase().includes(filters.address))) return false;
+                    return true;
+                });
+            });
+            const query = searchInput.value.toLowerCase().trim();
+            if (query) {
+                currentPatientList = currentPatientList.filter(p => (p.fullName || '').toLowerCase().includes(query) || (p.visits.some(v => v.cccd && v.cccd.includes(query))));
+            }
+            renderPatientList(currentPatientList);
+        }
+
+        function renderPatientList(patients) { 
+            patientTableBody.innerHTML = '';
+            if (patients.length === 0) {
+                const message = allPatients.length > 0 ? 'Không tìm thấy bệnh nhân nào khớp với tìm kiếm hoặc bộ lọc.' : 'Vui lòng tải lên Sổ khám bệnh (CSV/Excel) để bắt đầu.';
+                const icon = allPatients.length > 0 ? 'search-x' : 'file-up';
+                patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500"><i data-lucide="${icon}" class="mx-auto w-12 h-12 mb-4 text-gray-400"></i>${message}</td></tr>`;
+                lucide.createIcons();
+                return;
+            }
+            patients.forEach(patient => {
+                const latestVisit = patient.visits[0] || {};
+                const row = document.createElement('tr');
+                row.setAttribute('data-patient-id', patient.patientId);
+                row.innerHTML = `
+                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${patient.fullName || 'N/A'}</th>
+                    <td class="px-6 py-4">${patient.birthDate || 'N/A'}</td>
+                    <td class="px-6 py-4">${(patient.visits.find(v=>v.gender) || {}).gender || 'N/A'}</td>
+                    <td class="px-6 py-4">${(patient.visits.find(v=>v.address) || {}).address || 'N/A'}</td>
+                    <td class="px-6 py-4">${formatDate(latestVisit.examDate)}</td>
+                    <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${patient.visits.length}</span></td>
+                `;
+                row.addEventListener('click', () => { currentIndexInList = currentPatientList.findIndex(p => p.patientId === patient.patientId); currentVisitIndex = 0; displayPatientDetail(patient.patientId); });
+                patientTableBody.appendChild(row);
+            });
+        }
+        function displayPatientDetail(patientId) {
+            const patient = allPatients.find(p => p.patientId === patientId);
+            if (!patient || !patient.visits.length) return;
+            showView(detailView);
+            const visit = patient.visits[currentVisitIndex];
+            const birthDate = parseDate(patient.birthDate);
+            const age = birthDate ? (new Date().getFullYear() - birthDate.getFullYear()) : 'N/A';
+            const historyHtml = patient.visits.map((v, index) => `<button data-visit-index="${index}" class="visit-link px-4 py-2 rounded-full text-sm font-semibold transition ${index === currentVisitIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${formatDate(v.examDate)}</button>`).join('');
+            
+            detailContainer.innerHTML = `<div class="info-card"><h3 class="text-xl font-bold text-gray-700 mb-4">Lịch sử khám bệnh</h3><div class="flex flex-wrap gap-2">${historyHtml}</div></div><div class="info-card"><div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-4 border-b"><div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-8 h-8"></i></div><div><h2 class="text-2xl md:text-3xl font-bold text-gray-800">${patient.fullName || 'N/A'}</h2><p class="text-gray-500 text-lg">${visit.occupation || 'Chưa rõ'}</p></div><div class="ml-auto text-right"><p class="font-semibold text-gray-500 text-sm">Ngày khám</p><p class="text-lg font-bold text-blue-600">${formatDate(visit.examDate)}</p></div></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700"><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Ngày sinh / Tuổi</label><p class="text-lg font-medium">${patient.birthDate} - ${age} tuổi</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Giới tính</label><p class="text-lg font-medium">${visit.gender || 'N/A'}</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">CCCD/Tùy thân</label><p class="text-lg font-medium">${visit.cccd || 'Không có'}</p></div><div class="highlight-field border-blue-500 col-span-1 md:col-span-2"><label class="font-semibold text-gray-500 text-sm">Địa chỉ</label><p class="text-lg font-medium">${visit.address || 'N/A'}</p></div><div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Số thẻ BHYT</label><p class="text-lg font-medium">${visit.bhyt || 'Không có'}</p></div></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="info-card"><h3 class="text-xl font-bold text-green-600 mb-4">Sinh hiệu & Triệu chứng</h3><div class="highlight-field border-green-500 mb-4"><label class="font-semibold text-gray-500 text-sm">Triệu chứng chính</label><p>${(visit.symptoms || '').split(/, Mạch:| Mạch:/i)[0]}</p></div><div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">${['Mạch:l/p', 'Nhiệt độ:°C', 'Huyết áp:mmHg', 'Nhịp thở:l/p', 'Cân nặng:kg', 'Chiều cao:cm'].map(v => { const [key, unit] = v.split(':'); return `<div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">${key}</p><p class="text-xl font-bold text-green-900">${getVital(visit.symptoms, key, unit)}</p></div>`; }).join('')}</div></div><div class="info-card"><h3 class="text-xl font-bold text-orange-600 mb-4">Chẩn đoán</h3><ul class="highlight-field border-orange-500 list-disc list-inside space-y-1 text-gray-800">${formatList(visit.diagnosis)}</ul></div></div><div class="info-card"><h3 class="text-xl font-bold text-purple-600 mb-4">Phương pháp điều trị</h3><div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatList(visit.treatment, ',')}</ul></div><div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${visit.doctor || 'N/A'}</p></div></div>`;
+            lucide.createIcons();
+            updateDetailControls();
+            document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => { currentVisitIndex = parseInt(e.target.dataset.visitIndex, 10); displayPatientDetail(patientId); }));
+        }
+
+        const showView = (viewToShow) => { [listView, detailView, dashboardView].forEach(view => view.classList.toggle('hidden', view !== viewToShow)); };
+        function updateDetailControls() { pageIndicator.textContent = `Bệnh nhân ${currentIndexInList + 1} / ${currentPatientList.length}`; prevButton.disabled = currentIndexInList <= 0; nextButton.disabled = currentIndexInList >= currentPatientList.length - 1; prevButton.classList.toggle('opacity-50', prevButton.disabled); nextButton.classList.toggle('opacity-50', nextButton.disabled); }
+        function showModal({ title, text, icon, iconColor, isLoading = false }) { notificationModal.querySelector('#modalTitle').textContent = title; notificationModal.querySelector('#modalText').textContent = text; notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none'; const modalIcon = notificationModal.querySelector('#modalIcon'); const modalButton = notificationModal.querySelector('#modalButton'); modalIcon.style.display = isLoading ? 'none' : 'block'; modalButton.style.display = isLoading ? 'none' : 'block'; if (!isLoading) { modalIcon.setAttribute('data-lucide', icon); modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`; } notificationModal.classList.remove('hidden'); notificationModal.classList.add('flex'); lucide.createIcons(); }
+        function getVital(symptoms, key, unit = '') { const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i')); return match ? `${match[1]} ${unit}`.trim() : 'N/A'; }
+        function formatList(data, separator = ';') { if (!data) return '<li>Không có dữ liệu</li>'; return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>'; }
+        
+        fileInput.addEventListener('change', e => {
+            const file = e.target.files[0]; if (!file) return;
+            showModal({ title: 'Đang đọc file...', text: `Hệ thống đang xử lý file ${file.name}.`, isLoading: true });
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                let rows = [];
+                try {
+                    const data = event.target.result;
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    showModal({ title: 'Đang phân tích...', text: 'Trí tuệ nhân tạo đang xử lý dữ liệu của bạn. Vui lòng đợi.', isLoading: true });
+                    await processGeneralDataWithAI(rows);
+                    
+                    if (allPatients.length > 0) {
+                        const stats = analyzeDataForDashboard();
+                        renderDashboard(stats);
+                        populateFilterOptions(allPatients);
+                        goToDashboardButton.classList.remove('hidden');
+                    } else {
+                        goToDashboardButton.classList.add('hidden');
+                    }
+                    currentPatientList = [...allPatients];
+                    renderPatientList(currentPatientList);
+                    showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
+                    showView(dashboardView);
+                } catch (error) {
+                    console.error("Lỗi xử lý file: ", error);
+                    showModal({ title: "Lỗi xử lý file!", text: error.message || "Không thể đọc dữ liệu từ file đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
+                }
+            };
+            reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp.", icon: "alert-triangle", iconColor: "text-red-500" });
+            reader.readAsArrayBuffer(file);
+            e.target.value = '';
+        });
+
+        goToDashboardButton.addEventListener('click', () => showView(dashboardView));
+        goToListViewButton.addEventListener('click', () => showView(listView));
+        backToListButton.addEventListener('click', () => showView(listView));
+        toggleFilterButton.addEventListener('click', () => filterSection.classList.toggle('open'));
+        applyFiltersButton.addEventListener('click', applyFilters);
+        clearFiltersButton.addEventListener('click', () => { filterGender.value = ''; filterYear.value = ''; filterDoctor.value = ''; filterDiagnosis.value = ''; filterAddress.value = ''; applyFilters(); });
+        searchButton.addEventListener('click', applyFilters);
+        searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') applyFilters(); });
+        nextButton.addEventListener('click', () => { if (currentIndexInList < currentPatientList.length - 1) { currentIndexInList++; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
+        prevButton.addEventListener('click', () => { if (currentIndexInList > 0) { currentIndexInList--; currentVisitIndex = 0; displayPatientDetail(currentPatientList[currentIndexInList].patientId); } });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showView(listView);
+            renderPatientList([]);
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
