@@ -136,33 +136,112 @@
             });
             return mapping;
         }
+
+        function detectIfHeaderless(firstRowCells) {
+            const numericCells = firstRowCells.filter(cell => /^\d+(\.\d+)?$/.test(cell.trim())).length;
+            const textCells = firstRowCells.length - numericCells;
+            // If more than 30% of cells are numeric, or there are very few text cells, assume no header.
+            return (numericCells / firstRowCells.length) > 0.3 || textCells < 3;
+        }
+        
+        function inferHeaderlessMapping(sampleRows) {
+            const mapping = {};
+            if (!sampleRows.length) return mapping;
+            
+            const numCols = sampleRows[0].length;
+            const columnData = Array.from({ length: numCols }, (_, i) => sampleRows.map(row => (row[i] || '').trim()));
+
+            const testers = {
+                examDate: (d) => /^\d{5}$/.test(d) && parseInt(d) > 30000, // Excel serial date
+                yearOfBirth: (d) => /^\d{4}$/.test(d) && parseInt(d) > 1900 && parseInt(d) <= new Date().getFullYear(),
+                gender: (d) => /^(nam|nữ)$/i.test(d),
+                fullName: (d) => d.includes(' ') && d.length > 5 && d.length < 35 && !/\d/.test(d),
+                cccd: (d) => /^\d{12}$/.test(d),
+                bhyt: (d) => /^[A-Z]{2}\d{13}$/.test(d),
+                address: (d) => d.length > 15 && /(xã|huyện|tỉnh|thành phố|tp|ấp|thôn|đường)/i.test(d),
+                symptoms: (d) => d.length > 20 && /(mạch|huyết áp|nhiệt độ|đau|mệt|khó thở)/i.test(d),
+                diagnosis: (d) => d.length > 10 && /(bệnh|viêm|rối loạn|suy|tăng)/i.test(d),
+                treatment: (d) => d.length > 20 && /(viên|uống|sáng|chiều|mg|lần)/i.test(d)
+            };
+
+            const scores = Array.from({ length: numCols }, () => ({}));
+
+            for (let i = 0; i < numCols; i++) {
+                for (const key in testers) {
+                    const score = columnData[i].reduce((acc, cell) => acc + (testers[key](cell) ? 1 : 0), 0) / columnData[i].length;
+                    if (score > 0.6) { // Confidence threshold
+                        scores[i][key] = score;
+                    }
+                }
+            }
+
+            const assignedCols = new Set();
+            const fieldPriority = ['examDate', 'yearOfBirth', 'gender', 'fullName', 'cccd', 'bhyt', 'address', 'symptoms', 'treatment', 'diagnosis'];
+
+            fieldPriority.forEach(key => {
+                let bestCol = -1;
+                let maxScore = 0;
+                for (let i = 0; i < numCols; i++) {
+                    if (!assignedCols.has(i) && scores[i][key] > maxScore) {
+                        maxScore = scores[i][key];
+                        bestCol = i;
+                    }
+                }
+                if (bestCol !== -1) {
+                    mapping[key] = bestCol;
+                    assignedCols.add(bestCol);
+                }
+            });
+
+            return mapping;
+        }
         
         function excelSerialDateToJSDate(serial) {
             if (!serial || isNaN(serial)) return null;
-            const excelEpoch = new Date(1899, 11, 30);
-            return new Date(excelEpoch.getTime() + serial * 86400000);
+            return new Date(1899, 11, 30, 0, 0, 0, 0 + serial * 86400000);
         }
 
         function formatDate(date) {
-            if (!date) return 'Không rõ';
+            if (!date || isNaN(date)) return 'Không rõ';
             return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
         }
 
         async function processDataWithAI(csvString) {
             return new Promise(resolve => {
-                setTimeout(() => { // Simulate processing time
+                setTimeout(() => {
                     const rows = csvString.trim().replace(/\r\n/g, '\n').split('\n');
-                    const headers = rows[0].split(';').map(h => h.trim());
-                    const mapping = createHeaderMapping(headers);
+                    const firstRowCells = rows[0].split(';').map(h => h.trim());
+                    
+                    const isHeaderless = detectIfHeaderless(firstRowCells);
+                    
+                    let mapping;
+                    let dataRows;
+                    let headers;
 
-                    const standardizedData = rows.slice(1).map((row, index) => {
-                        if (!row) return null;
-                        const values = row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if (isHeaderless) {
+                        const sampleData = rows.slice(0, 20).map(row => row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+                        mapping = inferHeaderlessMapping(sampleData);
+                        dataRows = rows;
+                    } else {
+                        headers = firstRowCells;
+                        mapping = createHeaderMapping(headers);
+                        dataRows = rows.slice(1);
+                    }
+
+                    const standardizedData = dataRows.map((rowStr, index) => {
+                        if (!rowStr) return null;
+                        const values = rowStr.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                         const record = { originalIndex: index };
                         for (const key in mapping) {
-                            const header = mapping[key];
-                            const headerIndex = headers.indexOf(header);
-                            if (headerIndex !== -1) record[key] = (values[headerIndex] || '').replace(/"/g, '').trim();
+                            const mapValue = mapping[key];
+                            let cellValue = '';
+                            if(isHeaderless) {
+                                cellValue = (values[mapValue] || '');
+                            } else {
+                                const headerIndex = headers.indexOf(mapValue);
+                                if(headerIndex !== -1) cellValue = (values[headerIndex] || '');
+                            }
+                            record[key] = cellValue.replace(/"/g, '').trim();
                         }
                         return record;
                     }).filter(Boolean);
@@ -173,7 +252,7 @@
                         if (!patientGroups[patientKey]) {
                             patientGroups[patientKey] = {
                                 patientId: patientKey, fullName: visit.fullName, yearOfBirth: visit.yearOfBirth,
-                                address: visit.address, gender: visit.gender, cccd: visit.cccd, bhyt: visit.bhyt, visits: []
+                                visits: []
                             };
                         }
                         patientGroups[patientKey].visits.push(visit);
@@ -188,7 +267,7 @@
             });
         }
 
-        // --- UI RENDERING ---
+        // --- UI RENDERING (No changes from here) ---
 
         function renderPatientList(patients) {
             patientTableBody.innerHTML = '';
@@ -206,8 +285,8 @@
                 row.innerHTML = `
                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${patient.fullName || 'N/A'}</th>
                     <td class="px-6 py-4">${patient.yearOfBirth || 'N/A'}</td>
-                    <td class="px-6 py-4">${(patient.visits[0] || {}).gender || 'N/A'}</td>
-                    <td class="px-6 py-4">${(patient.visits[0] || {}).address || 'N/A'}</td>
+                    <td class="px-6 py-4">${latestVisit.gender || (patient.visits[1] || {}).gender || 'N/A'}</td>
+                    <td class="px-6 py-4">${latestVisit.address || (patient.visits[1] || {}).address || 'N/A'}</td>
                     <td class="px-6 py-4">${formatDate(excelSerialDateToJSDate(latestVisit.examDate))}</td>
                     <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${patient.visits.length}</span></td>
                 `;
