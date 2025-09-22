@@ -91,9 +91,6 @@
                         <!-- Dữ liệu bảng sẽ được chèn vào đây -->
                     </tbody>
                 </table>
-                 <div id="listLoadingState" class="text-center p-8 text-gray-500 hidden">
-                    <p>Đang tải dữ liệu...</p>
-                </div>
             </div>
         </div>
 
@@ -137,11 +134,6 @@
     </div>
 
     <script>
-        // --- DỮ LIỆU MẪU BAN ĐẦU ---
-        const initialCsvData = `STT;ngay kham;thang kham;HỌ VÀ TÊN;Tên;Ngày sinh;Năm sinh;giới;CCCD;SỐ THẺ BHYT;ĐỊA CHỈ;NGHỀ NGHIỆP;DÂN TỘC;TRIỆU CHỨNG;CHẨN ĐOÁN;THA;DTD;CV;PHƯƠRNG PHÁP ĐIỀU TRỊ;Thuốc;thiếu chẩn đoán;Y, BÁC SĨ KHÁM BỆNH;GHI CHÚ;BỆNH ÁN
-3705;45839;2025.07;Phạm Văn Bằng;;;1962;Nam;;CK2757524529200;"T 8, Xã Suối Nho, Tỉnh Đồng Nai";"Khác, Không xác định";Kinh;"bệnh đái tháo đường đang điều trị, Mạch: 80, Nhiệt độ: 37.0, Huyết áp: 140/80 mmHg, Cân nặng: 46";"Bệnh đái tháo đường không phụ thuộc insuline; Bệnh lý tăng huyết áp";1;1;;"1: Métforilex MR x 60 Viên - Uống, Sáng: 1 Viên, Chiều: 1 Viên , Số ngày:30, 2: Glumeron 30 MR x 60 viên - Uống, Sáng: 1 viên, Chiều: 1 viên , Số ngày:30";;;"Bác sĩ điều trị - Nguyễn Đức Hiệp";;
-574;45898;2025.08;Trương Thị Xuân;Xuân;24/02/1957;1957;Nữ;;GD4757524671408;"Xã Xuân Bắc, Tỉnh Đồng Nai";"Khác, Không xác định";Kinh;"nhức đầu, chóng mặt, đau mõi gáy, Mạch: 80, Nhiệt độ: 37.0, Huyết áp: 150/80 mmHg";"Bệnh lý tăng huyết áp";1;;;"1: AMLODAC 5 x 60 Viên - Uống, Sáng: 1 Viên, Chiều: 1 Viên , Số ngày:30";THA;;"Bác sĩ điều trị - Nguyễn Đức Hiệp";;`;
-        
         // --- KHỞI TẠO BIẾN VÀ DOM ELEMENTS ---
         let allPatients = [];
         let currentPatientList = []; // Danh sách hiển thị hiện tại (có thể đã lọc)
@@ -164,16 +156,18 @@
         // --- CÁC HÀM CHÍNH ---
 
         function parseCSV(data) {
-            const rows = data.trim().split('\n');
+            // Chuẩn hóa xuống dòng và loại bỏ dòng trống
+            const rows = data.trim().replace(/\r\n/g, '\n').split('\n');
             const headers = rows[0].split(';').map(h => h.trim());
             return rows.slice(1).map((row, index) => {
+                if (!row) return null; // Bỏ qua dòng trống
                 const values = row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 let record = { originalIndex: index }; // Lưu index gốc
                 headers.forEach((header, i) => {
                     record[header] = (values[i] || '').replace(/"/g, '').trim();
                 });
                 return record;
-            });
+            }).filter(Boolean); // Lọc bỏ các giá trị null (dòng trống)
         }
 
         function processData(csvString) {
@@ -191,9 +185,19 @@
         function renderPatientList(patients) {
             patientTableBody.innerHTML = ''; // Xóa bảng cũ
             if (patients.length === 0) {
-                patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">Không tìm thấy bệnh nhân nào.</td></tr>`;
+                const message = allPatients.length > 0
+                    ? 'Không tìm thấy bệnh nhân nào khớp với tìm kiếm.'
+                    : 'Vui lòng tải lên tệp CSV để bắt đầu.';
+                const icon = allPatients.length > 0 ? 'search-x' : 'file-up';
+
+                patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">
+                    <i data-lucide="${icon}" class="mx-auto w-12 h-12 mb-4 text-gray-400"></i>
+                    ${message}
+                </td></tr>`;
+                lucide.createIcons();
                 return;
             }
+
             patients.forEach(patient => {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b';
@@ -207,7 +211,6 @@
                     <td class="px-6 py-4">${patient['CCCD'] || patient['SỐ THẺ BHYT'] || 'N/A'}</td>
                 `;
                 row.addEventListener('click', () => {
-                    // Tìm index của bệnh nhân này trong currentPatientList để điều hướng
                     currentIndexInList = currentPatientList.findIndex(p => p.originalIndex === patient.originalIndex);
                     displayPatientDetail(patient.originalIndex);
                 });
@@ -216,7 +219,7 @@
         }
 
         function displayPatientDetail(originalIndex) {
-            const patient = allPatients[originalIndex];
+            const patient = allPatients.find(p => p.originalIndex === originalIndex);
             if (!patient) return;
             
             showDetailView();
@@ -262,7 +265,7 @@
                 </div>
                 <div class="info-card">
                     <h3 class="text-xl font-bold text-purple-600 mb-4">Phương pháp điều trị</h3>
-                    <div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatTreatments(patient['PHƯƠRNG PHÁP ĐIỀU TRỊ'])}</ul></div>
+                    <div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatTreatments(patient['PHƯƠNG PHÁP ĐIỀU TRỊ'])}</ul></div>
                     <div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${patient['Y, BÁC SĨ KHÁM BỆNH'] || 'N/A'}</p></div>
                 </div>`;
 
@@ -316,6 +319,10 @@
 
         searchButton.addEventListener('click', () => {
             const query = searchInput.value.toLowerCase().trim();
+            if (!allPatients.length) {
+                showModal("Chưa có dữ liệu", "Vui lòng tải lên một tệp CSV trước khi tìm kiếm.", "info", "text-blue-500");
+                return;
+            }
             currentPatientList = allPatients.filter(p => 
                 (p['HỌ VÀ TÊN'] || '').toLowerCase().includes(query) || 
                 (p['CCCD'] || '').includes(query)
@@ -355,11 +362,12 @@
             };
             reader.onerror = () => showModal("Lỗi đọc tệp!", "Đã xảy ra lỗi khi cố gắng đọc tệp bạn đã chọn.");
             reader.readAsText(file, 'UTF-8');
+            event.target.value = ''; // Reset input để có thể tải lại cùng file
         });
 
         // Tải dữ liệu ban đầu khi trang được mở
         document.addEventListener('DOMContentLoaded', () => {
-            processData(initialCsvData);
+            renderPatientList([]); // Bắt đầu với bảng trống
             lucide.createIcons();
         });
     </script>
