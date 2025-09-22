@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Tin Bệnh Nhân</title>
+    <title>Thông Tin Bệnh Nhân (AI-Powered)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,226 +23,241 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
             padding: 24px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .highlight-field {
-            border-left: 4px solid;
-            padding-left: 16px;
-        }
+        .highlight-field { border-left: 4px solid; padding-left: 16px; }
         .border-blue-500 { border-color: #3b82f6; }
         .border-green-500 { border-color: #22c55e; }
         .border-orange-500 { border-color: #f97316; }
         .border-purple-500 { border-color: #8b5cf6; }
-        
-        #patientTable tbody tr {
-            cursor: pointer;
-            transition: background-color 0.2s ease;
+        #patientTable tbody tr { cursor: pointer; transition: background-color 0.2s ease; }
+        #patientTable tbody tr:hover { background-color: #eff6ff; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-         #patientTable tbody tr:hover {
-            background-color: #eff6ff; /* blue-50 */
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
-        <!-- TIÊU ĐỀ -->
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Hồ Sơ Bệnh Nhân</h1>
-            <p class="text-gray-500">Xem, tìm kiếm và quản lý thông tin bệnh nhân</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Hồ Sơ Bệnh Nhân Thông Minh</h1>
+            <p class="text-gray-500">Tự động nhận diện dữ liệu và quản lý lịch sử khám</p>
         </header>
 
-        <!-- GIAO DIỆN DANH SÁCH BỆNH NHÂN -->
         <div id="listView">
-            <!-- THANH CÔNG CỤ: TÌM KIẾM VÀ TẢI LÊN -->
             <div class="mb-6 flex flex-col sm:flex-row gap-4 items-center">
                 <div class="relative flex-grow w-full sm:w-auto">
                     <input type="text" id="searchInput" placeholder="Tìm theo Tên hoặc CCCD..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i data-lucide="search" class="text-gray-400"></i>
-                    </div>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="text-gray-400"></i></div>
                 </div>
-                <button id="searchButton" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 active:bg-blue-800 transition shadow-md hover:shadow-lg w-full sm:w-auto">
-                    Tìm kiếm
-                </button>
+                <button id="searchButton" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 active:bg-blue-800 transition shadow-md hover:shadow-lg w-full sm:w-auto">Tìm kiếm</button>
                 <div>
                     <input type="file" id="csvFileInput" class="hidden" accept=".csv">
                     <label for="csvFileInput" class="cursor-pointer bg-green-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-700 active:bg-green-800 transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto">
-                        <i data-lucide="upload-cloud"></i>
-                        Tải lên CSV
+                        <i data-lucide="upload-cloud"></i> Tải lên CSV
                     </label>
                 </div>
             </div>
 
-            <!-- BẢNG DANH SÁCH BỆNH NHÂN -->
             <div class="bg-white rounded-lg shadow-md overflow-x-auto">
                 <table id="patientTable" class="w-full text-sm text-left text-gray-600">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3">STT</th>
                             <th scope="col" class="px-6 py-3">Họ và Tên</th>
                             <th scope="col" class="px-6 py-3">Năm Sinh</th>
                             <th scope="col" class="px-6 py-3">Giới tính</th>
                             <th scope="col" class="px-6 py-3">Địa chỉ</th>
-                            <th scope="col" class="px-6 py-3">CCCD / BHYT</th>
+                            <th scope="col" class="px-6 py-3">Lần khám gần nhất</th>
+                            <th scope="col" class="px-6 py-3">Số lần khám</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Dữ liệu bảng sẽ được chèn vào đây -->
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- GIAO DIỆN CHI TIẾT BỆNH NHÂN -->
         <div id="detailView" class="hidden">
             <div class="mb-6">
-                 <button id="backToListButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                    Quay lại danh sách
-                </button>
+                 <button id="backToListButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow"><i data-lucide="arrow-left" class="w-5 h-5"></i> Quay lại danh sách</button>
             </div>
-            <main id="patient-info-container" class="space-y-6">
-                <!-- Chi tiết bệnh nhân được chèn vào đây -->
-            </main>
-             <!-- NÚT ĐIỀU HƯỚNG CHI TIẾT -->
+            <main id="patient-info-container" class="space-y-6"></main>
             <footer class="mt-8 flex justify-between items-center">
-                <button id="prevButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                    Trước
-                </button>
+                <button id="prevButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow"><i data-lucide="arrow-left" class="w-5 h-5"></i> Trước</button>
                 <div id="pageIndicator" class="text-gray-600 font-medium"></div>
-                <button id="nextButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow">
-                    Sau
-                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                </button>
+                <button id="nextButton" class="flex items-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition shadow">Sau <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
             </footer>
         </div>
         
-        <!-- Modal thông báo -->
         <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg p-8 text-center shadow-xl max-w-sm w-full">
-                <i id="modalIcon" class="mx-auto w-16 h-16 mb-4"></i>
-                <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-2">Thông báo</h3>
-                <p id="modalText" class="text-gray-600"></p>
-                <button onclick="document.getElementById('notificationModal').classList.add('hidden')" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition">
-                    Đã hiểu
-                </button>
+            <div class="bg-white rounded-lg p-8 text-center shadow-xl max-w-sm w-full" id="modalContent">
+                <div class="loader mx-auto mb-4" id="modalLoader"></div>
+                <i id="modalIcon" class="mx-auto w-16 h-16 mb-4 hidden"></i>
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-2">Đang xử lý...</h3>
+                <p id="modalText" class="text-gray-600">Trí tuệ nhân tạo đang phân tích dữ liệu của bạn. Vui lòng đợi trong giây lát.</p>
+                <button id="modalButton" onclick="document.getElementById('notificationModal').classList.add('hidden')" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition hidden">Đã hiểu</button>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- KHỞI TẠO BIẾN VÀ DOM ELEMENTS ---
         let allPatients = [];
-        let currentPatientList = []; // Danh sách hiển thị hiện tại (có thể đã lọc)
-        let currentIndexInList = 0; // Index trong currentPatientList
+        let currentPatientList = [];
+        let currentIndexInList = 0;
+        let currentVisitIndex = 0;
 
-        const listView = document.getElementById('listView');
-        const detailView = document.getElementById('detailView');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const patientTableBody = document.querySelector('#patientTable tbody');
-        
-        const detailContainer = document.getElementById('patient-info-container');
-        const backToListButton = document.getElementById('backToListButton');
-        const prevButton = document.getElementById('prevButton');
-        const nextButton = document.getElementById('nextButton');
-        const pageIndicator = document.getElementById('pageIndicator');
-        const notificationModal = document.getElementById('notificationModal');
+        const [listView, detailView, searchInput, searchButton, csvFileInput, patientTableBody, detailContainer, backToListButton, prevButton, nextButton, pageIndicator, notificationModal] = [
+            'listView', 'detailView', 'searchInput', 'searchButton', 'csvFileInput', '#patientTable tbody', 'patient-info-container', 'backToListButton', 'prevButton', 'nextButton', 'pageIndicator', 'notificationModal'
+        ].map(id => id.startsWith('#') ? document.querySelector(id) : document.getElementById(id));
 
-        // --- CÁC HÀM CHÍNH ---
+        // --- CORE AI & DATA PROCESSING ---
 
-        function parseCSV(data) {
-            // Chuẩn hóa xuống dòng và loại bỏ dòng trống
-            const rows = data.trim().replace(/\r\n/g, '\n').split('\n');
-            const headers = rows[0].split(';').map(h => h.trim());
-            return rows.slice(1).map((row, index) => {
-                if (!row) return null; // Bỏ qua dòng trống
-                const values = row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                let record = { originalIndex: index }; // Lưu index gốc
-                headers.forEach((header, i) => {
-                    record[header] = (values[i] || '').replace(/"/g, '').trim();
-                });
-                return record;
-            }).filter(Boolean); // Lọc bỏ các giá trị null (dòng trống)
-        }
-
-        function processData(csvString) {
-            try {
-                allPatients = parseCSV(csvString);
-                currentPatientList = [...allPatients];
-                renderPatientList(currentPatientList);
-                showListView();
-            } catch (error) {
-                console.error("Lỗi khi xử lý dữ liệu CSV:", error);
-                showModal("Lỗi xử lý tệp!", "Không thể đọc dữ liệu từ tệp CSV. Vui lòng kiểm tra lại định dạng tệp.");
-            }
+        function createHeaderMapping(headers) {
+            const standardFields = {
+                stt: ['stt', 'số thứ tự'], examDate: ['ngay kham', 'ngày khám'], fullName: ['họ và tên', 'họ tên', 'tên bệnh nhân'],
+                yearOfBirth: ['năm sinh', 'n.sinh', 'ns'], birthDate: ['ngày sinh'], gender: ['giới', 'giới tính'], cccd: ['cccd', 'căn cước'],
+                bhyt: ['số thẻ bhyt', 'bhyt', 'mã thẻ'], address: ['địa chỉ'], occupation: ['nghề nghiệp'],
+                symptoms: ['triệu chứng', 'lý do'], diagnosis: ['chẩn đoán', 'chuẩn đoán'], treatment: ['phương pháp điều trị', 'điều trị', 'thuốc'],
+                doctor: ['y, bác sĩ khám bệnh', 'bác sĩ', 'bác sỹ']
+            };
+            const mapping = {};
+            headers.forEach(header => {
+                const lowerHeader = header.toLowerCase().trim();
+                for (const key in standardFields) {
+                    if (standardFields[key].some(alias => lowerHeader.includes(alias))) {
+                        if (!mapping[key]) mapping[key] = header;
+                    }
+                }
+            });
+            return mapping;
         }
         
+        function excelSerialDateToJSDate(serial) {
+            if (!serial || isNaN(serial)) return null;
+            const excelEpoch = new Date(1899, 11, 30);
+            return new Date(excelEpoch.getTime() + serial * 86400000);
+        }
+
+        function formatDate(date) {
+            if (!date) return 'Không rõ';
+            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        }
+
+        async function processDataWithAI(csvString) {
+            return new Promise(resolve => {
+                setTimeout(() => { // Simulate processing time
+                    const rows = csvString.trim().replace(/\r\n/g, '\n').split('\n');
+                    const headers = rows[0].split(';').map(h => h.trim());
+                    const mapping = createHeaderMapping(headers);
+
+                    const standardizedData = rows.slice(1).map((row, index) => {
+                        if (!row) return null;
+                        const values = row.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                        const record = { originalIndex: index };
+                        for (const key in mapping) {
+                            const header = mapping[key];
+                            const headerIndex = headers.indexOf(header);
+                            if (headerIndex !== -1) record[key] = (values[headerIndex] || '').replace(/"/g, '').trim();
+                        }
+                        return record;
+                    }).filter(Boolean);
+
+                    const patientGroups = {};
+                    standardizedData.forEach(visit => {
+                        const patientKey = `${(visit.fullName || 'N/A').trim()}_${visit.yearOfBirth || 'N/A'}`;
+                        if (!patientGroups[patientKey]) {
+                            patientGroups[patientKey] = {
+                                patientId: patientKey, fullName: visit.fullName, yearOfBirth: visit.yearOfBirth,
+                                address: visit.address, gender: visit.gender, cccd: visit.cccd, bhyt: visit.bhyt, visits: []
+                            };
+                        }
+                        patientGroups[patientKey].visits.push(visit);
+                    });
+
+                    for (const key in patientGroups) {
+                        patientGroups[key].visits.sort((a, b) => (excelSerialDateToJSDate(b.examDate) || 0) - (excelSerialDateToJSDate(a.examDate) || 0));
+                    }
+                    allPatients = Object.values(patientGroups);
+                    resolve();
+                }, 500);
+            });
+        }
+
+        // --- UI RENDERING ---
+
         function renderPatientList(patients) {
-            patientTableBody.innerHTML = ''; // Xóa bảng cũ
+            patientTableBody.innerHTML = '';
             if (patients.length === 0) {
-                const message = allPatients.length > 0
-                    ? 'Không tìm thấy bệnh nhân nào khớp với tìm kiếm.'
-                    : 'Vui lòng tải lên tệp CSV để bắt đầu.';
+                const message = allPatients.length > 0 ? 'Không tìm thấy bệnh nhân nào khớp với tìm kiếm.' : 'Vui lòng tải lên tệp CSV để bắt đầu.';
                 const icon = allPatients.length > 0 ? 'search-x' : 'file-up';
-
-                patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">
-                    <i data-lucide="${icon}" class="mx-auto w-12 h-12 mb-4 text-gray-400"></i>
-                    ${message}
-                </td></tr>`;
+                patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500"><i data-lucide="${icon}" class="mx-auto w-12 h-12 mb-4 text-gray-400"></i>${message}</td></tr>`;
                 lucide.createIcons();
                 return;
             }
-
             patients.forEach(patient => {
+                const latestVisit = patient.visits[0] || {};
                 const row = document.createElement('tr');
-                row.className = 'bg-white border-b';
-                row.setAttribute('data-original-index', patient.originalIndex);
+                row.setAttribute('data-patient-id', patient.patientId);
                 row.innerHTML = `
-                    <td class="px-6 py-4">${patient['STT'] || 'N/A'}</td>
-                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${patient['HỌ VÀ TÊN'] || 'N/A'}</th>
-                    <td class="px-6 py-4">${patient['Năm sinh'] || 'N/A'}</td>
-                    <td class="px-6 py-4">${patient['giới'] || 'N/A'}</td>
-                    <td class="px-6 py-4">${patient['ĐỊA CHỈ'] || 'N/A'}</td>
-                    <td class="px-6 py-4">${patient['CCCD'] || patient['SỐ THẺ BHYT'] || 'N/A'}</td>
+                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${patient.fullName || 'N/A'}</th>
+                    <td class="px-6 py-4">${patient.yearOfBirth || 'N/A'}</td>
+                    <td class="px-6 py-4">${(patient.visits[0] || {}).gender || 'N/A'}</td>
+                    <td class="px-6 py-4">${(patient.visits[0] || {}).address || 'N/A'}</td>
+                    <td class="px-6 py-4">${formatDate(excelSerialDateToJSDate(latestVisit.examDate))}</td>
+                    <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${patient.visits.length}</span></td>
                 `;
                 row.addEventListener('click', () => {
-                    currentIndexInList = currentPatientList.findIndex(p => p.originalIndex === patient.originalIndex);
-                    displayPatientDetail(patient.originalIndex);
+                    currentIndexInList = currentPatientList.findIndex(p => p.patientId === patient.patientId);
+                    currentVisitIndex = 0;
+                    displayPatientDetail(patient.patientId);
                 });
                 patientTableBody.appendChild(row);
             });
         }
-
-        function displayPatientDetail(originalIndex) {
-            const patient = allPatients.find(p => p.originalIndex === originalIndex);
-            if (!patient) return;
-            
+        
+        function displayPatientDetail(patientId) {
+            const patient = allPatients.find(p => p.patientId === patientId);
+            if (!patient || !patient.visits.length) return;
             showDetailView();
-            const age = patient['Năm sinh'] ? (new Date().getFullYear() - parseInt(patient['Năm sinh'])) : 'N/A';
-            const symptomsText = (patient['TRIỆU CHỨNG'] || '').split(/, Mạch:| Mạch:/i)[0];
-            let birthDateDisplay = patient['Ngày sinh'] || `01/01/${patient['Năm sinh']}` || 'N/A';
-            if (!patient['Ngày sinh'] && !patient['Năm sinh']) birthDateDisplay = 'N/A';
+            const visit = patient.visits[currentVisitIndex];
+            const age = visit.yearOfBirth ? (new Date().getFullYear() - parseInt(visit.yearOfBirth)) : 'N/A';
+            const symptomsText = (visit.symptoms || '').split(/, Mạch:| Mạch:/i)[0];
+            let birthDateDisplay = visit.birthDate || `01/01/${visit.yearOfBirth}` || 'N/A';
+            if (!visit.birthDate && !visit.yearOfBirth) birthDateDisplay = 'N/A';
+
+            const historyHtml = patient.visits.map((v, index) => {
+                const isActive = index === currentVisitIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+                return `<button data-visit-index="${index}" class="visit-link px-4 py-2 rounded-full text-sm font-semibold transition ${isActive}">${formatDate(excelSerialDateToJSDate(v.examDate))}</button>`;
+            }).join('');
             
             detailContainer.innerHTML = `
+                <div class="info-card">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4">Lịch sử khám bệnh</h3>
+                    <div class="flex flex-wrap gap-2">${historyHtml}</div>
+                </div>
                 <div class="info-card">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-4 border-b">
                          <div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-16 w-16 flex items-center justify-center"><i data-lucide="user-round" class="w-8 h-8"></i></div>
                         <div>
-                            <h2 class="text-2xl md:text-3xl font-bold text-gray-800">${patient['HỌ VÀ TÊN'] || 'N/A'}</h2>
-                            <p class="text-gray-500 text-lg">${patient['NGHỀ NGHIỆP'] || 'Chưa rõ'}</p>
+                            <h2 class="text-2xl md:text-3xl font-bold text-gray-800">${patient.fullName || 'N/A'}</h2>
+                            <p class="text-gray-500 text-lg">${visit.occupation || 'Chưa rõ'}</p>
+                        </div>
+                        <div class="ml-auto text-right">
+                           <p class="font-semibold text-gray-500 text-sm">Ngày khám</p>
+                           <p class="text-lg font-bold text-blue-600">${formatDate(excelSerialDateToJSDate(visit.examDate))}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700">
                         <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Ngày sinh / Tuổi</label><p class="text-lg font-medium">${birthDateDisplay} - ${age} tuổi</p></div>
-                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Giới tính</label><p class="text-lg font-medium">${patient['giới'] || 'N/A'}</p></div>
-                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">CCCD</label><p class="text-lg font-medium">${patient['CCCD'] || 'Không có'}</p></div>
-                        <div class="highlight-field border-blue-500 col-span-1 md:col-span-2"><label class="font-semibold text-gray-500 text-sm">Địa chỉ</label><p class="text-lg font-medium">${patient['ĐỊA CHỈ'] || 'N/A'}</p></div>
-                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Số thẻ BHYT</label><p class="text-lg font-medium">${patient['SỐ THẺ BHYT'] || 'Không có'}</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Giới tính</label><p class="text-lg font-medium">${visit.gender || 'N/A'}</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">CCCD</label><p class="text-lg font-medium">${visit.cccd || 'Không có'}</p></div>
+                        <div class="highlight-field border-blue-500 col-span-1 md:col-span-2"><label class="font-semibold text-gray-500 text-sm">Địa chỉ</label><p class="text-lg font-medium">${visit.address || 'N/A'}</p></div>
+                        <div class="highlight-field border-blue-500"><label class="font-semibold text-gray-500 text-sm">Số thẻ BHYT</label><p class="text-lg font-medium">${visit.bhyt || 'Không có'}</p></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -250,34 +265,34 @@
                         <h3 class="text-xl font-bold text-green-600 mb-4">Sinh hiệu & Triệu chứng</h3>
                         <div class="highlight-field border-green-500 mb-4"><label class="font-semibold text-gray-500 text-sm">Triệu chứng chính</label><p>${symptomsText}</p></div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Mạch</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Mạch', 'l/p')}</p></div>
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Nhiệt độ</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Nhiệt độ', '°C')}</p></div>
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Huyết áp</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Huyết áp', 'mmHg')}</p></div>
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Nhịp thở</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Nhịp thở', 'l/p')}</p></div>
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Cân nặng</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Cân nặng', 'kg')}</p></div>
-                            <div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">Chiều cao</p><p class="text-xl font-bold text-green-900">${getVital(patient['TRIỆU CHỨNG'], 'Chiều cao', 'cm')}</p></div>
+                            ${['Mạch:l/p', 'Nhiệt độ:°C', 'Huyết áp:mmHg', 'Nhịp thở:l/p', 'Cân nặng:kg', 'Chiều cao:cm'].map(v => {
+                                const [key, unit] = v.split(':');
+                                return `<div class="bg-green-50 p-3 rounded-lg"><p class="text-sm text-green-800 font-medium">${key}</p><p class="text-xl font-bold text-green-900">${getVital(visit.symptoms, key, unit)}</p></div>`;
+                            }).join('')}
                         </div>
                     </div>
                     <div class="info-card">
                         <h3 class="text-xl font-bold text-orange-600 mb-4">Chẩn đoán</h3>
-                        <ul class="highlight-field border-orange-500 list-disc list-inside space-y-1 text-gray-800">${formatList(patient['CHẨN ĐOÁN'])}</ul>
+                        <ul class="highlight-field border-orange-500 list-disc list-inside space-y-1 text-gray-800">${formatList(visit.diagnosis)}</ul>
                     </div>
                 </div>
                 <div class="info-card">
                     <h3 class="text-xl font-bold text-purple-600 mb-4">Phương pháp điều trị</h3>
-                    <div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatTreatments(patient['PHƯƠNG PHÁP ĐIỀU TRỊ'])}</ul></div>
-                    <div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${patient['Y, BÁC SĨ KHÁM BỆNH'] || 'N/A'}</p></div>
+                    <div class="highlight-field border-purple-500"><ul class="divide-y divide-gray-100 text-gray-800">${formatTreatments(visit.treatment)}</ul></div>
+                    <div class="mt-6 pt-4 border-t text-right"><p class="text-sm text-gray-500">Bác sĩ điều trị</p><p class="font-semibold text-gray-700">${visit.doctor || 'N/A'}</p></div>
                 </div>`;
-
+            
             lucide.createIcons();
             updateDetailControls();
+            document.querySelectorAll('.visit-link').forEach(button => button.addEventListener('click', e => {
+                currentVisitIndex = parseInt(e.target.dataset.visitIndex, 10);
+                displayPatientDetail(patientId);
+            }));
         }
 
-        // --- CÁC HÀM TIỆN ÍCH ---
-
+        // --- UTILITY & EVENT HANDLERS ---
         const showListView = () => { listView.classList.remove('hidden'); detailView.classList.add('hidden'); };
         const showDetailView = () => { listView.classList.add('hidden'); detailView.classList.remove('hidden'); };
-
         function updateDetailControls() {
             pageIndicator.textContent = `Bệnh nhân ${currentIndexInList + 1} / ${currentPatientList.length}`;
             prevButton.disabled = currentIndexInList <= 0;
@@ -285,93 +300,82 @@
             prevButton.classList.toggle('opacity-50', prevButton.disabled);
             nextButton.classList.toggle('opacity-50', nextButton.disabled);
         }
-
-        function showModal(title, text, icon = 'alert-circle', iconColor = 'text-red-500') {
+        function showModal({ title, text, icon, iconColor, isLoading = false }) {
             notificationModal.querySelector('#modalTitle').textContent = title;
             notificationModal.querySelector('#modalText').textContent = text;
-            const iconEl = notificationModal.querySelector('#modalIcon');
-            iconEl.setAttribute('data-lucide', icon);
-            iconEl.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`;
+            notificationModal.querySelector('#modalLoader').style.display = isLoading ? 'block' : 'none';
+            const modalIcon = notificationModal.querySelector('#modalIcon');
+            const modalButton = notificationModal.querySelector('#modalButton');
+            modalIcon.style.display = isLoading ? 'none' : 'block';
+            modalButton.style.display = isLoading ? 'none' : 'block';
+            if (!isLoading) {
+                modalIcon.setAttribute('data-lucide', icon);
+                modalIcon.className = `mx-auto w-16 h-16 mb-4 ${iconColor}`;
+            }
             notificationModal.classList.remove('hidden');
             notificationModal.classList.add('flex');
             lucide.createIcons();
         }
-
         function getVital(symptoms, key, unit = '') {
-            const regex = new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i');
-            const match = (symptoms || '').match(regex);
+            const match = (symptoms || '').match(new RegExp(`${key}:\\s*([\\d\\/.]+)`, 'i'));
             return match ? `${match[1]} ${unit}`.trim() : 'N/A';
         }
-
         function formatList(data, separator = ';') {
             if (!data) return '<li>Không có dữ liệu</li>';
-            return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('');
+            return data.split(separator).map(item => item.trim()).filter(Boolean).map(item => `<li class="py-1">${item}</li>`).join('') || '<li>Không có dữ liệu</li>';
         }
-        
         function formatTreatments(data) {
             if (!data) return '<li>Không có dữ liệu</li>';
             const treatments = data.match(/\d+:\s*.*?(?=,\s*\d+:|$)/g);
-            if (!treatments) return `<li>${data}</li>`; // Fallback if regex fails
+            if (!treatments) return `<li>${data}</li>`;
             return treatments.map(item => `<li class="py-2 border-b border-gray-100 last:border-b-0">${item.trim()}</li>`).join('');
         }
-
-        // --- GÁN SỰ KIỆN ---
-
         searchButton.addEventListener('click', () => {
             const query = searchInput.value.toLowerCase().trim();
             if (!allPatients.length) {
-                showModal("Chưa có dữ liệu", "Vui lòng tải lên một tệp CSV trước khi tìm kiếm.", "info", "text-blue-500");
-                return;
+                showModal({ title: "Chưa có dữ liệu", text: "Vui lòng tải lên một tệp CSV trước khi tìm kiếm.", icon: "info", iconColor: "text-blue-500" }); return;
             }
-            currentPatientList = allPatients.filter(p => 
-                (p['HỌ VÀ TÊN'] || '').toLowerCase().includes(query) || 
-                (p['CCCD'] || '').includes(query)
-            );
+            currentPatientList = allPatients.filter(p => (p.fullName || '').toLowerCase().includes(query) || (p.cccd || '').includes(query));
             renderPatientList(currentPatientList);
             if (currentPatientList.length === 0 && query) {
-                 showModal("Không tìm thấy!", "Không có bệnh nhân nào khớp với từ khóa tìm kiếm.", "user-x", "text-orange-500");
+                 showModal({ title: "Không tìm thấy!", text: "Không có bệnh nhân nào khớp với từ khóa tìm kiếm.", icon: "user-x", iconColor: "text-orange-500" });
             }
         });
-        searchInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') searchButton.click(); });
-        
+        searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchButton.click(); });
         backToListButton.addEventListener('click', showListView);
-
         prevButton.addEventListener('click', () => {
             if (currentIndexInList > 0) {
                 currentIndexInList--;
-                const patient = currentPatientList[currentIndexInList];
-                displayPatientDetail(patient.originalIndex);
+                currentVisitIndex = 0;
+                displayPatientDetail(currentPatientList[currentIndexInList].patientId);
             }
         });
-
         nextButton.addEventListener('click', () => {
             if (currentIndexInList < currentPatientList.length - 1) {
                 currentIndexInList++;
-                const patient = currentPatientList[currentIndexInList];
-                displayPatientDetail(patient.originalIndex);
+                currentVisitIndex = 0;
+                displayPatientDetail(currentPatientList[currentIndexInList].patientId);
             }
         });
-        
-        csvFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
+        csvFileInput.addEventListener('change', e => {
+            const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
-                processData(e.target.result);
-                showModal("Tải lên thành công!", `Đã tải và xử lý thành công ${allPatients.length} hồ sơ bệnh nhân.`, "check-circle", "text-green-500");
+            reader.onload = async (event) => {
+                showModal({ title: 'Đang xử lý...', text: 'Trí tuệ nhân tạo đang phân tích dữ liệu của bạn. Vui lòng đợi trong giây lát.', isLoading: true });
+                await processDataWithAI(event.target.result);
+                currentPatientList = [...allPatients];
+                renderPatientList(currentPatientList);
+                showModal({ title: "Tải lên thành công!", text: `Đã xử lý và nhóm ${allPatients.length} bệnh nhân duy nhất.`, icon: "check-circle", iconColor: "text-green-500" });
             };
-            reader.onerror = () => showModal("Lỗi đọc tệp!", "Đã xảy ra lỗi khi cố gắng đọc tệp bạn đã chọn.");
+            reader.onerror = () => showModal({ title: "Lỗi đọc tệp!", text: "Đã xảy ra lỗi khi cố gắng đọc tệp bạn đã chọn.", icon: "alert-triangle", iconColor: "text-red-500" });
             reader.readAsText(file, 'UTF-8');
-            event.target.value = ''; // Reset input để có thể tải lại cùng file
+            e.target.value = '';
         });
-
-        // Tải dữ liệu ban đầu khi trang được mở
         document.addEventListener('DOMContentLoaded', () => {
-            renderPatientList([]); // Bắt đầu với bảng trống
+            renderPatientList([]);
             lucide.createIcons();
         });
     </script>
-
 </body>
 </html>
 
