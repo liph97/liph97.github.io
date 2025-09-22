@@ -256,14 +256,8 @@
                     if (filters.doctor && visit.doctor !== filters.doctor) return false;
                     if (filters.diagnosis && (!visit.diagnosis || !visit.diagnosis.includes(filters.diagnosis))) return false;
                     if (filters.address && (!visit.address || !visit.address.toLowerCase().includes(filters.address))) return false;
-                    if (filters.treatment) {
-                        const treatmentText = (visit.treatment || '').toString().toLowerCase();
-                        if (filters.treatment === 'Chuyển viện' && !treatmentText.includes('chuyển viện')) {
-                            return false;
-                        }
-                        if (filters.treatment === 'Điều trị tại trạm' && treatmentText.includes('chuyển viện')) {
-                            return false;
-                        }
+                    if (filters.treatment && !(visit.treatment || '').toString().includes(filters.treatment)) {
+                        return false;
                     }
                     return true;
                 });
@@ -518,10 +512,18 @@
                     if(v.doctor) unique.doctors.add(v.doctor);
                     if(v.diagnosis) v.diagnosis.toString().replace(/^"/, '').replace(/"$/, '').split(';').forEach(d => { if(d.trim()) unique.diagnoses.add(d.trim()); });
                     if(v.treatment) {
-                        if (v.treatment.toString().toLowerCase().includes('chuyển viện')) {
+                        const treatmentText = v.treatment.toString().trim().replace(/^"/, '').replace(/"$/, '');
+                        if (treatmentText.toLowerCase().includes('chuyển viện')) {
                             unique.treatments.add('Chuyển viện');
                         } else {
-                            unique.treatments.add('Điều trị tại trạm');
+                            // Split by comma that is followed by a number and a colon, or just by comma
+                            const individualTreatments = treatmentText.split(/,\s*(?=\d+:)|, /g);
+                            individualTreatments.forEach(t => {
+                                const trimmedT = t.trim();
+                                if(trimmedT) {
+                                    unique.treatments.add(trimmedT);
+                                }
+                            });
                         }
                     }
                 });
