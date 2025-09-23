@@ -17,7 +17,7 @@
         .tab-active { border-bottom-color: #0ea5e9; color: #0ea5e9; font-weight: 600; }
         .modal { transition: opacity 0.25s ease; }
         .modal-content { transition: transform 0.25s ease; }
-        .info-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); padding: 24px; border: 1px solid #e2e8f0; }
+        .info-card { background: white; border-radius: 12px; box-shadow: 0 4px M M M M 15px rgba(0, 0, 0, 0.05); padding: 24px; border: 1px solid #e2e8f0; }
         #history-table-container th.month-header, 
         #history-table-container td.month-cell { min-width: 6rem; max-width: 6rem; text-align: center; }
         #history-table-container td.month-cell { height: 3rem; padding: 0; }
@@ -27,8 +27,10 @@
         .tag-remove { margin-left: 0.5rem; cursor: pointer; color: #38bdf8; font-weight: bold; }
         .history-sub-tab-active { background-color: #0ea5e9; color: white; }
         .sticky-col { position: sticky; left: 0; z-index: 10; }
-        #meds-stats-container thead .sticky-col { background-color: #f9fafb; } /* Slightly different from bg-slate-50 to ensure visibility */
+        #meds-stats-container thead .sticky-col { background-color: #f9fafb; }
         #meds-stats-container tbody .sticky-col { background-color: white; }
+        .address-col { max-width: 250px; white-space: normal; word-break: break-word; }
+        .detail-tab-active { background-color: #0ea5e9; color: white; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -199,7 +201,19 @@
                  <!-- Tab Tổng hợp Lượt khám -->
                 <div id="all-encounters-view" class="tab-pane hidden">
                     <div class="info-card mb-4">
-                        <input type="text" id="all-encounters-search" placeholder="Tìm theo tên, địa chỉ, tình trạng, chẩn đoán..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm chung</label>
+                                <input type="text" id="all-encounters-search" placeholder="Tên, địa chỉ, tình trạng, chẩn đoán..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="all-encounters-month-filter" class="block text-sm font-medium text-gray-700 mb-1">Tháng khám</label>
+                                <select id="all-encounters-month-filter" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="all">Tất cả các tháng</option>
+                                </select>
+                            </div>
+                            <button id="all-encounters-reset-filters" class="w-full bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors">Xóa lọc</button>
+                        </div>
                         <p id="all-encounters-count" class="text-sm text-slate-500 mt-2"></p>
                     </div>
                     <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
@@ -211,7 +225,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tình trạng</th>
                                 </tr>
                             </thead>
@@ -223,8 +237,49 @@
                 <!-- Tab Quản lý THA/ĐTĐ -->
                 <div id="ncd-encounters-view" class="tab-pane hidden">
                     <div class="info-card mb-4">
-                        <input type="text" id="ncd-encounters-search" placeholder="Tìm theo tên, địa chỉ, tình trạng..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
-                        <p id="ncd-encounters-count" class="text-sm text-slate-500 mt-2"></p>
+                        <h3 class="font-bold text-lg mb-4">Bộ lọc chi tiết</h3>
+                        <div id="ncd-filters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                                <input type="text" id="ncd-encounters-search" placeholder="Theo tên, địa chỉ..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tháng khám</label>
+                                <select id="ncd-month-filter" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="all">Tất cả các tháng</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Năm sinh</label>
+                                <input type="number" id="ncd-birthyear-filter" placeholder="VD: 1965" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+                                <select id="ncd-gender-filter" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="all">Tất cả</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Bệnh lý</label>
+                                <div class="space-y-1">
+                                    <label class="flex items-center"><input type="checkbox" name="ncd-disease-filter" value="tăng huyết áp" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"> <span class="ml-2 text-sm text-gray-700">Tăng huyết áp</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="ncd-disease-filter" value="đái tháo đường" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"> <span class="ml-2 text-sm text-gray-700">Đái tháo đường</span></label>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tình trạng</label>
+                                <div class="space-y-1">
+                                    <label class="flex items-center"><input type="checkbox" name="ncd-status-filter" value="tại trạm" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"> <span class="ml-2 text-sm text-gray-700">Điều trị tại trạm</span></label>
+                                    <label class="flex items-center"><input type="checkbox" name="ncd-status-filter" value="nơi khác" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500"> <span class="ml-2 text-sm text-gray-700">Điều trị nơi khác</span></label>
+                                </div>
+                            </div>
+                            <div class="lg:col-start-4">
+                               <button id="ncd-reset-filters" class="w-full bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors">Xóa bộ lọc</button>
+                            </div>
+                        </div>
+                        <p id="ncd-encounters-count" class="text-sm text-slate-500 mt-4"></p>
                     </div>
                     <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
                         <table class="min-w-full divide-y divide-slate-200">
@@ -235,7 +290,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tình trạng</th>
                                 </tr>
                             </thead>
@@ -247,7 +302,19 @@
                 <!-- Tab Danh sách bệnh nhân -->
                 <div id="patients-view" class="tab-pane hidden">
                     <div class="info-card mb-4">
-                        <input type="text" id="patients-search" placeholder="Tìm theo tên, địa chỉ..." class="w-full md:w-1/3 p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm theo Tên, Địa chỉ</label>
+                                <input type="text" id="patients-search" placeholder="Nhập từ khóa..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="patients-month-filter" class="block text-sm font-medium text-gray-700 mb-1">Khám trong tháng</label>
+                                <select id="patients-month-filter" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="all">Tất cả các tháng</option>
+                                </select>
+                            </div>
+                            <button id="patients-reset-filters" class="w-full bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors">Xóa lọc</button>
+                        </div>
                         <p id="patients-count" class="text-sm text-slate-500 mt-2"></p>
                     </div>
                     <div class="overflow-x-auto bg-white rounded-lg shadow-sm border">
@@ -257,7 +324,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Khám gần nhất</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tổng số lần khám</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Số lần điều trị tại trạm</th>
@@ -323,12 +390,18 @@
         </div>
 
         <div id="detail-modal" class="modal fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none z-40">
-            <div class="modal-content bg-slate-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] transform scale-95 flex flex-col">
-                <div class="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0"><h3 id="modal-title" class="text-xl font-bold text-slate-900">Chi tiết Bệnh nhân</h3><button id="close-modal-button" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button></div>
-                <div id="modal-body" class="p-6 overflow-y-auto flex-grow bg-white"></div>
-                <div class="p-4 bg-slate-200 border-t border-slate-300 text-right rounded-b-lg flex-shrink-0"><button id="close-modal-button-footer" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm">Đóng</button></div>
+            <div class="modal-content bg-slate-100 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] transform scale-95 flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0 bg-white rounded-t-lg">
+                    <h3 id="modal-title" class="text-xl font-bold text-slate-900">Chi tiết Bệnh nhân</h3>
+                    <button id="close-modal-button" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button>
+                </div>
+                <div id="modal-body" class="overflow-y-auto flex-grow p-4"></div>
+                <div class="p-4 bg-slate-200 border-t border-slate-300 text-right rounded-b-lg flex-shrink-0">
+                    <button id="close-modal-button-footer" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 px-4 rounded-lg text-sm">Đóng</button>
+                </div>
             </div>
         </div>
+
         <footer class="fixed bottom-4 right-8 z-50">
             <p style="font-family: 'Dancing Script', cursive;" class="text-2xl font-bold text-slate-600 select-none">Dr.Liph</p>
         </footer>
@@ -360,15 +433,23 @@
             thaMeds: [],
             dtdMeds: [],
             filters: {
-                allEncounters: { searchText: '' },
-                ncdEncounters: { searchText: '' },
-                patients: { searchText: '' },
+                allEncounters: { searchText: '', month: 'all' },
+                ncdEncounters: { 
+                    searchText: '',
+                    month: 'all',
+                    birthYear: '',
+                    gender: 'all',
+                    diseases: [],
+                    statuses: []
+                },
+                patients: { searchText: '', month: 'all' },
                 history: { searchText: '', diseases: [], statuses: [] }
-            }
+            },
+            currentPatientId: null
         };
 
-        const DEFAULT_THA_MEDS = ['amlodipin', 'nifedipin', 'losartan', 'telmisartan', 'irbesartan', 'valsartan', 'candesartan', 'perindopril', 'enalapril', 'lisinopril', 'ramipril', 'metoprolol', 'bisoprolol', 'carvedilol', 'atenolol', 'hydrochlorothiazide', 'indapamide', 'furosemide', 'spironolactone', 'coveram', 'coversyl', 'amlodac', 'amcardia', 'cozaar', 'diovan', 'micardis', 'aprovel', 'atacand', 'coversyl', 'renitec', 'zestril', 'concor', 'betaloc', 'dilatrend', 'tenormin', 'lasix'];
-        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu'];
+        const DEFAULT_THA_MEDS = ['amlodipin', 'nifedipin', 'losartan', 'telmisartan', 'irbesartan', 'valsartan', 'candesartan', 'perindopril', 'enalapril', 'lisinopril', 'ramipril', 'metoprolol', 'bisoprolol', 'carvedilol', 'atenolol', 'hydrochlorothiazide', 'indapamide', 'furosemide', 'spironolactone', 'coveram', 'coversyl', 'amlodac', 'amcardia', 'cozaar', 'diovan', 'micardis', 'aprovel', 'atacand', 'renitec', 'zestril', 'concor', 'betaloc', 'dilatrend', 'tenormin', 'lasix', 'aldan'];
+        const DEFAULT_DTD_MEDS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'saxagliptin', 'linagliptin', 'dapagliflozin', 'empagliflozin', 'canagliflozin', 'pioglitazone', 'acarbose', 'diamicron', 'glucophage', 'amaryl', 'daonil', 'januvia', 'galvus', 'onglyza', 'trajenta', 'forxiga', 'jardiance', 'invokana', 'actos', 'glucobay', 'tforilex', 'glumeron', 'golddicron', 'dhmetglu', 'gliclada', 'gludipha'];
         const CHUYEN_VIEN_KEYWORDS = ['chuyển viện', 'chuyển đến bệnh viện'];
 
         const COLUMN_MAPPINGS = {
@@ -431,7 +512,6 @@
             return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
         
-        // Sửa lỗi tính tuổi
         function calculateAge(birthYear, encounterDate) {
             if (!birthYear || !encounterDate || isNaN(parseInt(birthYear))) return 'N/A';
             return encounterDate.getFullYear() - parseInt(birthYear);
@@ -455,7 +535,6 @@
             return vitals;
         }
         
-        // Hàm mới để tách chuỗi triệu chứng khỏi sinh hiệu
         function cleanSymptomsString(symptoms) {
             if (typeof symptoms !== 'string') return 'N/A';
             let cleaned = symptoms;
@@ -518,8 +597,9 @@
 
             let currentDate = null;
             let encountersList = [];
+            let encounterIdCounter = 0;
 
-            dataRows.forEach((row, index) => {
+            dataRows.forEach((row) => {
                 if (!row || !Array.isArray(row) || row.every(cell => !cell)) return;
 
                 const firstCell = String(row[0] || '').trim();
@@ -535,7 +615,7 @@
 
                 if (!hoTen || !namSinh) return;
 
-                const encounter = { id: `enc-${index}` };
+                const encounter = { id: `enc-${encounterIdCounter++}` };
                 for (const key in headerMap) {
                     encounter[key] = row[headerMap[key]];
                 }
@@ -569,10 +649,11 @@
                 }
             });
 
-            appState.encounters = encountersList;
+            appState.encounters = encountersList.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
         }
         
         function renderAllViews() {
+            populateAllMonthFilters();
             renderDashboard();
             renderReportView();
             renderExportView();
@@ -611,7 +692,6 @@
             document.getElementById('totalNcdVisits').textContent = encounters.length;
             document.getElementById('newNcdPatients').textContent = newPatientsCount;
 
-            // --- Chart Data Calculation ---
             const genderData = { 'Nam': 0, 'Nữ': 0, 'Khác': 0 };
             const ageGroups = { 'Dưới 40': 0, '40-60': 0, 'Trên 60': 0 };
             
@@ -641,7 +721,6 @@
                 return new Date(yA, mA - 1) - new Date(yB, mB-1);
             });
 
-            // --- Meds Stats Calculation ---
             const medsStats = {};
             const medList = filter === 'tha' ? appState.thaMeds : (filter === 'dtd' ? appState.dtdMeds : [...appState.thaMeds, ...appState.dtdMeds]);
             encounters.forEach(e => {
@@ -660,7 +739,6 @@
             });
             const sortedMeds = Object.entries(medsStats).sort(([,a], [,b]) => b.total - a.total);
             
-            // --- Render Meds Stats Table ---
             const medsContainer = document.getElementById('meds-stats-container');
             if(sortedMeds.length === 0){
                  medsContainer.innerHTML = `<p class="text-center text-slate-500 py-4">Không có dữ liệu thuốc để hiển thị cho lựa chọn này.</p>`;
@@ -682,7 +760,6 @@
                  medsContainer.innerHTML = medsTableHtml;
             }
 
-            // --- Render Charts ---
             Object.values(chartInstances).forEach(chart => chart.destroy());
             chartInstances.gender = new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: Object.keys(genderData), datasets: [{ data: Object.values(genderData), backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartInstances.age = new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: Object.keys(ageGroups), datasets: [{ label: 'Số lượng bệnh nhân', data: Object.values(ageGroups), backgroundColor: '#34d399' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
@@ -711,14 +788,15 @@
             document.getElementById('export-start-date').valueAsDate = oneMonthAgo;
         }
 
-
         function renderAllEncountersView() {
             const tableBody = document.getElementById('all-encounters-table-body');
-            const filterText = appState.filters.allEncounters.searchText.toLowerCase();
+            const { searchText, month } = appState.filters.allEncounters;
 
             const filteredEncounters = appState.encounters.filter(e => {
                 const searchString = `${e.hoTen || ''} ${e.diaChi || ''} ${e.tinhTrang || ''} ${e.chanDoan || ''}`.toLowerCase();
-                return searchString.includes(filterText);
+                const searchTextMatch = searchString.includes(searchText.toLowerCase());
+                const monthMatch = month === 'all' || (e.ngayKhamDate && `${e.ngayKhamDate.getFullYear()}-${String(e.ngayKhamDate.getMonth() + 1).padStart(2, '0')}` === month);
+                return searchTextMatch && monthMatch;
             });
             
             tableBody.innerHTML = filteredEncounters.map(e => {
@@ -728,77 +806,110 @@
                 if (isTaiTram) rowClass = 'bg-sky-50/50';
                 else if (isNoiKhac) rowClass = 'bg-amber-50/50';
 
-                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" data-patient-id="${e.hoTen.trim()}_${e.namSinhNum}">
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${e.hoTen.trim()}_${e.namSinhNum}', '${e.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.diaChi || ''}</td>
+                    <td class="px-6 py-4 text-sm text-slate-800 address-col">${e.diaChi || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tinhTrang}</td>
                 </tr>`;
             }).join('');
 
-            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
             document.getElementById('all-encounters-count').textContent = `Hiển thị ${filteredEncounters.length} trên tổng số ${appState.encounters.length} lượt khám.`;
+        }
+        
+        function populateAllMonthFilters() {
+            const monthFilters = document.querySelectorAll('#ncd-month-filter, #all-encounters-month-filter, #patients-month-filter');
+            const encounterMonths = new Set();
+            appState.encounters.forEach(e => {
+                if(e.ngayKhamDate) {
+                    const monthKey = `${e.ngayKhamDate.getFullYear()}-${String(e.ngayKhamDate.getMonth() + 1).padStart(2, '0')}`;
+                    encounterMonths.add(monthKey);
+                }
+            });
+
+            const sortedMonths = Array.from(encounterMonths).sort((a,b) => b.localeCompare(a));
+            
+            monthFilters.forEach(filter => {
+                // Clear existing options except the first one
+                while (filter.options.length > 1) {
+                    filter.remove(1);
+                }
+                
+                sortedMonths.forEach(monthKey => {
+                    const [year, month] = monthKey.split('-');
+                    const option = document.createElement('option');
+                    option.value = monthKey;
+                    option.textContent = `Tháng ${month}/${year}`;
+                    filter.appendChild(option);
+                });
+            });
         }
         
         function renderNcdEncountersView() {
             const tableBody = document.getElementById('ncd-encounters-table-body');
-            const filterText = appState.filters.ncdEncounters.searchText.toLowerCase();
+            const filters = appState.filters.ncdEncounters;
+            const ncdEncounters = appState.encounters.filter(e => e.tinhTrang.toLowerCase() !== 'không xác định');
 
-            const ncdEncounters = appState.encounters.filter(e => e.tinhTrang !== 'Không xác định');
             const filteredEncounters = ncdEncounters.filter(e => {
-                const searchString = `${e.hoTen || ''} ${e.diaChi || ''} ${e.tinhTrang || ''}`.toLowerCase();
-                return searchString.includes(filterText);
+                const statusLower = e.tinhTrang.toLowerCase();
+                const searchString = `${e.hoTen || ''} ${e.diaChi || ''}`.toLowerCase();
+
+                const searchTextMatch = !filters.searchText || searchString.includes(filters.searchText.toLowerCase());
+                const monthMatch = filters.month === 'all' || (e.ngayKhamDate && `${e.ngayKhamDate.getFullYear()}-${String(e.ngayKhamDate.getMonth() + 1).padStart(2, '0')}` === filters.month);
+                const birthYearMatch = !filters.birthYear || e.namSinhNum == filters.birthYear;
+                const genderMatch = filters.gender === 'all' || (e.gioiTinh && e.gioiTinh.toLowerCase() === filters.gender.toLowerCase());
+                const diseaseMatch = filters.diseases.length === 0 || filters.diseases.some(d => statusLower.includes(d));
+                const statusMatch = filters.statuses.length === 0 || filters.statuses.some(s => statusLower.includes(s));
+
+                return searchTextMatch && monthMatch && birthYearMatch && genderMatch && diseaseMatch && statusMatch;
             });
 
-            const sortedEncounters = filteredEncounters.sort((a, b) => {
-                const idA = `${a.hoTen}_${a.namSinhNum}`; const idB = `${b.hoTen}_${b.namSinhNum}`;
-                if (idA < idB) return -1; if (idA > idB) return 1;
-                return b.ngayKhamDate - a.ngayKhamDate;
-            });
-            
-            tableBody.innerHTML = sortedEncounters.map(e => {
+            tableBody.innerHTML = filteredEncounters.map(e => {
                 const isTaiTram = e.tinhTrang.includes('tại trạm');
                 let rowClass = isTaiTram ? 'bg-sky-50/50' : 'bg-amber-50/50';
 
-                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" data-patient-id="${e.hoTen.trim()}_${e.namSinhNum}">
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${e.hoTen.trim()}_${e.namSinhNum}', '${e.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.diaChi || ''}</td>
+                    <td class="px-6 py-4 text-sm text-slate-800 address-col">${e.diaChi || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tinhTrang}</td>
                 </tr>`;
             }).join('');
 
-            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
-            document.getElementById('ncd-encounters-count').textContent = `Hiển thị ${sortedEncounters.length} trên tổng số ${ncdEncounters.length} lượt khám THA/ĐTĐ.`;
+            document.getElementById('ncd-encounters-count').textContent = `Tìm thấy ${filteredEncounters.length} trên tổng số ${ncdEncounters.length} lượt khám THA/ĐTĐ.`;
         }
 
         function renderPatientsView() {
             const tableBody = document.getElementById('patients-table-body');
-            const filterText = appState.filters.patients.searchText.toLowerCase();
+            const { searchText, month } = appState.filters.patients;
             const ncdPatients = Object.values(appState.patients).filter(p => p.encounters.some(e => e.tinhTrang !== 'Không xác định'));
-            const filteredPatients = ncdPatients.filter(p => `${p.hoTen || ''} ${p.diaChi || ''}`.toLowerCase().includes(filterText));
+            
+            const filteredPatients = ncdPatients.filter(p => {
+                const searchTextMatch = `${p.hoTen || ''} ${p.diaChi || ''}`.toLowerCase().includes(searchText.toLowerCase());
+                const monthMatch = month === 'all' || p.encounters.some(e => e.ngayKhamDate && `${e.ngayKhamDate.getFullYear()}-${String(e.ngayKhamDate.getMonth() + 1).padStart(2, '0')}` === month);
+                return searchTextMatch && monthMatch;
+            });
 
             tableBody.innerHTML = filteredPatients.map(p => {
                 const latestEncounter = p.encounters[0];
                 const atStationCount = p.encounters.filter(e => e.tinhTrang.includes('tại trạm')).length;
-                return `<tr class="hover:bg-slate-100 cursor-pointer" data-patient-id="${p.id}">
+                return `<tr class="hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${p.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${p.hoTen}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.namSinh}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.gioiTinh}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.diaChi || ''}</td>
+                    <td class="px-6 py-4 text-sm text-slate-800 address-col">${p.diaChi || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(latestEncounter.ngayKhamDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${p.encounters.length}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${atStationCount}</td>
                 </tr>`;
             }).join('');
 
-            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => showDetailModal(row.dataset.patientId)));
             document.getElementById('patients-count').textContent = `Hiển thị ${filteredPatients.length} trên tổng số ${ncdPatients.length} bệnh nhân THA/ĐTĐ.`;
         }
 
@@ -836,7 +947,6 @@
             }
             const monthTimestamps = months.map(m => m.getTime());
 
-            // Pre-calculate monthly records for all patients
             patientsToDisplay.forEach(p => {
                 p.monthlyRecords = {};
                 monthTimestamps.forEach(ts => p.monthlyRecords[ts] = false);
@@ -868,10 +978,8 @@
                     <td class="sticky-name px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900 sticky left-0 bg-white">${patient.hoTen}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-800">${patient.namSinh}</td>`;
 
-                let lastRecordIndex = -1, firstRecordIndex = -1;
                 const recordIndices = monthTimestamps.map((ts, i) => patient.monthlyRecords[ts] ? i : -1).filter(i => i !== -1);
-                if (recordIndices.length > 0) firstRecordIndex = recordIndices[0];
-
+                let firstRecordIndex = recordIndices.length > 0 ? recordIndices[0] : -1;
                 let dropped = false;
                 let returned = false;
                 let consecutiveEmpty = 0;
@@ -879,7 +987,6 @@
                 monthTimestamps.forEach((ts, index) => {
                     let cellContent = '';
                     const hasRecord = patient.monthlyRecords[ts];
-
                     if (mode === 'C' && hasRecord) {
                          cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">C</span>`;
                          monthlyTotals[ts]++;
@@ -910,18 +1017,15 @@
             
             tableHTML += `</tbody></table>`;
             container.innerHTML = tableHTML;
-            // Update totals in the header
             for(const ts in monthlyTotals) {
                 const totalEl = document.getElementById(`total-${ts}`);
                 if (totalEl) totalEl.textContent = monthlyTotals[ts];
             }
-             // Add sorting event listeners to headers
             container.querySelectorAll('th.month-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const colIndex = parseInt(header.dataset.colIndex);
                     const tbody = container.querySelector('tbody');
                     const rows = Array.from(tbody.querySelectorAll('tr'));
-
                     rows.sort((trA, trB) => {
                         const cellA = trA.children[colIndex];
                         const cellB = trB.children[colIndex];
@@ -989,135 +1093,392 @@
             localStorage.setItem('thaMeds', JSON.stringify(appState.thaMeds));
             localStorage.setItem('dtdMeds', JSON.stringify(appState.dtdMeds));
         }
-
+        
         function formatTreatment(dieuTri) {
-            if (!dieuTri) return 'Không có dữ liệu';
-            let html = '';
-            const rawString = String(dieuTri);
+            if (!dieuTri) return '<div class="p-3 bg-white rounded-md border text-slate-500 italic">Không có dữ liệu điều trị.</div>';
             
-            const entries = rawString.split(/(?=\d+:)/).filter(Boolean);
+            const rawString = String(dieuTri).trim();
+            const entries = rawString.split(/(?=\d+\.\s*|\d+:\s*)/).filter(s => s.trim());
 
             if (entries.length === 0) {
-                 return `<div class="p-3 bg-slate-50 rounded-md border text-slate-800">${rawString}</div>`;
+                return `<div class="p-3 bg-white rounded-md border text-slate-800">${rawString}</div>`;
             }
 
-            entries.forEach(entry => {
-                const mainParts = entry.match(/(\d+):\s*([^x]+)\s*x\s*([\d\.]+\s*\w+)/);
-                if (mainParts) {
-                     const [_, num, medName, total] = mainParts.map(m => m ? m.trim() : '');
-                     
-                     const doseParts = [];
-                     const sangMatch = entry.match(/Sáng:?\s*([\d\.]+)/i);
-                     const truaMatch = entry.match(/Trưa:?\s*([\d\.]+)/i);
-                     const chieuMatch = entry.match(/Chiều:?\s*([\d\.]+)/i);
-                     const toiMatch = entry.match(/Tối:?\s*([\d\.]+)/i);
+            let html = '<ol class="space-y-3">';
+            entries.forEach((entry, index) => {
+                const cleanedEntry = entry.replace(/^\d+[\.:]\s*/, '').trim();
+                
+                const mainRegex = /^(.*?)(?:x\s*(\d+\s*\w+))/i;
+                const mainMatch = cleanedEntry.match(mainRegex);
+                
+                let medName = cleanedEntry;
+                let total = 'Không rõ SL';
 
-                     if (sangMatch && parseFloat(sangMatch[1]) > 0) doseParts.push(`Sáng ${sangMatch[1]}`);
-                     if (truaMatch && parseFloat(truaMatch[1]) > 0) doseParts.push(`Trưa ${truaMatch[1]}`);
-                     if (chieuMatch && parseFloat(chieuMatch[1]) > 0) doseParts.push(`Chiều ${chieuMatch[1]}`);
-                     if (toiMatch && parseFloat(toiMatch[1]) > 0) doseParts.push(`Tối ${toiMatch[1]}`);
-
-                     if (doseParts.length === 0) {
-                         const dailyMatch = entry.match(/(\d+)\s*v/i);
-                         if (dailyMatch) {
-                             doseParts.push(`Ngày ${dailyMatch[1]} viên`);
-                         }
-                     }
-                     
-                     const daysMatch = entry.match(/Số ngày:\s*(\d+)/i);
-                     const days = daysMatch ? daysMatch[1] : '';
-
-                     html += `<div class="p-3 bg-white rounded-md mb-2 border border-slate-200">
-                            <div class="flex justify-between items-center font-semibold">
-                                <p class="text-slate-800">${num}. ${medName}</p>
-                                <p class="text-slate-600">${total}</p>
-                            </div>
-                            <div class="flex justify-between items-center text-sm text-slate-500 mt-1">
-                                <p>${doseParts.join(' - ') || 'Không rõ liều'}</p>
-                                <p>${days ? `x ${days} ngày` : ''}</p>
-                            </div>
-                         </div>`;
+                if (mainMatch) {
+                    medName = mainMatch[1].trim();
+                    total = mainMatch[2].trim();
                 } else {
-                     html += `<div class="p-3 bg-white rounded-md mb-2 border border-slate-200 text-slate-800">${entry}</div>`;
+                    const parts = cleanedEntry.split(' ');
+                    if(!isNaN(parseInt(parts[parts.length-1], 10))) {
+                        total = parts.pop();
+                        medName = parts.join(' ');
+                    }
                 }
+                
+                const doseParts = [];
+                const sangMatch = cleanedEntry.match(/(?:sáng|s)\s*[:\-\s]\s*([\d\.\/]+)/i);
+                const truaMatch = cleanedEntry.match(/(?:trưa|t)\s*[:\-\s]\s*([\d\.\/]+)/i);
+                const chieuMatch = cleanedEntry.match(/(?:chiều|c)\s*[:\-\s]\s*([\d\.\/]+)/i);
+                const toiMatch = cleanedEntry.match(/(?:tối|to)\s*[:\-\s]\s*([\d\.\/]+)/i);
+
+                if (sangMatch) doseParts.push(`Sáng ${sangMatch[1]}`);
+                if (truaMatch) doseParts.push(`Trưa ${truaMatch[1]}`);
+                if (chieuMatch) doseParts.push(`Chiều ${chieuMatch[1]}`);
+                if (toiMatch) doseParts.push(`Tối ${toiMatch[1]}`);
+
+                let usageLine = doseParts.join(' - ');
+                
+                const daysMatch = cleanedEntry.match(/(?:số ngày|songay|sn)\s*[:\-\s]*(\d+)/i);
+                const daysText = daysMatch ? `x ${daysMatch[1]} ngày` : '';
+
+                if (!usageLine) {
+                    const genericUsageMatch = cleanedEntry.match(/ngày\s+\d+\s+lần/i);
+                    if (genericUsageMatch) {
+                        usageLine = genericUsageMatch[0];
+                    } else {
+                         usageLine = 'Không rõ cách dùng';
+                    }
+                }
+
+                html += `<li class="p-3 bg-white rounded-md border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between">
+                               <p class="font-semibold text-slate-800"><span class="text-sky-600 font-bold mr-2">${index + 1}.</span>${medName}</p>
+                               <p class="font-bold text-slate-700 text-right">${total}</p>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-1 pl-6">${usageLine} ${daysText}</p>
+                         </li>`;
             });
+            html += '</ol>';
             return html;
         }
 
-        function showDetailModal(patientId) {
+        function showDetailModal(patientId, encounterId = null) {
             const patient = appState.patients[patientId];
             if (!patient) return;
             
-            modalTitle.textContent = `Chi tiết Bệnh nhân: ${patient.hoTen}`;
-
-            let contentHTML = `<div class="info-card mb-6 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 text-sm bg-sky-50 border-sky-200">
-                <div><strong class="font-semibold text-slate-600 block">Họ tên:</strong> <span class="text-slate-900 font-bold text-base">${patient.hoTen}</span></div>
-                <div><strong class="font-semibold text-slate-600 block">Năm sinh:</strong> <span class="text-slate-900 font-bold text-base">${patient.namSinh}</span></div>
-                <div><strong class="font-semibold text-slate-600 block">Giới tính:</strong> <span class="text-slate-900 font-bold text-base">${patient.gioiTinh || 'N/A'}</span></div>
-            </div>
-            <h4 class="text-lg font-semibold text-slate-800 mb-4">Lịch sử các lần khám (${patient.encounters.length} lần)</h4>`;
+            appState.currentPatientId = patientId;
+            modalTitle.textContent = `Hồ sơ bệnh nhân: ${patient.hoTen}`;
             
-            patient.encounters.forEach(e => {
-                const isTaiTram = e.tinhTrang.includes('tại trạm');
-                const statusColorClass = isTaiTram ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800';
-                const diagnosesHTML = (e.chanDoan || 'N/A').split(';').map(d => `<li class="list-disc ml-5">${d.trim()}</li>`).join('');
-                
-                contentHTML += `<div class="bg-slate-50 border border-slate-200 rounded-lg mb-4">
-                    <div class="flex justify-between items-start p-4 bg-slate-100 rounded-t-lg border-b">
-                        <div>
-                            <h5 class="font-bold text-slate-800 text-md flex items-center gap-2">
-                                <i data-lucide="calendar" class="w-5 h-5 text-sky-600"></i>
-                                ${formatDate(e.ngayKhamDate)} (Tuổi: ${e.tuoi})
-                            </h5>
-                        </div>
-                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusColorClass}">${e.tinhTrang}</span>
-                    </div>
-                    <div class="p-4 space-y-4">
-                        <!-- Thông tin cá nhân -->
-                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <h6 class="font-semibold text-sm text-blue-800 mb-2 flex items-center gap-2"><i data-lucide="user-round-search" class="w-4 h-4"></i>Thông tin hành chính</h6>
-                            <div class="grid md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                <p><strong class="text-slate-500">Địa chỉ:</strong> ${e.diaChi || 'N/A'}</p>
-                                <p><strong class="text-slate-500">CCCD:</strong> ${e.cccd || 'N/A'}</p>
-                                <p><strong class="text-slate-500">BHYT:</strong> ${e.bhyt || 'N/A'}</p>
+            modalBody.innerHTML = `
+                <div class="p-6 bg-white rounded-lg shadow-md border border-slate-200 mb-4">
+                     <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+                        <div class="flex-shrink-0"><i data-lucide="user-circle-2" class="w-20 h-20 text-slate-400"></i></div>
+                        <div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                            <div>
+                                <p class="text-xs text-slate-500">Họ và Tên</p>
+                                <p class="text-lg font-bold text-slate-800">${patient.hoTen}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500">Năm sinh</p>
+                                <p class="font-semibold text-slate-700">${patient.namSinh}</p>
+                            </div>
+                             <div>
+                                <p class="text-xs text-slate-500">Giới tính</p>
+                                <p class="font-semibold text-slate-700">${patient.gioiTinh || 'N/A'}</p>
+                            </div>
+                            <div class="md:col-span-3">
+                                <p class="text-xs text-slate-500">Địa chỉ</p>
+                                <p class="font-semibold text-slate-700">${patient.diaChi || 'N/A'}</p>
+                            </div>
+                             <div>
+                                <p class="text-xs text-slate-500">CCCD</p>
+                                <p class="font-semibold text-slate-700">${patient.encounters[0]?.cccd || 'N/A'}</p>
+                            </div>
+                             <div>
+                                <p class="text-xs text-slate-500">BHYT</p>
+                                <p class="font-semibold text-slate-700">${patient.encounters[0]?.bhyt || 'N/A'}</p>
                             </div>
                         </div>
+                     </div>
+                </div>
 
-                        <!-- Triệu chứng -->
-                        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                            <h6 class="font-semibold text-sm text-yellow-800 mb-2 flex items-center gap-2"><i data-lucide="file-question" class="w-4 h-4"></i>Triệu chứng</h6>
-                            <p class="text-sm text-slate-800">${cleanSymptomsString(e.trieuChung)}</p>
-                        </div>
-                        
-                        <!-- Sinh hiệu -->
-                        <div class="p-3 bg-green-50 border border-green-200 rounded-md">
-                            <h6 class="font-semibold text-sm text-green-800 mb-2 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4"></i>Sinh hiệu</h6>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                                ${Object.entries(e.vitals).map(([key, value]) => `<div><strong class="text-slate-500">${key}:</strong> <span class="text-slate-800 font-medium">${value}</span></div>`).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Chẩn đoán -->
-                        <div class="p-3 bg-red-50 border border-red-200 rounded-md">
-                            <h6 class="font-semibold text-sm text-red-800 mb-2 flex items-center gap-2"><i data-lucide="stethoscope" class="w-4 h-4"></i>Chẩn đoán</h6>
-                            <ul class="text-sm text-slate-800">${diagnosesHTML}</ul>
-                        </div>
-
-                        <!-- Điều trị -->
-                        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-md">
-                            <h6 class="font-semibold text-sm text-indigo-800 mb-2 flex items-center gap-2"><i data-lucide="pilcrow" class="w-4 h-4"></i>Điều trị</h6>
-                            ${formatTreatment(e.dieuTri)}
+                <div class="bg-white rounded-lg shadow-md border border-slate-200">
+                    <div class="p-2 bg-slate-100 border-b border-slate-200 rounded-t-lg">
+                        <div id="detail-tabs-container" class="inline-flex space-x-1">
+                            <button data-tab="history" class="detail-tab-btn detail-tab-active font-semibold px-4 py-2 rounded-md text-sm transition flex items-center gap-2"><i data-lucide="history"></i> Lịch sử khám</button>
+                            <button data-tab="chart" class="detail-tab-btn bg-transparent text-gray-600 hover:bg-gray-200 font-semibold px-4 py-2 rounded-md text-sm transition flex items-center gap-2"><i data-lucide="line-chart"></i> Biểu đồ tuân thủ</button>
                         </div>
                     </div>
-                </div>`;
-            });
+                    <div id="detail-tab-content" class="p-4">
+                        <div id="detail-history-view">
+                            <div class="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6 items-start">
+                                <div>
+                                    <h4 class="font-semibold text-sm mb-2 text-slate-600">Chọn lần khám</h4>
+                                    <div id="history-sidebar" class="max-h-[55vh] overflow-y-auto pr-2 border rounded-md p-2 bg-slate-50">${renderHistorySidebar(patient, encounterId)}</div>
+                                </div>
+                                <div id="visit-detail-container" class="min-h-[55vh]"></div>
+                            </div>
+                        </div>
+                        <div id="detail-chart-view" class="hidden">
+                           ${renderAdherenceChartView()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const targetEncounterId = encounterId || (patient.encounters.length > 0 ? patient.encounters[0].id : null);
+            if(targetEncounterId) {
+                renderVisitDetail(patient.id, targetEncounterId);
+            }
 
-            modalBody.innerHTML = contentHTML;
             modal.classList.remove('opacity-0', 'pointer-events-none');
             modal.querySelector('.modal-content').classList.remove('scale-95');
             lucide.createIcons();
+
+            // Add event listeners for new tabs
+            document.getElementById('detail-tabs-container').addEventListener('click', e => {
+                const button = e.target.closest('.detail-tab-btn');
+                if (!button) return;
+
+                document.querySelectorAll('.detail-tab-btn').forEach(btn => {
+                    btn.classList.remove('detail-tab-active');
+                    btn.classList.add('bg-transparent', 'text-gray-600', 'hover:bg-gray-200');
+                });
+                button.classList.add('detail-tab-active');
+                button.classList.remove('bg-transparent', 'text-gray-600', 'hover:bg-gray-200');
+
+                const targetTab = button.dataset.tab;
+                document.getElementById('detail-history-view').classList.toggle('hidden', targetTab !== 'history');
+                document.getElementById('detail-chart-view').classList.toggle('hidden', targetTab !== 'chart');
+                
+                if (targetTab === 'chart') {
+                    // Initial render of the chart
+                    renderAdherenceChart(appState.currentPatientId);
+                }
+            });
+        }
+        
+        function renderHistorySidebar(patient, activeEncounterId) {
+            const selectedId = activeEncounterId || (patient.encounters.length > 0 ? patient.encounters[0].id : null);
+            return patient.encounters.map(e => `
+                <div onclick="switchVisitView('${patient.id}', '${e.id}')"
+                   class="sidebar-link block text-sm p-2 rounded-md mb-1 cursor-pointer transition-colors ${e.id === selectedId ? 'bg-sky-200 font-semibold' : 'hover:bg-slate-200'}"
+                   data-encounter-id="${e.id}">
+                   ${formatDate(e.ngayKhamDate)} - ${e.tinhTrang.split(';')[0]}
+                </div>
+            `).join('');
+        }
+        
+        function switchVisitView(patientId, encounterId) {
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('bg-sky-200', 'font-semibold');
+                link.classList.add('hover:bg-slate-200');
+            });
+            const activeLink = document.querySelector(`.sidebar-link[data-encounter-id="${encounterId}"]`);
+            if (activeLink) {
+                 activeLink.classList.add('bg-sky-200', 'font-semibold');
+                 activeLink.classList.remove('hover:bg-slate-200');
+            }
+            renderVisitDetail(patientId, encounterId);
         }
 
+        function renderVisitDetail(patientId, encounterId) {
+            const patient = appState.patients[patientId];
+            const encounter = patient.encounters.find(e => e.id === encounterId);
+            const container = document.getElementById('visit-detail-container');
+
+            if (!encounter) {
+                container.innerHTML = '<p>Không tìm thấy chi tiết lần khám.</p>';
+                return;
+            }
+
+            const diagnosesHTML = (encounter.chanDoan || 'N/A').split(';').map(d => `<li class="flex items-start"><span class="text-orange-500 mr-2 mt-1">&#9679;</span><span>${d.trim()}</span></li>`).join('');
+
+            container.innerHTML = `
+                <div class="visit-card">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                         <h3 class="font-bold text-lg text-sky-700">Ngày khám: ${formatDate(encounter.ngayKhamDate)} (Tuổi: ${encounter.tuoi})</h3>
+                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${encounter.tinhTrang.includes('tại trạm') ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800'}">${encounter.tinhTrang}</span>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                <h4 class="font-semibold text-green-700 border-l-4 border-green-500 pl-2 mb-3">Sinh hiệu & Triệu chứng</h4>
+                                <p class="text-sm text-slate-600 mb-3">${cleanSymptomsString(encounter.trieuChung)}</p>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    ${Object.entries(encounter.vitals).map(([key, value]) => `
+                                        <div class="p-2 rounded-md ${key === 'Huyết áp' && value !== 'N/A' ? 'bg-red-100' : 'bg-slate-100'}">
+                                            <p class="text-slate-500 text-xs">${key}</p>
+                                            <p class="font-semibold text-slate-800">${value}</p>
+                                        </div>`).join('')}
+                                </div>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                <h4 class="font-semibold text-orange-700 border-l-4 border-orange-500 pl-2 mb-3">Chẩn đoán</h4>
+                                <ul class="text-sm text-slate-800 space-y-1">${diagnosesHTML}</ul>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-1 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                            <h4 class="font-semibold text-purple-700 border-l-4 border-purple-500 pl-2 mb-3">Phương pháp điều trị</h4>
+                            <div class="max-h-[40vh] overflow-y-auto pr-2">
+                                ${formatTreatment(encounter.dieuTri)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderAdherenceChartView() {
+            return `
+                <div id="adherence-chart-controls" class="mb-4 p-3 bg-slate-50 rounded-md border flex flex-wrap items-center gap-6">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phân tích theo bệnh</label>
+                        <select id="adherence-disease-filter" class="p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500 text-sm">
+                            <option value="tha">Tăng huyết áp</option>
+                            <option value="dtd">Đái tháo đường</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phân tích theo nơi điều trị</label>
+                        <select id="adherence-location-filter" class="p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500 text-sm">
+                            <option value="tại trạm">Điều trị tại trạm</option>
+                            <option value="nơi khác">Điều trị nơi khác</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="relative h-96">
+                    <canvas id="adherenceChart"></canvas>
+                </div>
+            `;
+        }
+
+        function renderAdherenceChart(patientId) {
+            const patient = appState.patients[patientId];
+            if (!patient) return;
+            
+            const diseaseFilter = document.getElementById('adherence-disease-filter').value;
+            const locationFilter = document.getElementById('adherence-location-filter').value;
+            
+            const diseaseKeyword = diseaseFilter === 'tha' ? 'tăng huyết áp' : 'đái tháo đường';
+
+            const relevantEncounters = patient.encounters.filter(e => {
+                const statusLower = e.tinhTrang.toLowerCase();
+                return statusLower.includes(diseaseKeyword) && statusLower.includes(locationFilter);
+            }).sort((a,b) => a.ngayKhamDate - b.ngayKhamDate);
+            
+            if (relevantEncounters.length === 0) {
+                 if (chartInstances.adherence) chartInstances.adherence.destroy();
+                 const canvas = document.getElementById('adherenceChart');
+                 const ctx = canvas.getContext('2d');
+                 ctx.clearRect(0,0, canvas.width, canvas.height);
+                 ctx.font = '16px "Be Vietnam Pro"';
+                 ctx.fillStyle = '#64748b';
+                 ctx.textAlign = 'center';
+                 ctx.fillText('Không có dữ liệu tuân thủ cho lựa chọn này.', canvas.width / 2, canvas.height / 2);
+                 return;
+            }
+
+            const firstVisit = relevantEncounters[0].ngayKhamDate;
+            const lastVisit = new Date(); // Use today as the end date for timeline
+            
+            const months = [];
+            let currentDate = new Date(firstVisit.getFullYear(), firstVisit.getMonth(), 1);
+            while (currentDate <= lastVisit) {
+                months.push(new Date(currentDate));
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+
+            const visitsByMonth = {};
+            relevantEncounters.forEach(e => {
+                const monthKey = `${e.ngayKhamDate.getFullYear()}-${e.ngayKhamDate.getMonth()}`;
+                visitsByMonth[monthKey] = true;
+            });
+            
+            const adherenceData = [];
+            const pointColors = [];
+            const ADHERENCE_LEVELS = { MAX: 3, WARN1: 2, WARN2: 1, DROPPED: 0 };
+            const ADHERENCE_COLORS = { 3: '#22c55e', 2: '#facc15', 1: '#f97316', 0: '#ef4444' };
+            
+            let consecutiveMisses = 0;
+            months.forEach(month => {
+                const monthKey = `${month.getFullYear()}-${month.getMonth()}`;
+                let level;
+                if(visitsByMonth[monthKey]) {
+                    consecutiveMisses = 0;
+                    level = ADHERENCE_LEVELS.MAX;
+                } else {
+                    consecutiveMisses++;
+                    level = Math.max(ADHERENCE_LEVELS.DROPPED, ADHERENCE_LEVELS.MAX - consecutiveMisses);
+                }
+                adherenceData.push(level);
+                pointColors.push(ADHERENCE_COLORS[level]);
+            });
+
+            if (chartInstances.adherence) {
+                chartInstances.adherence.destroy();
+            }
+            
+            const ctx = document.getElementById('adherenceChart').getContext('2d');
+            chartInstances.adherence = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months.map(m => m.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })),
+                    datasets: [{
+                        label: 'Mức độ tuân thủ',
+                        data: adherenceData,
+                        borderColor: '#94a3b8',
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: pointColors,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        tension: 0.1,
+                        stepped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 3.5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value, index, values) {
+                                    switch(value) {
+                                        case 3: return 'Tái khám';
+                                        case 2: return 'Vắng 1 tháng';
+                                        case 1: return 'Vắng 2 tháng';
+                                        case 0: return 'Bỏ trị';
+                                        default: return '';
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                     const level = context.parsed.y;
+                                     let label = '';
+                                     switch(level) {
+                                        case 3: label = 'Tuân thủ tốt (Tái khám)'; break;
+                                        case 2: label = 'Cảnh báo (Vắng 1 tháng)'; break;
+                                        case 1: label = 'Nguy cơ (Vắng 2 tháng)'; break;
+                                        case 0: label = 'Bỏ trị (Vắng >= 3 tháng)'; break;
+                                     }
+                                     return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
         // --- EVENT LISTENERS ---
         uploadButton.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (event) => {
@@ -1137,10 +1498,10 @@
                     appState.rawData = jsonData;
                     setTimeout(() => {
                         processData(jsonData);
+                        populateAllMonthFilters(); // Populate filters right after processing data
                         loadingOverlay.classList.add('hidden');
                         uploadContainer.classList.add('hidden');
                         mainContent.classList.remove('hidden');
-                        
                         const firstTab = document.querySelector('.tab-button[data-tab="dashboard"]');
                         firstTab.click();
                         fileInput.value = '';
@@ -1169,14 +1530,9 @@
                 
                 if (appState.rawData.length > 0) {
                     const viewRenderers = {
-                        'dashboard': renderDashboard,
-                        'report': renderReportView,
-                        'export': renderExportView,
-                        'all-encounters': renderAllEncountersView,
-                        'ncd-encounters': renderNcdEncountersView,
-                        'patients': renderPatientsView,
-                        'history': renderHistoryView,
-                        'reference': renderReferenceView,
+                        'dashboard': renderDashboard, 'report': renderReportView, 'export': renderExportView,
+                        'all-encounters': renderAllEncountersView, 'ncd-encounters': renderNcdEncountersView,
+                        'patients': renderPatientsView, 'history': renderHistoryView, 'reference': renderReferenceView,
                     };
                     if(viewRenderers[targetTab]) viewRenderers[targetTab]();
                 }
@@ -1208,15 +1564,62 @@
                 renderHistoryView();
             }
         });
+        
+        modalBody.addEventListener('change', e => {
+            if (e.target.id === 'adherence-disease-filter' || e.target.id === 'adherence-location-filter') {
+                if (appState.currentPatientId) {
+                    renderAdherenceChart(appState.currentPatientId);
+                }
+            }
+        });
+
 
         closeModalButtons.forEach(btn => btn.addEventListener('click', () => {
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.querySelector('.modal-content').classList.add('scale-95');
+            appState.currentPatientId = null;
         }));
 
         document.getElementById('all-encounters-search').addEventListener('input', (e) => { appState.filters.allEncounters.searchText = e.target.value; renderAllEncountersView(); });
-        document.getElementById('ncd-encounters-search').addEventListener('input', (e) => { appState.filters.ncdEncounters.searchText = e.target.value; renderNcdEncountersView(); });
+        document.getElementById('all-encounters-month-filter').addEventListener('change', (e) => { appState.filters.allEncounters.month = e.target.value; renderAllEncountersView(); });
+        document.getElementById('all-encounters-reset-filters').addEventListener('click', () => {
+             document.getElementById('all-encounters-search').value = '';
+             document.getElementById('all-encounters-month-filter').value = 'all';
+             appState.filters.allEncounters = { searchText: '', month: 'all' };
+             renderAllEncountersView();
+        });
+
+        document.getElementById('ncd-filters').addEventListener('input', () => {
+            appState.filters.ncdEncounters = {
+                searchText: document.getElementById('ncd-encounters-search').value,
+                month: document.getElementById('ncd-month-filter').value,
+                birthYear: document.getElementById('ncd-birthyear-filter').value,
+                gender: document.getElementById('ncd-gender-filter').value,
+                diseases: Array.from(document.querySelectorAll('input[name="ncd-disease-filter"]:checked')).map(cb => cb.value),
+                statuses: Array.from(document.querySelectorAll('input[name="ncd-status-filter"]:checked')).map(cb => cb.value),
+            };
+            renderNcdEncountersView();
+        });
+        document.getElementById('ncd-reset-filters').addEventListener('click', () => {
+            document.getElementById('ncd-encounters-search').value = '';
+            document.getElementById('ncd-month-filter').value = 'all';
+            document.getElementById('ncd-birthyear-filter').value = '';
+            document.getElementById('ncd-gender-filter').value = 'all';
+            document.querySelectorAll('input[name="ncd-disease-filter"]:checked').forEach(cb => cb.checked = false);
+            document.querySelectorAll('input[name="ncd-status-filter"]:checked').forEach(cb => cb.checked = false);
+            appState.filters.ncdEncounters = { searchText: '', month: 'all', birthYear: '', gender: 'all', diseases: [], statuses: [] };
+            renderNcdEncountersView();
+        });
+
         document.getElementById('patients-search').addEventListener('input', (e) => { appState.filters.patients.searchText = e.target.value; renderPatientsView(); });
+        document.getElementById('patients-month-filter').addEventListener('change', (e) => { appState.filters.patients.month = e.target.value; renderPatientsView(); });
+        document.getElementById('patients-reset-filters').addEventListener('click', () => {
+            document.getElementById('patients-search').value = '';
+            document.getElementById('patients-month-filter').value = 'all';
+            appState.filters.patients = { searchText: '', month: 'all' };
+            renderPatientsView();
+        });
+
         document.getElementById('history-filters').addEventListener('input', (e) => { 
             if (e.target.id === 'history-search') appState.filters.history.searchText = e.target.value;
             else {
@@ -1226,7 +1629,6 @@
             renderHistoryView();
         });
 
-        // --- REPORT PAGE LISTENERS ---
         document.getElementById('report-period').addEventListener('change', (e) => {
             const period = e.target.value;
             document.getElementById('month-selector-container').style.display = period === 'month' ? 'block' : 'none';
@@ -1246,14 +1648,10 @@
                 endDate = new Date(year, month, 0, 23, 59, 59, 999);
             } else if (period === '3months') {
                 endDate = new Date(now);
-                startDate = new Date(now);
-                startDate.setMonth(startDate.getMonth() - 3);
-                startDate.setDate(1);
+                startDate = new Date(now); startDate.setMonth(startDate.getMonth() - 3); startDate.setDate(1);
             } else if (period === '6months') {
                 endDate = new Date(now);
-                startDate = new Date(now);
-                startDate.setMonth(startDate.getMonth() - 6);
-                startDate.setDate(1);
+                startDate = new Date(now); startDate.setMonth(startDate.getMonth() - 6); startDate.setDate(1);
             } else if (period === 'custom') {
                 startDate = new Date(document.getElementById('report-start-date').value);
                 endDate = new Date(document.getElementById('report-end-date').value);
@@ -1269,7 +1667,6 @@
             generateReport(startDate, endDate, population);
         });
 
-        // --- EXPORT PAGE LISTENERS ---
         document.getElementById('export-period').addEventListener('change', (e) => {
             const period = e.target.value;
             document.getElementById('export-month-selector-container').style.display = period === 'month' ? 'block' : 'none';
@@ -1278,74 +1675,42 @@
 
         document.getElementById('export-excel-btn').addEventListener('click', generatePatientListExcel);
 
-
         function generateReport(startDate, endDate, population) {
             const outputContainer = document.getElementById('report-output');
-            
             const thaData = calculateReportMetrics('tha', startDate, endDate, population, 0.12);
             const dtdData = calculateReportMetrics('dtd', startDate, endDate, population, 0.02);
-
-            outputContainer.innerHTML = `
-                ${createReportSectionHTML('Tăng huyết áp', thaData)}
-                ${createReportSectionHTML('Đái tháo đường', dtdData)}
-            `;
+            outputContainer.innerHTML = `${createReportSectionHTML('Tăng huyết áp', thaData)}${createReportSectionHTML('Đái tháo đường', dtdData)}`;
             lucide.createIcons();
         }
         
         function getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, diseaseKeyword, statusFilter) {
             const medicatedPatientIds = new Set();
             patientsForStatus.forEach(p => {
-                const hasRecordInPeriod = p.encounters.some(e => 
-                    e.ngayKhamDate >= periodStart && e.ngayKhamDate <= periodEnd &&
-                    e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
-                    (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
-                );
-                if (hasRecordInPeriod) {
+                if (p.encounters.some(e => e.ngayKhamDate >= periodStart && e.ngayKhamDate <= periodEnd && e.tinhTrang.toLowerCase().includes(diseaseKeyword) && (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter)))) {
                     medicatedPatientIds.add(p.id);
                 }
             });
-
             let newlyDetected = 0;
             patientsForStatus.forEach(p => {
-                const firstRelevantEncounter = [...p.encounters]
-                    .reverse()
-                    .find(e => 
-                        e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
-                        (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
-                    );
-                
+                const firstRelevantEncounter = [...p.encounters].reverse().find(e => e.tinhTrang.toLowerCase().includes(diseaseKeyword) && (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter)));
                 if (firstRelevantEncounter && firstRelevantEncounter.ngayKhamDate >= periodStart && firstRelevantEncounter.ngayKhamDate <= periodEnd) {
                     newlyDetected++;
                 }
             });
-
             const managementPeriodStart = new Date(periodStart);
             managementPeriodStart.setMonth(managementPeriodStart.getMonth() - 2);
-
             const underManagementPatientIds = new Set();
             patientsForStatus.forEach(p => {
-                const isManaged = p.encounters.some(e => 
-                    e.ngayKhamDate >= managementPeriodStart && e.ngayKhamDate <= periodEnd &&
-                    e.tinhTrang.toLowerCase().includes(diseaseKeyword) &&
-                    (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter))
-                );
-                if (isManaged) {
+                if (p.encounters.some(e => e.ngayKhamDate >= managementPeriodStart && e.ngayKhamDate <= periodEnd && e.tinhTrang.toLowerCase().includes(diseaseKeyword) && (statusFilter === 'all' || e.tinhTrang.toLowerCase().includes(statusFilter)))) {
                     underManagementPatientIds.add(p.id);
                 }
             });
-
             const medicated = medicatedPatientIds.size;
-            return {
-                newlyDetected: newlyDetected,
-                underManagement: underManagementPatientIds.size,
-                medicated: medicated,
-                targetAchieved: Math.round(medicated * 0.20)
-            };
+            return { newlyDetected, underManagement: underManagementPatientIds.size, medicated, targetAchieved: Math.round(medicated * 0.20) };
         }
 
         function calculateReportMetrics(diseaseType, startDate, endDate, population, prevalenceRate) {
             const keyword = diseaseType === 'tha' ? 'tăng huyết áp' : 'đái tháo đường';
-
             const getMetricsForPeriod = (periodStart, periodEnd, statusFilter) => {
                 const allRelevantPatientIds = new Set();
                 appState.encounters.forEach(e => {
@@ -1355,137 +1720,50 @@
                     }
                 });
                 const patientsForStatus = Array.from(allRelevantPatientIds).map(id => appState.patients[id]).filter(Boolean);
-
                 const metrics = getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, keyword, statusFilter);
-                
-                return {
-                    detected: Math.round(population * prevalenceRate),
-                    ...metrics
-                };
+                return { detected: Math.round(population * prevalenceRate), ...metrics };
             };
-
-            const lastYearStartDate = new Date(startDate);
-            lastYearStartDate.setFullYear(lastYearStartDate.getFullYear() - 1);
-            const lastYearEndDate = new Date(endDate);
-            lastYearEndDate.setFullYear(lastYearEndDate.getFullYear() - 1);
-
-            const currentData = {
-                taiTram: getMetricsForPeriod(startDate, endDate, 'tại trạm'),
-                noiKhac: getMetricsForPeriod(startDate, endDate, 'nơi khác'),
-                tongHop: getMetricsForPeriod(startDate, endDate, 'all')
-            };
-
-            const lastYearData = {
-                taiTram: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'tại trạm'),
-                noiKhac: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'nơi khác'),
-                tongHop: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'all')
-            };
-
+            const lastYearStartDate = new Date(startDate); lastYearStartDate.setFullYear(lastYearStartDate.getFullYear() - 1);
+            const lastYearEndDate = new Date(endDate); lastYearEndDate.setFullYear(lastYearEndDate.getFullYear() - 1);
+            const currentData = { taiTram: getMetricsForPeriod(startDate, endDate, 'tại trạm'), noiKhac: getMetricsForPeriod(startDate, endDate, 'nơi khác'), tongHop: getMetricsForPeriod(startDate, endDate, 'all') };
+            const lastYearData = { taiTram: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'tại trạm'), noiKhac: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'nơi khác'), tongHop: getMetricsForPeriod(lastYearStartDate, lastYearEndDate, 'all') };
             const calculateComparison = (currentMetrics, lastYearMetrics) => {
                 const result = {};
                 for (const key in currentMetrics) {
-                    const current = currentMetrics[key];
-                    const last = lastYearMetrics[key];
+                    const current = currentMetrics[key], last = lastYearMetrics[key];
                     let change = null;
-                    if (last > 0) {
-                        change = Math.round(((current - last) / last) * 100);
-                    } else if (current > 0) {
-                        change = null; 
-                    }
-                    result[key] = { value: current, lastYearValue: last, change: change };
+                    if (last > 0) change = Math.round(((current - last) / last) * 100);
+                    else if (current > 0) change = null;
+                    result[key] = { value: current, lastYearValue: last, change };
                 }
                 return result;
             };
-
-            return {
-                taiTram: calculateComparison(currentData.taiTram, lastYearData.taiTram),
-                noiKhac: calculateComparison(currentData.noiKhac, lastYearData.noiKhac),
-                tongHop: calculateComparison(currentData.tongHop, lastYearData.tongHop)
-            };
+            return { taiTram: calculateComparison(currentData.taiTram, lastYearData.taiTram), noiKhac: calculateComparison(currentData.noiKhac, lastYearData.noiKhac), tongHop: calculateComparison(currentData.tongHop, lastYearData.tongHop) };
         }
 
         function createReportSectionHTML(title, data) {
              const createMetricComparisonHTML = (metric) => {
                 let comparisonText = `<p class="text-xs text-slate-500 mt-1">Cùng kỳ: ${metric.lastYearValue}</p>`;
-                
-                if (metric.change === null || isNaN(metric.change)) {
-                     if (metric.value > 0 && metric.lastYearValue === 0) {
-                         return comparisonText + `<p class="text-xs font-semibold text-green-500">Mới</p>`;
-                     }
-                    return comparisonText; 
-                }
-                const color = metric.change >= 0 ? 'text-green-500' : 'text-red-500';
-                const icon = metric.change >= 0 ? 'arrow-up' : 'arrow-down';
-                const sign = metric.change > 0 ? '+' : '';
-                
-                comparisonText += `
-                    <p class="text-xs font-semibold ${color} inline-flex items-center">
-                        <i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${sign}${metric.change}%
-                    </p>`;
-                return comparisonText;
+                if (metric.change === null || isNaN(metric.change)) return comparisonText + (metric.value > 0 && metric.lastYearValue === 0 ? `<p class="text-xs font-semibold text-green-500">Mới</p>` : '');
+                const color = metric.change >= 0 ? 'text-green-500' : 'text-red-500', icon = metric.change >= 0 ? 'arrow-up' : 'arrow-down', sign = metric.change > 0 ? '+' : '';
+                return comparisonText + `<p class="text-xs font-semibold ${color} inline-flex items-center"><i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${sign}${metric.change}%</p>`;
             };
-
-            const createSubSection = (subTitle, metrics, note) => `
-                <div class="p-4 bg-slate-50 rounded-lg border">
-                    <h4 class="font-semibold text-slate-700 mb-3">${subTitle}</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
-                        <div class="bg-white p-3 rounded-md border">
-                            <p class="text-slate-500">Tổng số phát hiện</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.detected.value}</p>
-                            <p class="text-xs text-slate-400 mt-1">${note}</p>
-                        </div>
-                        <div class="bg-white p-3 rounded-md border">
-                            <p class="text-slate-500">Số mới phát hiện</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value}</p>
-                            ${createMetricComparisonHTML(metrics.newlyDetected)}
-                        </div>
-                        <div class="bg-white p-3 rounded-md border">
-                            <p class="text-slate-500">Số đang quản lí</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.underManagement.value}</p>
-                             ${createMetricComparisonHTML(metrics.underManagement)}
-                        </div>
-                        <div class="bg-white p-3 rounded-md border">
-                            <p class="text-slate-500">Số khám cấp thuốc</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.medicated.value}</p>
-                             ${createMetricComparisonHTML(metrics.medicated)}
-                        </div>
-                        <div class="bg-white p-3 rounded-md border">
-                            <p class="text-slate-500">Điều trị đạt mục tiêu</p>
-                            <p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value}</p>
-                             ${createMetricComparisonHTML(metrics.targetAchieved)}
-                            <p class="text-xs text-slate-400 mt-1">(Ước tính 20% số cấp thuốc)</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const createSubSection = (subTitle, metrics, note) => `<div class="p-4 bg-slate-50 rounded-lg border"><h4 class="font-semibold text-slate-700 mb-3">${subTitle}</h4><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm"><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Tổng số phát hiện</p><p class="text-xl font-bold text-sky-600">${metrics.detected.value}</p><p class="text-xs text-slate-400 mt-1">${note}</p></div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số mới phát hiện</p><p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value}</p>${createMetricComparisonHTML(metrics.newlyDetected)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số đang quản lí</p><p class="text-xl font-bold text-sky-600">${metrics.underManagement.value}</p>${createMetricComparisonHTML(metrics.underManagement)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số khám cấp thuốc</p><p class="text-xl font-bold text-sky-600">${metrics.medicated.value}</p>${createMetricComparisonHTML(metrics.medicated)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Điều trị đạt mục tiêu</p><p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value}</p>${createMetricComparisonHTML(metrics.targetAchieved)}<p class="text-xs text-slate-400 mt-1">(Ước tính 20% số cấp thuốc)</p></div></div></div>`;
             const note = title === 'Tăng huyết áp' ? '(Ước tính 12% dân số)' : '(Ước tính 2% dân số)';
-            return `
-                <div class="info-card">
-                    <h3 class="text-xl font-bold mb-4 text-sky-700">${title}</h3>
-                    <div class="space-y-4">
-                        ${createSubSection('Điều trị tại trạm', data.taiTram, note)}
-                        ${createSubSection('Điều trị nơi khác', data.noiKhac, note)}
-                        ${createSubSection('Tổng hợp', data.tongHop, note)}
-                    </div>
-                </div>
-            `;
+            return `<div class="info-card"><h3 class="text-xl font-bold mb-4 text-sky-700">${title}</h3><div class="space-y-4">${createSubSection('Điều trị tại trạm', data.taiTram, note)}${createSubSection('Điều trị nơi khác', data.noiKhac, note)}${createSubSection('Tổng hợp', data.tongHop, note)}</div></div>`;
         }
 
-        // --- HÀM XUẤT EXCEL ---
-        async function generatePatientListExcel() {
+        function generatePatientListExcel() {
             const exportBtn = document.getElementById('export-excel-btn');
             const originalBtnHTML = exportBtn.innerHTML;
             exportBtn.disabled = true;
             exportBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Đang xử lý...`;
             lucide.createIcons();
-            
             const oldMsg = document.getElementById('export-error-msg');
             if (oldMsg) oldMsg.remove();
-
             const selectedDiseases = Array.from(document.querySelectorAll('#export-view input[name="export-disease"]:checked')).map(cb => cb.value);
             const selectedStatuses = Array.from(document.querySelectorAll('#export-view input[name="export-status"]:checked')).map(cb => cb.value);
             const period = document.getElementById('export-period').value;
-
             let startDate, endDate;
             if (period === 'month') {
                 const [year, month] = document.getElementById('export-month').value.split('-').map(Number);
@@ -1497,44 +1775,26 @@
                 startDate.setHours(0, 0, 0, 0);
                 endDate.setHours(23, 59, 59, 999);
             }
-
             const patientData = {};
             appState.encounters.forEach(e => {
                 if (e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate) {
                     const statusLower = e.tinhTrang.toLowerCase();
                     const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.some(d => statusLower.includes(d));
                     const statusMatch = selectedStatuses.length === 0 || selectedStatuses.some(s => statusLower.includes(s));
-
                     if (diseaseMatch && statusMatch) {
                         const patientId = `${e.hoTen.trim()}_${e.namSinhNum}`;
                         if (!patientData[patientId]) {
                             const patientInfo = appState.patients[patientId];
-                            patientData[patientId] = {
-                                hoTen: patientInfo.hoTen,
-                                gioiTinh: patientInfo.gioiTinh,
-                                namSinh: patientInfo.namSinh,
-                                diaChi: patientInfo.diaChi,
-                                encounters: []
-                            };
+                            patientData[patientId] = { hoTen: patientInfo.hoTen, gioiTinh: patientInfo.gioiTinh, namSinh: patientInfo.namSinh, diaChi: patientInfo.diaChi, encounters: [] };
                         }
                         patientData[patientId].encounters.push(e);
                     }
                 }
             });
-            
             const tableData = Object.values(patientData).map((p, index) => {
                 const visitDates = p.encounters.map(e => formatDate(e.ngayKhamDate)).join('; ');
-                return [
-                    index + 1,
-                    p.hoTen,
-                    p.gioiTinh || 'N/A',
-                    p.namSinh,
-                    p.diaChi || 'N/A',
-                    p.encounters.length,
-                    visitDates
-                ];
+                return [index + 1, p.hoTen, p.gioiTinh || 'N/A', p.namSinh, p.diaChi || 'N/A', p.encounters.length, visitDates];
             });
-
             if (tableData.length === 0) {
                  const msgEl = document.createElement('p');
                  msgEl.id = 'export-error-msg';
@@ -1542,50 +1802,25 @@
                  msgEl.textContent = 'Không có dữ liệu phù hợp.';
                  exportBtn.parentElement.style.position = 'relative';
                  exportBtn.parentElement.appendChild(msgEl);
-
-                 exportBtn.disabled = false;
-                 exportBtn.innerHTML = originalBtnHTML;
-                 lucide.createIcons();
+                 exportBtn.disabled = false; exportBtn.innerHTML = originalBtnHTML; lucide.createIcons();
                  setTimeout(() => msgEl.remove(), 3000);
                  return;
             }
-
             try {
                 const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Năm sinh', 'Địa chỉ', 'Số lần khám', 'Ghi chú (ngày khám)'];
                 const dataToExport = [headers, ...tableData];
-                
                 const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
-
-                worksheet['!cols'] = [
-                    { wch: 5 },  // STT
-                    { wch: 25 }, // Họ và Tên
-                    { wch: 10 }, // Giới tính
-                    { wch: 10 }, // Năm sinh
-                    { wch: 40 }, // Địa chỉ
-                    { wch: 15 }, // Số lần khám
-                    { wch: 40 }  // Ghi chú
-                ];
-
+                worksheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 40 }, { wch: 15 }, { wch: 40 }];
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
                 XLSX.writeFile(workbook, `Danh_sach_benh_nhan_${new Date().toISOString().slice(0,10)}.xlsx`);
-
             } catch(err) {
                 console.error("Error generating Excel file:", err);
-                const msgEl = document.createElement('p');
-                msgEl.id = 'export-error-msg';
-                msgEl.className = 'text-red-500 text-sm ml-4';
-                msgEl.textContent = 'Lỗi khi tạo tệp Excel.';
-                exportBtn.parentElement.appendChild(msgEl);
             } finally {
-                exportBtn.disabled = false;
-                exportBtn.innerHTML = originalBtnHTML;
-                lucide.createIcons();
+                exportBtn.disabled = false; exportBtn.innerHTML = originalBtnHTML; lucide.createIcons();
             }
         }
 
-
-        // --- KHỞI ĐỘNG ỨNG DỤNG ---
         document.addEventListener('DOMContentLoaded', () => {
             loadReferenceMeds();
             lucide.createIcons();
@@ -1593,4 +1828,3 @@
     </script>
 </body>
 </html>
-
