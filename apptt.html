@@ -637,7 +637,7 @@ const App = function() {
     let state = {};
 
     const defaultState = {
-        version: "1.0.0",
+        version: "1.0.1",
         activeView: 'dashboard',
         settings: {
             stationName: 'Trạm Y tế xã Xuân Bắc',
@@ -720,17 +720,22 @@ const App = function() {
     };
     
     const exportData = () => {
-        const dataStr = JSON.stringify(state, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `health_comm_assistant_backup_${formatDate(new Date())}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        showToast('Đã xuất dữ liệu thành công!');
+        try {
+            const dataStr = JSON.stringify(state, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `health_comm_assistant_backup_${formatDate(new Date())}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('Đã xuất dữ liệu thành công!');
+        } catch (error) {
+            console.error("Export failed:", error);
+            showToast('Xuất file thất bại.', 'error');
+        }
     };
     
     const importData = (event) => {
@@ -783,27 +788,35 @@ const App = function() {
         });
 
         // Call specific render functions based on the active view
-        switch (state.activeView) {
-            case 'dashboard':
-                renderDashboard();
-                break;
-            case 'activity-management':
-                renderActivityManagement();
-                break;
-            case 'planning':
-                renderPlanning();
-                break;
-            case 'reports':
-                renderReports();
-                break;
-            case 'library':
-                renderLibrary();
-                break;
-            case 'settings':
-                renderSettings();
-                break;
+        try {
+            switch (state.activeView) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'activity-management':
+                    renderActivityManagement();
+                    break;
+                case 'planning':
+                    renderPlanning();
+                    break;
+                case 'reports':
+                    renderReports();
+                    break;
+                case 'library':
+                    renderLibrary();
+                    break;
+                case 'settings':
+                    renderSettings();
+                    break;
+            }
+        } catch (error) {
+            console.error("Error during render:", error);
+            // Optionally show an error message to the user
         }
-        lucide.createIcons();
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     };
     
     const renderNavigation = () => {
@@ -828,7 +841,6 @@ const App = function() {
             </div>
         `;
         
-        // FIX: Attach navigation listener immediately after creation for stability.
         navContainer.addEventListener('click', (e) => {
             const link = e.target.closest('a');
             if (link && link.dataset.view) {
@@ -844,8 +856,15 @@ const App = function() {
         const toast = $('#toast-notification');
         const toastMessage = $('#toast-message');
         
-        toast.classList.remove('bg-green-500', 'bg-red-500');
-        toast.classList.add(type === 'success' ? 'bg-green-500' : 'bg-red-500');
+        toast.classList.remove('bg-green-500', 'bg-red-500', 'bg-yellow-500');
+        if (type === 'success') {
+            toast.classList.add('bg-green-500');
+        } else if (type === 'error') {
+            toast.classList.add('bg-red-500');
+        } else {
+             toast.classList.add('bg-yellow-500');
+        }
+        
         toastMessage.textContent = message;
 
         toast.classList.remove('translate-x-full');
@@ -864,24 +883,21 @@ const App = function() {
         const okBtn = $('#confirm-modal-ok-btn');
         const cancelBtn = $('#confirm-modal-cancel-btn');
 
-        const confirmHandler = () => {
+        // Clone and replace to remove old listeners
+        const newOkBtn = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+        
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        newOkBtn.addEventListener('click', () => {
             onConfirm();
             closeModal('confirm-modal');
-            cleanup();
-        };
+        });
 
-        const cancelHandler = () => {
+        newCancelBtn.addEventListener('click', () => {
             closeModal('confirm-modal');
-            cleanup();
-        };
-        
-        const cleanup = () => {
-            okBtn.removeEventListener('click', confirmHandler);
-            cancelBtn.removeEventListener('click', cancelHandler);
-        }
-
-        okBtn.addEventListener('click', confirmHandler);
-        cancelBtn.addEventListener('click', cancelHandler);
+        });
     };
 
     // --- MODULE-SPECIFIC RENDER FUNCTIONS ---
@@ -983,6 +999,14 @@ const App = function() {
     };
 
     const renderDashboardCharts = (monthlyActivities) => {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded.');
+            const errorMsg = '<p class="text-center text-red-500">Lỗi tải thư viện biểu đồ. Vui lòng kiểm tra kết nối mạng và tải lại trang.</p>';
+            $('#topics-chart').parentElement.innerHTML = errorMsg;
+            $('#methods-chart').parentElement.innerHTML = errorMsg;
+            return;
+        }
+
         // Data for charts
         const topicCounts = monthlyActivities.reduce((acc, activity) => {
             acc[activity.topicName] = (acc[activity.topicName] || 0) + 1;
@@ -1149,7 +1173,9 @@ const App = function() {
         }
         
         renderPaginationControls('activity', totalPages);
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     };
     
     const renderPaginationControls = (context, totalPages) => {
@@ -1180,7 +1206,9 @@ const App = function() {
 
         html += '</div>';
         paginationContainer.innerHTML = html;
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     };
     
     const changePage = (context, page) => {
@@ -1291,6 +1319,10 @@ const App = function() {
     };
     
     const downloadExcelTemplate = () => {
+        if (typeof XLSX === 'undefined') {
+            showToast('Lỗi: Thư viện Excel chưa được tải. Vui lòng kiểm tra kết nối mạng.', 'error');
+            return;
+        }
         const worksheet = XLSX.utils.json_to_sheet([
             {
                 ngay_thuc_hien: 'yyyy-mm-dd',
@@ -1310,6 +1342,11 @@ const App = function() {
     };
 
     const importFromExcel = (event) => {
+        if (typeof XLSX === 'undefined') {
+            showToast('Lỗi: Thư viện Excel chưa được tải. Vui lòng kiểm tra kết nối mạng.', 'error');
+            event.target.value = ''; // Reset input
+            return;
+        }
         const file = event.target.files[0];
         if (!file) return;
 
@@ -1360,6 +1397,10 @@ const App = function() {
     };
     
     const exportActivityLog = () => {
+        if (typeof window.jspdf === 'undefined') {
+            showToast('Lỗi: Thư viện PDF chưa được tải. Vui lòng kiểm tra kết nối mạng.', 'error');
+            return;
+        }
         const { from, to, topic, staff } = state.filters.activity;
         let filteredActivities = state.activities
             .filter(a => {
@@ -1375,7 +1416,7 @@ const App = function() {
             .sort((a,b) => new Date(a.date) - new Date(b.date));
             
         if (filteredActivities.length === 0) {
-            showToast("Không có dữ liệu để xuất.", "error");
+            showToast("Không có dữ liệu để xuất.", "warning");
             return;
         }
 
@@ -1485,7 +1526,9 @@ const App = function() {
             });
         });
         
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     };
     
     const changeMonth = (offset) => {
@@ -1639,14 +1682,12 @@ const App = function() {
         });
 
         if (reportData.length === 0) {
-            showToast('Không có dữ liệu trong khoảng thời gian đã chọn.', 'error');
+            showToast('Không có dữ liệu trong khoảng thời gian đã chọn.', 'warning');
             return;
         }
 
         switch(type) {
             case 'monthly_stats':
-                // For this, we'd need a very specific template, which is complex to generate.
-                // A simplified version could be a printable HTML page.
                 showToast('Chức năng "Báo cáo Thống kê Tháng" đang được phát triển.', 'warning');
                 break;
             case 'six_month_summary':
@@ -1659,6 +1700,10 @@ const App = function() {
     };
     
     const exportDetailedListToExcel = (data) => {
+        if (typeof XLSX === 'undefined') {
+            showToast('Lỗi: Thư viện Excel chưa được tải. Vui lòng kiểm tra kết nối mạng.', 'error');
+            return;
+        }
         const exportData = data.map(act => ({
             'Ngày thực hiện': formatDate(act.date, 'dd/mm/yyyy'),
             'Chủ đề': act.topicName,
@@ -1877,10 +1922,16 @@ const App = function() {
     
     const resetAllData = () => {
         confirmAction('HÀNH ĐỘNG NÀY SẼ XÓA TẤT CẢ DỮ LIỆU. Bạn có chắc chắn muốn tiếp tục không?', () => {
-            localStorage.removeItem('healthCommAsstState');
-            state = JSON.parse(JSON.stringify(defaultState));
-            init();
-            showToast('Toàn bộ dữ liệu đã được xóa.');
+            try {
+                localStorage.removeItem('healthCommAsstState');
+                state = JSON.parse(JSON.stringify(defaultState));
+                // No need to save the default state, it will be created on next load
+                init();
+                showToast('Toàn bộ dữ liệu đã được xóa.');
+            } catch (error) {
+                console.error("Failed to reset data:", error);
+                showToast('Xóa dữ liệu thất bại.', 'error');
+            }
         });
     };
 
@@ -1952,6 +2003,8 @@ const App = function() {
         deleteLibraryItem,
         changePage,
         editPlannedActivity,
+        deletePlannedActivity,
+        confirmPlannedActivity
     };
 };
 
@@ -1964,3 +2017,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
