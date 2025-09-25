@@ -753,7 +753,7 @@
                 return;
             }
             
-            const activities = this.data.activities.filter(a => a.status === 'approved');
+            const activities = this.data.activities; // FIX: Count ALL activities, not just approved ones
 
             const periodData = this.calculateReportMetrics(activities, periodStart, periodEnd);
             let cumulativeData = null;
@@ -794,6 +794,9 @@
             };
 
             filtered.forEach(act => {
+                 // Only count metrics for approved activities in the detailed breakdown
+                if (act.status !== 'approved') return;
+
                 const attendees = parseInt(act.soNguoiThamDu) || 0;
                 const phuongTien = act.phuongTien.toLowerCase();
                 const hinhThuc = act.hinhThuc.toLowerCase();
@@ -824,6 +827,9 @@
                     }
                 }
             });
+             // Add total activities count (both planned and approved)
+            metrics.totalActivities = filtered.length;
+            
             return metrics;
         },
 
@@ -846,9 +852,9 @@
                 return sum + currentAttendees;
             }, 0);
             
-            const totalActivitiesPeriod = Object.values(periodData.direct).reduce((sum, type) => sum + (type.count || 0), 0) + Object.values(periodData.indirect).reduce((sum, val) => typeof val === 'number' ? sum + val : sum, 0);
+            const totalActivitiesPeriod = periodData.totalActivities;
             
-             const cumulativeActivities = cumulativeData ? Object.values(cumulativeData.direct).reduce((s,t)=>s+(t.count || 0),0) + Object.values(cumulativeData.indirect).reduce((s,v)=> typeof v === 'number' ? s + v : s,0) : 0;
+             const cumulativeActivities = cumulativeData ? cumulativeData.totalActivities : 0;
              const cumulativeAttendees = cumulativeData ? Object.values(cumulativeData.direct).reduce((sum, type) => {
                 let currentAttendees = type.attendees || 0;
                 if (typeof type === 'object' && !type.attendees) {
@@ -866,12 +872,13 @@
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
                          ${createMetricCard('Hoạt động (Trong kỳ)', totalActivitiesPeriod, 'text-blue-600')}
-                         ${createMetricCard('Lượt tham dự (Trong kỳ)', totalAttendeesPeriod, 'text-green-600')}
+                         ${createMetricCard('Lượt tham dự (Đã duyệt)', totalAttendeesPeriod, 'text-green-600')}
                          ${cumulativeData ? createMetricCard('Hoạt động (Cộng dồn)', cumulativeActivities, 'text-blue-700') : ''}
                          ${cumulativeData ? createMetricCard('Lượt tham dự (Cộng dồn)', cumulativeAttendees, 'text-green-700') : ''}
                     </div>
 
                     <div class="mt-8">
+                        <p class="text-sm text-gray-600 mb-4 italic">Lưu ý: Bảng chi tiết dưới đây chỉ thống kê số liệu từ các hoạt động <span class="font-semibold">"Đã phê duyệt"</span>.</p>
                         ${this.generateReportTable(periodData, cumulativeData)}
                     </div>
                 </div>
@@ -1001,11 +1008,11 @@
                 ["Kỳ báo cáo", `Từ ${periodStart} đến ${periodEnd}`],
                 ...(cumulativeData ? [["Cộng dồn", `Từ ${cumulativeStart} đến ${periodEnd}`]] : []),
                 [],
-                ["I. THỐNG KÊ CHUNG"],
+                ["I. THỐNG KÊ CHUNG (CHỈ TÍNH HOẠT ĐỘNG ĐÃ DUYỆT)"],
                 header,
                 ...mainData,
                 [],
-                ["II. TƯ VẤN TẠI TRẠM"],
+                ["II. TƯ VẤN TẠI TRẠM (CHỈ TÍNH HOẠT ĐỘNG ĐÃ DUYỆT)"],
                 header,
                 ...consultingDataRows
             ];
@@ -2044,3 +2051,4 @@
     </script>
 </body>
 </html>
+
