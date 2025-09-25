@@ -294,6 +294,10 @@
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                         Xóa
                     </button>
+                    <button type="button" id="duplicate-activity-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 hidden items-center gap-2 ml-2">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        Nhân đôi
+                    </button>
                 </div>
                 <div class="flex space-x-3">
                     <button type="button" id="cancel-activity-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Hủy</button>
@@ -324,6 +328,7 @@
     
     // Đặt toàn bộ code JavaScript của ứng dụng vào đây
     const App = {
+        draggedActivityId: null,
         data: {
             activities: [],
             options: {
@@ -610,6 +615,7 @@
                                     <th scope="col" class="px-6 py-3">Địa điểm</th>
                                     <th scope="col" class="px-6 py-3">Trạng thái</th>
                                     <th scope="col" class="px-6 py-3">Người tham dự</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Đính kèm</th>
                                     <th scope="col" class="px-6 py-3 text-center">Hành động</th>
                                 </tr>
                             </thead>
@@ -679,7 +685,7 @@
                 });
 
                 const activitiesHtml = dayActivities.map(act => `
-                    <div class="calendar-activity ${act.status === 'planned' ? 'status-planned' : 'status-approved'}" data-id="${act.id}" title="${act.loaiNoiDung}: ${act.noiDungCuThe}">
+                    <div class="calendar-activity ${act.status === 'planned' ? 'status-planned' : 'status-approved'}" draggable="true" data-id="${act.id}" title="${act.loaiNoiDung}: ${act.noiDungCuThe}">
                        <span class="activity-type">${act.loaiNoiDung}</span>
                        ${act.noiDungCuThe}
                     </div>
@@ -1073,14 +1079,13 @@
             const form = document.getElementById('activity-form');
             form.reset();
             
-            // Xóa hiển thị file cũ
             this.updateFileDisplay('bien-ban', null);
             this.updateFileDisplay('tai-lieu', null);
             document.getElementById('tai-lieu-input-text').value = '';
 
-
             const title = document.getElementById('modal-title');
             const deleteBtn = document.getElementById('delete-activity-in-modal-btn');
+            const duplicateBtn = document.getElementById('duplicate-activity-btn');
 
             if (activity) {
                 title.textContent = 'Chỉnh sửa Hoạt động Truyền thông';
@@ -1109,17 +1114,16 @@
                     document.getElementById('tai-lieu-input-text').value = activity.taiLieu.name;
                 }
 
-                
                 deleteBtn.classList.remove('hidden');
                 deleteBtn.classList.add('inline-flex');
-                deleteBtn.dataset.id = activity.id;
+                duplicateBtn.classList.remove('hidden');
+                duplicateBtn.classList.add('inline-flex');
 
             } else {
                 title.textContent = 'Thêm Hoạt động Truyền thông Mới';
                 document.getElementById('activity-id').value = '';
                 deleteBtn.classList.add('hidden');
-                deleteBtn.classList.remove('inline-flex');
-                deleteBtn.removeAttribute('data-id');
+                duplicateBtn.classList.add('hidden');
             }
 
             modal.classList.remove('hidden');
@@ -1140,7 +1144,6 @@
             saveButton.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> Đang lưu...`;
             lucide.createIcons();
 
-            // Lấy dữ liệu file từ các hidden input nếu không có file mới được chọn
             let bienBanData = {
                 name: document.getElementById('bien-ban-display')?.querySelector('.file-name')?.textContent || null,
                 dataURL: document.getElementById('bien-ban-data-url').value || null
@@ -1161,7 +1164,6 @@
                     taiLieuData = await this.readFileAsDataURL(taiLieuFile);
                 }
 
-                // Nếu người dùng chọn từ datalist, tìm dataURL tương ứng
                  if (!taiLieuFile && taiLieuData.name && !taiLieuData.dataURL) {
                     const existingMaterial = (this.data.options.materials || []).find(m => m.name === taiLieuData.name);
                     if (existingMaterial) {
@@ -1188,7 +1190,6 @@
                     taiLieu: taiLieuData.name ? taiLieuData : null,
                 };
                 
-                // Cập nhật các danh sách tùy chọn
                 this.addOptionIfNeeded('locations', activityData.diaDiem);
                 this.addOptionIfNeeded('contentTypes', activityData.loaiNoiDung);
                 this.addOptionIfNeeded('targetAudiences', activityData.doiTuong);
@@ -1196,7 +1197,6 @@
                 if (activityData.hinhThuc === 'Trực tiếp') this.addOptionIfNeeded('media.direct', activityData.phuongTien);
                 else this.addOptionIfNeeded('media.indirect', activityData.phuongTien);
                 
-                // Thêm tài liệu mới vào danh sách gợi ý
                 if (activityData.taiLieu) this.addOptionIfNeeded('materials', activityData.taiLieu, true);
 
                 if (id) {
@@ -1265,12 +1265,12 @@
                           <span class="file-name text-gray-700 truncate" title="${fileData.name}">${fileData.name}</span>
                        </div>
                        <div class="flex items-center">
-                          <button type="button" class="view-file-btn p-1 text-blue-600 hover:text-blue-800" title="Xem file"><i data-lucide="eye"></i></button>
+                          <a href="${fileData.dataURL}" target="_blank" class="p-1 text-blue-600 hover:text-blue-800" title="Xem file"><i data-lucide="eye"></i></a>
+                          <a href="${fileData.dataURL}" download="${fileData.name}" class="p-1 text-green-600 hover:text-green-800" title="Tải về"><i data-lucide="download"></i></a>
                           <button type="button" class="remove-file-btn p-1 text-red-600 hover:text-red-800" data-type="${type}" title="Xóa file"><i data-lucide="x"></i></button>
                        </div>
                     </div>
                 `;
-                displayDiv.querySelector('.view-file-btn').onclick = () => window.open(fileData.dataURL);
                 displayDiv.querySelector('.remove-file-btn').onclick = () => {
                     this.updateFileDisplay(type, null);
                     if (type === 'tai-lieu') {
@@ -1287,6 +1287,17 @@
             }
         },
 
+        duplicateActivity() {
+            document.getElementById('modal-title').textContent = 'Nhân đôi Hoạt động Truyền thông';
+            document.getElementById('activity-id').value = '';
+            const dateInput = document.getElementById('thoi-gian');
+            dateInput.value = '';
+            dateInput.focus();
+            this.updateFileDisplay('bien-ban', null);
+            document.getElementById('delete-activity-in-modal-btn').classList.add('hidden');
+            document.getElementById('duplicate-activity-btn').classList.add('hidden');
+            this.showToast('Vui lòng chọn ngày mới và lưu lại hoạt động nhân đôi.', 'success');
+        },
 
         deleteActivity(id) {
             if (confirm('Bạn có chắc chắn muốn xóa hoạt động này?')) {
@@ -1340,7 +1351,6 @@
                 })
                 .sort((a, b) => new Date(b.thoiGian) - new Date(a.thoiGian));
             
-            // Phân trang
             const totalItems = filteredActivities.length;
             const totalPages = Math.ceil(totalItems / itemsPerPage);
             const start = (page - 1) * itemsPerPage;
@@ -1350,6 +1360,11 @@
             tbody.innerHTML = paginatedActivities.map(act => {
                  const statusClass = act.status === 'planned' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
                  const statusText = act.status === 'planned' ? 'Kế hoạch' : 'Đã duyệt';
+                 const attachmentsHtml = `
+                    <div class="flex justify-center items-center gap-2">
+                        ${act.bienBan ? '<i data-lucide="paperclip" class="w-4 h-4 text-gray-500" title="Có biên bản"></i>' : '<i class="w-4 h-4"></i>'}
+                        ${act.taiLieu ? '<i data-lucide="book-marked" class="w-4 h-4 text-gray-500" title="Có tài liệu"></i>' : '<i class="w-4 h-4"></i>'}
+                    </div>`;
                  return `
                     <tr class="bg-white border-b hover:bg-gray-50">
                         <td class="px-6 py-4 font-medium text-gray-900">${new Date(act.thoiGian).toLocaleDateString('vi-VN')}</td>
@@ -1358,6 +1373,7 @@
                         <td class="px-6 py-4">${act.diaDiem}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${statusText}</span></td>
                         <td class="px-6 py-4">${act.soNguoiThamDu || 'N/A'}</td>
+                        <td class="px-4 py-4">${attachmentsHtml}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 ${act.status === 'planned' ? `<button class="approve-btn p-1 text-green-600 hover:text-green-800" data-id="${act.id}" title="Phê duyệt"><i data-lucide="check-circle-2"></i></button>` : ''}
@@ -1383,15 +1399,12 @@
                 return;
             }
 
-            // Previous button
             html += `<button class="pagination-btn px-3 py-1 border rounded ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>Trước</button>`;
 
-            // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 html += `<button class="pagination-btn px-3 py-1 border rounded ${i === currentPage ? 'bg-var(--mau-chinh) text-white' : ''}" data-page="${i}">${i}</button>`;
             }
 
-            // Next button
             html += `<button class="pagination-btn px-3 py-1 border rounded ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>Sau</button>`;
             
             container.innerHTML = html;
@@ -1416,11 +1429,9 @@
             reader.onload = (e) => {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    // Thực hiện một số kiểm tra cơ bản
                     if (importedData.activities && importedData.options) {
                         this.data = importedData;
-                        // this.saveData();
-                        this.loadData(); // Tải lại để đảm bảo date objects được chuyển đổi
+                        this.loadData(); 
                         this.navigateTo(this.data.currentView || 'dashboard');
                         this.showToast('Nhập dữ liệu từ JSON thành công!', 'success');
                     } else {
@@ -1437,14 +1448,12 @@
         downloadExcelTemplate() {
             const wb = XLSX.utils.book_new();
             
-            // Sheet 1: Mẫu nhập liệu
             const templateData = [
                 ["Thời gian (dd/mm/yyyy)", "Địa điểm", "Loại nội dung truyền thông", "Nội dung cụ thể", "Hình thức truyền thông (Trực tiếp/Gián tiếp)", "Đối tượng", "Số người tham dự", "Phương tiện truyền thông", "Thời lượng", "Đơn vị thời lượng (giờ/phút)", "Đơn vị-Người thực hiện", "Ghi chú"]
             ];
             const ws1 = XLSX.utils.aoa_to_sheet(templateData);
             XLSX.utils.book_append_sheet(wb, ws1, "Mau Nhap Lieu");
             
-            // Sheet 2: Danh sách các tùy chọn
             const optionsData = [
                 ["DANH MỤC CÁC LOẠI NỘI DUNG TRUYỀN THÔNG"],
                 ...this.data.options.contentTypes.map(c => [c])
@@ -1478,7 +1487,6 @@
                 return;
             }
 
-            // Sắp xếp từ cũ đến mới
             filteredActivities.sort((a,b) => new Date(a.thoiGian) - new Date(b.thoiGian));
 
             const dataToExport = filteredActivities.map((act, index) => ({
@@ -1529,7 +1537,6 @@
 
                     if (json.length > 1) {
                         const headers = json[0].map(h => h.toString().toLowerCase().trim());
-                        const requiredHeaders = ["thời gian", "địa điểm", "loại nội dung truyền thông", "nội dung cụ thể", "hình thức truyền thông", "đối tượng", "phương tiện truyền thông"];
                         const headerMapping = {
                             "thời gian (dd/mm/yyyy)": "thoiGian", "thời gian": "thoiGian",
                             "địa điểm": "diaDiem",
@@ -1555,18 +1562,15 @@
                                 if (key) activityData[key] = row[index];
                             });
 
-                            // Bỏ qua dòng trống
                             if (Object.values(activityData).every(x => x === null || x === '')) continue;
                             
-                             // Kiểm tra các trường bắt buộc
                             if (!activityData.thoiGian || !activityData.diaDiem || !activityData.loaiNoiDung || !activityData.hinhThuc || !activityData.doiTuong || !activityData.phuongTien) {
                                 skippedCount++;
                                 continue;
                             }
                             activityData.noiDungCuThe = activityData.noiDungCuThe || activityData.loaiNoiDung;
 
-                            // Chuyển đổi ngày tháng
-                             if (typeof activityData.thoiGian === 'number') { // Excel date serial number
+                             if (typeof activityData.thoiGian === 'number') {
                                 const excelEpoch = new Date(1899, 11, 30);
                                 activityData.thoiGian = new Date(excelEpoch.getTime() + activityData.thoiGian * 86400000);
                             } else if (typeof activityData.thoiGian === 'string') {
@@ -1580,11 +1584,9 @@
                             
                             if (isNaN(activityData.thoiGian.getTime())) {
                                 skippedCount++;
-                                console.warn("Ngày không hợp lệ, bỏ qua dòng:", row);
                                 continue;
                             }
                             
-                            // Kiểm tra trùng lặp
                             const isDuplicate = this.data.activities.some(existing => 
                                 new Date(existing.thoiGian).toDateString() === activityData.thoiGian.toDateString() &&
                                 existing.diaDiem === activityData.diaDiem &&
@@ -1596,9 +1598,8 @@
                                 skippedCount++;
                             } else {
                                 activityData.id = this.generateId();
-                                activityData.status = 'approved'; // Mặc định từ Excel là đã phê duyệt
+                                activityData.status = 'approved';
                                 this.data.activities.push(activityData);
-
                                 this.addOptionIfNeeded('locations', activityData.diaDiem);
                                 this.addOptionIfNeeded('contentTypes', activityData.loaiNoiDung);
                                 this.addOptionIfNeeded('targetAudiences', activityData.doiTuong);
@@ -1607,7 +1608,6 @@
                             }
                         }
                     }
-                    // Process the next file
                     processFile(fileIndex + 1);
                 };
                 reader.readAsArrayBuffer(file);
@@ -1618,7 +1618,6 @@
         deleteAllData() {
             if (prompt("Hành động này không thể hoàn tác. Để xác nhận, vui lòng gõ 'XÓA' vào ô bên dưới.") === 'XÓA') {
                 localStorage.removeItem('communicationAppData');
-                // Reset data state
                 this.data.activities = [];
                 this.data.options.locations = [];
                 this.data.options.targetAudiences = [];
@@ -1630,7 +1629,40 @@
                 alert('Hủy bỏ hành động. Dữ liệu của bạn vẫn an toàn.');
             }
         },
-
+        
+        // --- DRAG & DROP ---
+        dragStart(e) {
+            const activityCell = e.target.closest('.calendar-activity');
+            if (activityCell) {
+                this.draggedActivityId = activityCell.dataset.id;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => activityCell.classList.add('opacity-50'), 0);
+            }
+        },
+        dragOver(e) {
+            e.preventDefault(); 
+        },
+        drop(e) {
+            e.preventDefault();
+            const dayCell = e.target.closest('.calendar-day');
+            if (dayCell && this.draggedActivityId) {
+                const newDate = dayCell.dataset.date;
+                const activity = this.data.activities.find(a => a.id === this.draggedActivityId);
+                
+                if (activity) {
+                    const originalDate = new Date(activity.thoiGian);
+                    const newDateObj = new Date(newDate);
+                    newDateObj.setHours(originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds());
+                    activity.thoiGian = newDateObj;
+                    
+                    this.saveData();
+                    this.render(); 
+                    this.showToast('Đã cập nhật ngày cho hoạt động.');
+                }
+            }
+            this.draggedActivityId = null;
+            document.querySelectorAll('.calendar-activity.opacity-50').forEach(el => el.classList.remove('opacity-50'));
+        },
         
         // --- HELPERS ---
         generateId() {
@@ -1661,7 +1693,6 @@
         
         // --- QUẢN LÝ EVENT LISTENERS ---
         setupEventListeners() {
-            // Navigation tabs
             document.getElementById('tabs').addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (button && button.dataset.tab) {
@@ -1669,7 +1700,6 @@
                 }
             });
 
-            // Modal controls
             document.getElementById('activity-modal').addEventListener('click', (e) => {
                 if (e.target.classList.contains('modal-backdrop') || e.target.id === 'cancel-activity-btn') {
                     this.closeActivityModal();
@@ -1678,24 +1708,25 @@
             document.getElementById('activity-form').addEventListener('submit', this.saveActivity.bind(this));
             
             document.getElementById('delete-activity-in-modal-btn').addEventListener('click', (e) => {
-                const id = e.currentTarget.dataset.id;
+                const id = document.getElementById('activity-id').value;
                 if (id) {
                     this.closeActivityModal();
                     setTimeout(() => this.deleteActivity(id), 50); 
                 }
             });
+            
+            document.getElementById('duplicate-activity-btn').addEventListener('click', this.duplicateActivity.bind(this));
 
-            document.getElementById('phuong-tien')?.addEventListener('change', (e) => {
+            document.getElementById('phuong-tien')?.addEventListener('input', (e) => {
                 const phuongTien = e.target.value.toLowerCase();
                 const hinhThucSelect = document.getElementById('hinh-thuc');
                 const isDirect = this.data.options.media.direct.some(m => m.toLowerCase().includes(phuongTien));
                 const isIndirect = this.data.options.media.indirect.some(m => m.toLowerCase().includes(phuongTien));
 
-                if (isDirect) hinhThucSelect.value = 'Trực tiếp';
-                else if (isIndirect) hinhThucSelect.value = 'Gián tiếp';
+                if (isDirect && !isIndirect) hinhThucSelect.value = 'Trực tiếp';
+                else if (isIndirect && !isDirect) hinhThucSelect.value = 'Gián tiếp';
             });
             
-            // File input listeners in modal
             document.getElementById('bien-ban-input').addEventListener('change', async (e) => {
                 if (e.target.files[0]) {
                     const fileData = await this.readFileAsDataURL(e.target.files[0]);
@@ -1722,10 +1753,10 @@
             document.getElementById('add-activity-btn').addEventListener('click', () => this.openActivityModal());
             document.getElementById('export-excel-btn').addEventListener('click', () => this.exportFilteredExcel());
 
-            // Filter listeners
             ['filter-keyword', 'filter-start-date', 'filter-end-date', 'filter-status', 'filter-content-type', 'filter-hinh-thuc', 'filter-phuong-tien'].forEach(id => {
                 const element = document.getElementById(id);
-                element.addEventListener('change', () => { // Change event is better for performance than input
+                const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+                element.addEventListener(eventType, () => {
                     this.data.filters.keyword = document.getElementById('filter-keyword').value;
                     this.data.filters.startDate = document.getElementById('filter-start-date').value;
                     this.data.filters.endDate = document.getElementById('filter-end-date').value;
@@ -1733,12 +1764,11 @@
                     this.data.filters.contentType = document.getElementById('filter-content-type').value;
                     this.data.filters.hinhThuc = document.getElementById('filter-hinh-thuc').value;
                     this.data.filters.phuongTien = document.getElementById('filter-phuong-tien').value;
-                    this.saveData(); // Lưu trạng thái bộ lọc
+                    this.saveData();
                     this.applyFilters();
                 });
             });
             
-            // Table action buttons
             document.getElementById('activities-tbody').addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
@@ -1756,7 +1786,6 @@
                 }
             });
             
-            // Pagination
             document.getElementById('pagination-controls')?.addEventListener('click', (e) => {
                 const button = e.target.closest('button.pagination-btn');
                 if (button && !button.disabled) {
@@ -1776,6 +1805,9 @@
             });
 
             const calendarGrid = document.querySelector('.calendar-grid');
+            calendarGrid.addEventListener('dragstart', this.dragStart.bind(this));
+            calendarGrid.addEventListener('dragover', this.dragOver.bind(this));
+            calendarGrid.addEventListener('drop', this.drop.bind(this));
             calendarGrid.addEventListener('click', (e) => {
                 const dayCell = e.target.closest('.calendar-day');
                 const activityCell = e.target.closest('.calendar-activity');
@@ -1785,7 +1817,6 @@
                     if (activity) this.openActivityModal(activity);
                 } else if (dayCell) {
                     this.openActivityModal();
-                    // Set default date for new activity
                     setTimeout(() => document.getElementById('thoi-gian').value = dayCell.dataset.date, 0);
                 }
             });
