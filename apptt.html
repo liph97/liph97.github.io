@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trợ lý Truyền thông Y tế</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide-icons@0.378.0/dist/lucide.min.js"></script>
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SheetJS (xlsx) for Excel import/export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* Custom styles to match the design philosophy */
+        :root {
+            --color-primary: #2563EB;
+            --color-background: #F3F4F6;
+            --color-text: #1F2937;
+            --color-success: #10B981;
+            --color-warning: #F59E0B;
+            --color-danger: #EF4444;
+        }
+
+        body {
+            background-color: var(--color-background);
+            color: var(--color-text);
+            font-family: 'Inter', sans-serif; /* A clean, modern font */
+        }
+
+        /* Custom scrollbar for a more polished look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Custom styles for the calendar */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-day {
+            min-height: 120px;
+        }
+        .day-number {
+            font-size: 0.8rem;
+        }
+        .other-month {
+            color: #9ca3af;
+        }
+        .planned-activity {
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: 2px;
+            cursor: pointer;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-left: 3px solid #60a5fa;
+            transition: background-color 0.2s;
+        }
+        .planned-activity:hover {
+             background-color: #bfdbfe;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            -webkit-animation-name: fadeIn;
+            -webkit-animation-duration: 0.4s;
+            animation-name: fadeIn;
+            animation-duration: 0.4s
+        }
+        .modal-content {
+            -webkit-animation-name: slideIn;
+            -webkit-animation-duration: 0.4s;
+            animation-name: slideIn;
+            animation-duration: 0.4s
+        }
+
+        @-webkit-keyframes slideIn {
+            from {bottom: -300px; opacity: 0} 
+            to {bottom: 0; opacity: 1}
+        }
+
+        @keyframes slideIn {
+            from {transform: translateY(50px); opacity: 0}
+            to {transform: translateY(0); opacity: 1}
+        }
+
+        @-webkit-keyframes fadeIn {
+            from {opacity: 0} 
+            to {opacity: 1}
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0} 
+            to {opacity: 1}
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-200">
+            <i data-lucide="heart-pulse" class="text-blue-600 h-8 w-8 mr-2"></i>
+            <h1 class="text-xl font-bold text-gray-800">Trợ lý Y tế</h1>
+        </div>
+        <nav class="flex-1 overflow-y-auto" id="main-nav">
+             <!-- Navigation items will be injected by JS -->
+        </nav>
+        <div class="p-4 border-t border-gray-200">
+             <div class="flex items-center space-x-2 mb-4">
+                <button id="export-data-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                    <i data-lucide="download" class="h-4 w-4 mr-2"></i>
+                    Xuất File
+                </button>
+                <label for="import-file-input" class="w-full cursor-pointer flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                    <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
+                    Nhập File
+                </label>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+            </div>
+            <div class="text-center text-xs text-gray-400">
+                <p>BS. Phạm Hải Linh</p>
+                <p>TYT Xuân Bắc</p>
+                <p id="app-version">v1.0.0</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-gray-100 overflow-y-auto p-6 md:p-8">
+        
+        <!-- ============================================= -->
+        <!-- MODULE 1: DASHBOARD                           -->
+        <!-- ============================================= -->
+        <div id="page-dashboard" class="page-content">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Trang Tổng quan</h2>
+            
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="dashboard-metrics">
+                <!-- Metrics will be injected by JS -->
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow relative h-96">
+                    <h3 class="text-lg font-semibold mb-4">Top 5 Chủ đề Truyền thông (Tháng này)</h3>
+                    <canvas id="topics-chart"></canvas>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow relative h-96">
+                    <h3 class="text-lg font-semibold mb-4">Tỷ trọng Hình thức Truyền thông (Tháng này)</h3>
+                    <canvas id="methods-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Upcoming Activities & Reminders -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-4">Hoạt động Sắp tới (7 ngày)</h3>
+                    <div id="upcoming-activities-list" class="space-y-3">
+                        <!-- Upcoming activities will be injected by JS -->
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-4">Thông báo & Nhắc nhở</h3>
+                    <div id="reminders-list" class="space-y-3">
+                         <!-- Reminders will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODULE 2: ACTIVITY MANAGEMENT                 -->
+        <!-- ============================================= -->
+        <div id="page-activity-management" class="page-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">Quản lý Hoạt động</h2>
+                <div class="flex items-center space-x-2">
+                    <label for="import-excel-input" class="cursor-pointer bg-green-100 text-green-700 hover:bg-green-200 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="file-up" class="h-5 w-5 mr-2"></i>
+                        Nhập từ Excel
+                    </label>
+                    <input type="file" id="import-excel-input" class="hidden" accept=".xlsx, .xls">
+                    <button id="download-excel-template-btn" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="file-spreadsheet" class="h-5 w-5 mr-2"></i>
+                        Tải mẫu Excel
+                    </button>
+                    <button id="add-new-activity-btn" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors shadow">
+                        <i data-lucide="plus-circle" class="h-5 w-5 mr-2"></i>
+                        Thêm hoạt động mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white p-4 rounded-lg shadow mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label for="filter-date-from" class="text-sm font-medium text-gray-600">Từ ngày</label>
+                        <input type="date" id="filter-date-from" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="filter-date-to" class="text-sm font-medium text-gray-600">Đến ngày</label>
+                        <input type="date" id="filter-date-to" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="filter-topic" class="text-sm font-medium text-gray-600">Chủ đề</label>
+                        <select id="filter-topic" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <!-- Options will be injected by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-staff" class="text-sm font-medium text-gray-600">Cán bộ</label>
+                        <select id="filter-staff" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                           <!-- Options will be injected by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button id="reset-filters-btn" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="rotate-ccw" class="h-4 w-4 mr-2"></i>
+                        Đặt lại
+                    </button>
+                    <button id="apply-filters-btn" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="filter" class="h-4 w-4 mr-2"></i>
+                        Áp dụng
+                    </button>
+                     <button id="export-log-btn" class="bg-green-600 text-white hover:bg-green-700 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="file-output" class="h-4 w-4 mr-2"></i>
+                        Xuất Sổ
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Activity Log Table -->
+            <div class="bg-white rounded-lg shadow overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Ngày</th>
+                            <th scope="col" class="px-6 py-3">Chủ đề</th>
+                            <th scope="col" class="px-6 py-3">Hình thức</th>
+                            <th scope="col" class="px-6 py-3">Người thực hiện</th>
+                            <th scope="col" class="px-6 py-3 text-center">Số người tiếp cận</th>
+                            <th scope="col" class="px-6 py-3 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-log-table-body">
+                        <!-- Table rows will be injected by JS -->
+                    </tbody>
+                </table>
+                 <div id="activity-log-pagination" class="p-4 border-t">
+                    <!-- Pagination controls will be injected by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============================================= -->
+        <!-- MODULE 3: PLANNING                            -->
+        <!-- ============================================= -->
+        <div id="page-planning" class="page-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">Lập kế hoạch</h2>
+                <div class="flex items-center space-x-2" id="calendar-controls">
+                    <button id="prev-month-btn" class="p-2 rounded-md hover:bg-gray-200"><i data-lucide="chevron-left" class="h-5 w-5"></i></button>
+                    <h3 id="current-month-year" class="text-xl font-semibold"></h3>
+                    <button id="next-month-btn" class="p-2 rounded-md hover:bg-gray-200"><i data-lucide="chevron-right" class="h-5 w-5"></i></button>
+                    <button id="today-btn" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors">Hôm nay</button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="grid grid-cols-7 text-center font-semibold text-sm text-gray-600 mb-2">
+                    <div>Chủ Nhật</div>
+                    <div>Thứ Hai</div>
+                    <div>Thứ Ba</div>
+                    <div>Thứ Tư</div>
+                    <div>Thứ Năm</div>
+                    <div>Thứ Sáu</div>
+                    <div>Thứ Bảy</div>
+                </div>
+                <div id="calendar-body" class="calendar-grid">
+                    <!-- Calendar days will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODULE 4: REPORTS & STATISTICS                -->
+        <!-- ============================================= -->
+        <div id="page-reports" class="page-content hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Báo cáo & Thống kê</h2>
+            <div class="bg-white p-6 rounded-lg shadow">
+                 <h3 class="text-lg font-semibold mb-4">Tạo báo cáo tự động</h3>
+                 <p class="text-gray-600 mb-6">Chọn khoảng thời gian và loại báo cáo bạn muốn xuất. Hệ thống sẽ tự động tổng hợp dữ liệu.</p>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                     <div>
+                        <label for="report-date-from" class="text-sm font-medium text-gray-600">Từ ngày</label>
+                        <input type="date" id="report-date-from" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="report-date-to" class="text-sm font-medium text-gray-600">Đến ngày</label>
+                        <input type="date" id="report-date-to" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="report-type" class="text-sm font-medium text-gray-600">Loại báo cáo</label>
+                        <select id="report-type" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="monthly_stats">Báo cáo Thống kê Tháng</option>
+                            <option value="six_month_summary">Báo cáo Tổng hợp 6 Tháng</option>
+                            <option value="detailed_list">Danh sách Hoạt động Chi tiết (Excel)</option>
+                        </select>
+                    </div>
+                 </div>
+                 <div class="flex justify-end">
+                      <button id="generate-report-btn" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-6 rounded-lg flex items-center transition-colors shadow">
+                        <i data-lucide="file-check-2" class="h-5 w-5 mr-2"></i>
+                        Tạo báo cáo
+                    </button>
+                 </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODULE 5: LIBRARY & RESOURCES                 -->
+        <!-- ============================================= -->
+        <div id="page-library" class="page-content hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Thư viện & Tài nguyên</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Staff Directory -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Danh bạ Cán bộ</h3>
+                        <button id="add-new-staff-btn" class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm font-semibold py-1 px-3 rounded-lg flex items-center transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4 mr-1"></i>Thêm
+                        </button>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <ul id="staff-list" class="space-y-2">
+                           <!-- Staff list will be injected by JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Topics Library -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Thư viện Chủ đề</h3>
+                        <button id="add-new-topic-btn" class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm font-semibold py-1 px-3 rounded-lg flex items-center transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4 mr-1"></i>Thêm
+                        </button>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                         <ul id="topic-list" class="space-y-2 max-h-80 overflow-y-auto">
+                           <!-- Topic list will be injected by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Repository -->
+             <div class="mt-8">
+                 <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Kho Văn bản</h3>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="doc-search-input" placeholder="Tìm theo tên hoặc thẻ..." class="w-64 border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                         <button id="add-new-doc-btn" class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm font-semibold py-2 px-3 rounded-lg flex items-center transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4 mr-1"></i>Thêm văn bản
+                        </button>
+                    </div>
+                </div>
+                 <div class="bg-white rounded-lg shadow overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Tên Văn bản</th>
+                                <th scope="col" class="px-6 py-3">Mô tả</th>
+                                <th scope="col" class="px-6 py-3">Thẻ (Tags)</th>
+                                <th scope="col" class="px-6 py-3">Ngày tải lên</th>
+                                <th scope="col" class="px-6 py-3 text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="document-list-body">
+                            <!-- Document list will be injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODULE 6: SETTINGS                            -->
+        <!-- ============================================= -->
+        <div id="page-settings" class="page-content hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Hệ thống & Dữ liệu</h2>
+             <div class="bg-white p-6 rounded-lg shadow max-w-2xl">
+                 <h3 class="text-lg font-semibold mb-4">Thông tin Trạm Y tế</h3>
+                 <p class="text-gray-600 mb-6">Thông tin này sẽ được tự động chèn vào đầu các báo cáo được xuất ra.</p>
+                 <form id="settings-form" class="space-y-4">
+                     <div>
+                         <label for="setting-station-name" class="block text-sm font-medium text-gray-700">Tên đơn vị</label>
+                         <input type="text" id="setting-station-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                     </div>
+                      <div>
+                         <label for="setting-station-address" class="block text-sm font-medium text-gray-700">Địa chỉ</label>
+                         <input type="text" id="setting-station-address" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                     </div>
+                      <div>
+                         <label for="setting-station-contact" class="block text-sm font-medium text-gray-700">Thông tin liên hệ (SĐT, Email)</label>
+                         <input type="text" id="setting-station-contact" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                     </div>
+                      <div class="flex justify-end pt-4">
+                        <button type="submit" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-6 rounded-lg flex items-center transition-colors shadow">
+                            <i data-lucide="save" class="h-5 w-5 mr-2"></i>
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                 </form>
+            </div>
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow mt-8 max-w-2xl">
+                 <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="alert-triangle" class="h-5 w-5 text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700 font-semibold">Khu vực nguy hiểm</p>
+                        <p class="text-sm text-red-600 mt-1">Hành động xóa toàn bộ dữ liệu sẽ không thể hoàn tác. Hãy chắc chắn rằng bạn đã sao lưu dữ liệu trước khi thực hiện.</p>
+                        <button id="reset-all-data-btn" class="mt-3 bg-red-600 text-white hover:bg-red-700 font-semibold py-2 px-4 rounded-lg flex items-center transition-colors text-sm">
+                           Xóa Toàn Bộ Dữ Liệu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- ============================================= -->
+    <!-- MODALS                                        -->
+    <!-- ============================================= -->
+    <!-- Activity Form Modal -->
+    <div id="activity-modal" class="modal">
+        <div class="modal-content mx-auto mt-20 p-8 bg-white w-full max-w-3xl rounded-lg shadow-xl relative">
+            <h3 id="activity-modal-title" class="text-2xl font-bold text-gray-800 mb-6">Thêm hoạt động mới</h3>
+            <button class="absolute top-0 right-0 mt-4 mr-4 text-gray-400 hover:text-gray-600" onclick="app.closeModal('activity-modal')">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+            <form id="activity-form">
+                <input type="hidden" id="activity-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="activity-date" class="block text-sm font-medium text-gray-700">Ngày thực hiện</label>
+                        <input type="date" id="activity-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="activity-topic" class="block text-sm font-medium text-gray-700">Chủ đề</label>
+                        <select id="activity-topic" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                           <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="activity-method" class="block text-sm font-medium text-gray-700">Hình thức</label>
+                        <select id="activity-method" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            <option>Phát thanh</option>
+                            <option>Tư vấn trực tiếp</option>
+                            <option>Thảo luận nhóm</option>
+                            <option>Nói chuyện chuyên đề</option>
+                            <option>Bài viết Mạng xã hội</option>
+                            <option>Tờ rơi/Áp phích</option>
+                            <option>Khác</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="activity-staff" class="block text-sm font-medium text-gray-700">Người thực hiện</label>
+                        <select id="activity-staff" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                           <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="activity-location" class="block text-sm font-medium text-gray-700">Địa điểm</label>
+                        <input type="text" id="activity-location" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                     <div>
+                        <label for="activity-reach" class="block text-sm font-medium text-gray-700">Số người tiếp cận</label>
+                        <input type="number" id="activity-reach" min="0" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                     <div>
+                        <label for="activity-materials" class="block text-sm font-medium text-gray-700">Số tài liệu cấp phát</label>
+                        <input type="number" id="activity-materials" min="0" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                     <div class="md:col-span-2">
+                        <label for="activity-notes" class="block text-sm font-medium text-gray-700">Ghi chú</label>
+                        <textarea id="activity-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end space-x-3">
+                    <button type="button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-6 rounded-lg" onclick="app.closeModal('activity-modal')">Hủy</button>
+                    <button type="submit" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-6 rounded-lg">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Planned Activity Form Modal -->
+    <div id="planned-activity-modal" class="modal">
+        <div class="modal-content mx-auto mt-20 p-8 bg-white w-full max-w-lg rounded-lg shadow-xl relative">
+            <h3 id="planned-activity-modal-title" class="text-2xl font-bold text-gray-800 mb-6">Hoạt động dự kiến</h3>
+             <button class="absolute top-0 right-0 mt-4 mr-4 text-gray-400 hover:text-gray-600" onclick="app.closeModal('planned-activity-modal')">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+            <form id="planned-activity-form">
+                <input type="hidden" id="planned-activity-id">
+                 <input type="hidden" id="planned-activity-date">
+                <div class="space-y-4">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Ngày dự kiến</label>
+                        <p id="planned-activity-date-display" class="mt-1 text-lg font-semibold text-blue-600"></p>
+                    </div>
+                    <div>
+                        <label for="planned-activity-name" class="block text-sm font-medium text-gray-700">Tên hoạt động / Chủ đề</label>
+                        <input type="text" id="planned-activity-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="planned-activity-staff" class="block text-sm font-medium text-gray-700">Người phụ trách</label>
+                        <select id="planned-activity-staff" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                           <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="planned-activity-notes" class="block text-sm font-medium text-gray-700">Ghi chú</tabel>
+                        <textarea id="planned-activity-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                    </div>
+                </div>
+                 <div class="mt-8 flex justify-end items-center space-x-3">
+                    <button type="button" id="delete-planned-activity-btn" class="text-red-600 hover:text-red-800 font-semibold py-2 px-4 rounded-lg hidden">
+                       <i data-lucide="trash-2" class="h-5 w-5"></i>
+                    </button>
+                    <div class="flex-grow"></div>
+                    <button type="button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-6 rounded-lg" onclick="app.closeModal('planned-activity-modal')">Đóng</button>
+                    <button type="submit" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-6 rounded-lg">Lưu</button>
+                    <button type="button" id="confirm-planned-activity-btn" class="bg-green-600 text-white hover:bg-green-700 font-semibold py-2 px-6 rounded-lg flex items-center hidden">
+                        <i data-lucide="check-circle" class="h-5 w-5 mr-2"></i> Xác nhận thực hiện
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Generic Prompt Modal (for Library items) -->
+    <div id="prompt-modal" class="modal">
+        <div class="modal-content mx-auto mt-20 p-8 bg-white w-full max-w-lg rounded-lg shadow-xl relative">
+            <h3 id="prompt-modal-title" class="text-2xl font-bold text-gray-800 mb-6"></h3>
+             <button class="absolute top-0 right-0 mt-4 mr-4 text-gray-400 hover:text-gray-600" onclick="app.closeModal('prompt-modal')">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+            <form id="prompt-form">
+                <div id="prompt-modal-fields" class="space-y-4">
+                    <!-- Fields will be dynamically injected here -->
+                </div>
+                <div class="mt-8 flex justify-end space-x-3">
+                    <button type="button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-6 rounded-lg" onclick="app.closeModal('prompt-modal')">Hủy</button>
+                    <button type="submit" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-6 rounded-lg">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+         <div class="modal-content mx-auto mt-40 p-6 bg-white w-full max-w-sm rounded-lg shadow-xl text-center">
+             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <i data-lucide="alert-triangle" class="h-6 w-6 text-red-600"></i>
+            </div>
+            <h3 id="confirm-modal-title" class="text-lg leading-6 font-medium text-gray-900 mt-3">Xác nhận hành động</h3>
+            <div class="mt-2 px-7 py-3">
+                <p id="confirm-modal-text" class="text-sm text-gray-500"></p>
+            </div>
+            <div class="items-center px-4 py-3 flex justify-center space-x-4">
+                 <button id="confirm-modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md w-24 text-center">
+                    Hủy
+                </button>
+                <button id="confirm-modal-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded-md w-24 text-center">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Toast -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-green-500 text-white py-3 px-6 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+        <p id="toast-message"></p>
+    </div>
+
+<script>
+// =============================================
+// APP INITIALIZATION & CORE LOGIC
+// =============================================
+const App = function() {
+
+    // --- STATE MANAGEMENT ---
+    let state = {};
+
+    const defaultState = {
+        version: "1.0.0",
+        activeView: 'dashboard',
+        settings: {
+            stationName: 'Trạm Y tế xã Xuân Bắc',
+            stationAddress: 'Điểm chính: Ấp 2B, xã Xuân Bắc, tỉnh Đồng Nai',
+            stationContact: 'Fanpage: facebook.com/ytexuanbac | Zalo: zalo.me/g/tlunac887'
+        },
+        activities: [],
+        plannedActivities: [],
+        staff: [
+            { id: `staff_${Date.now()}`, name: 'BS. Phạm Hải Linh', programs: ['Tăng huyết áp', 'Đái tháo đường', 'Truyền thông GDSK'] },
+            { id: `staff_${Date.now()+1}`, name: 'YS. Nguyễn Văn An', programs: ['Tiêm chủng Mở rộng', 'Sốt xuất huyết'] },
+            { id: `staff_${Date.now()+2}`, name: 'ĐD. Trần Thị Bình', programs: ['Chăm sóc Sức khỏe Sinh sản'] },
+        ],
+        topics: [
+            { id: `topic_${Date.now()}`, name: 'Tăng huyết áp' },
+            { id: `topic_${Date.now()+1}`, name: 'Đái tháo đường' },
+            { id: `topic_${Date.now()+2}`, name: 'Phòng chống Sốt xuất huyết' },
+            { id: `topic_${Date.now()+3}`, name: 'Tiêm chủng Mở rộng' },
+            { id: `topic_${Date.now()+4}`, name: 'An toàn thực phẩm' },
+            { id: `topic_${Date.now()+5}`, name: 'Dinh dưỡng hợp lý' },
+            { id: `topic_${Date.now()+6}`, name: 'Tác hại của thuốc lá' },
+            { id: `topic_${Date.now()+7}`, name: 'Sức khỏe tâm thần' },
+        ],
+        documents: [],
+        // Calendar state
+        calendar: {
+            currentDate: new Date()
+        },
+        // Filters state
+        filters: {
+            activity: { from: '', to: '', topic: '', staff: '' }
+        },
+        // Pagination state
+        pagination: {
+            activity: { currentPage: 1, itemsPerPage: 10 }
+        }
+    };
+    
+    // --- UTILITY FUNCTIONS ---
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+    const formatDate = (date, format = 'yyyy-mm-dd') => {
+        if (!date) return '';
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        if (format === 'dd/mm/yyyy') return `${day}/${month}/${year}`;
+        return `${year}-${month}-${day}`;
+    };
+    const generateId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // --- LOCAL STORAGE & DATA HANDLING ---
+    const saveState = () => {
+        try {
+            localStorage.setItem('healthCommAsstState', JSON.stringify(state));
+            console.log('State saved successfully.');
+        } catch (error) {
+            console.error('Error saving state to localStorage:', error);
+            showToast('Lỗi: Không thể lưu dữ liệu. Bộ nhớ có thể đã đầy.', 'error');
+        }
+    };
+
+    const loadState = () => {
+        const savedState = localStorage.getItem('healthCommAsstState');
+        if (savedState) {
+            try {
+                state = JSON.parse(savedState);
+                console.log('State loaded from localStorage.');
+            } catch (error) {
+                console.error('Error parsing saved state. Initializing with default.', error);
+                state = JSON.parse(JSON.stringify(defaultState));
+            }
+        } else {
+            console.log('No saved state found. Initializing with default state.');
+            state = JSON.parse(JSON.stringify(defaultState));
+        }
+        // Ensure all default keys exist in loaded state to prevent errors on updates
+        state = { ...JSON.parse(JSON.stringify(defaultState)), ...state };
+    };
+    
+    const exportData = () => {
+        const dataStr = JSON.stringify(state, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `health_comm_assistant_backup_${formatDate(new Date())}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Đã xuất dữ liệu thành công!');
+    };
+    
+    const importData = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedState = JSON.parse(e.target.result);
+                // Simple validation
+                if (importedState.version && importedState.activities !== undefined) {
+                    confirmAction('Bạn có chắc chắn muốn nhập dữ liệu này không? Mọi dữ liệu hiện tại sẽ bị ghi đè.', () => {
+                        state = importedState;
+                        saveState();
+                        showToast('Dữ liệu đã được nhập thành công!');
+                        init(); // Re-initialize the app with new data
+                    });
+                } else {
+                    throw new Error('Invalid file format.');
+                }
+            } catch (error) {
+                console.error('Error importing data:', error);
+                showToast('Lỗi: Tệp dữ liệu không hợp lệ.', 'error');
+            }
+            // Reset file input
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    };
+
+    // --- UI RENDERING ---
+    const render = () => {
+        console.log("Rendering UI for view:", state.activeView);
+        // Hide all pages, then show the active one
+        $$('.page-content').forEach(page => page.classList.add('hidden'));
+        const activePage = $(`#page-${state.activeView}`);
+        if (activePage) {
+            activePage.classList.remove('hidden');
+        } else {
+            $('#page-dashboard').classList.remove('hidden'); // Fallback to dashboard
+        }
+
+        // Update active state in sidebar
+        $$('#main-nav a').forEach(link => {
+            link.classList.remove('bg-blue-50', 'text-blue-600', 'font-semibold');
+            if (link.dataset.view === state.activeView) {
+                link.classList.add('bg-blue-50', 'text-blue-600', 'font-semibold');
+            }
+        });
+
+        // Call specific render functions based on the active view
+        switch (state.activeView) {
+            case 'dashboard':
+                renderDashboard();
+                break;
+            case 'activity-management':
+                renderActivityManagement();
+                break;
+            case 'planning':
+                renderPlanning();
+                break;
+            case 'reports':
+                renderReports();
+                break;
+            case 'library':
+                renderLibrary();
+                break;
+            case 'settings':
+                renderSettings();
+                break;
+        }
+        lucide.createIcons();
+    };
+    
+    const renderNavigation = () => {
+        const navItems = [
+            { view: 'dashboard', icon: 'layout-dashboard', label: 'Trang Tổng quan' },
+            { view: 'activity-management', icon: 'clipboard-list', label: 'Quản lý Hoạt động' },
+            { view: 'planning', icon: 'calendar-days', label: 'Lập kế hoạch' },
+            { view: 'reports', icon: 'pie-chart', label: 'Báo cáo' },
+            { view: 'library', icon: 'library', label: 'Thư viện' },
+            { view: 'settings', icon: 'settings', label: 'Cài đặt' },
+        ];
+        
+        const navContainer = $('#main-nav');
+        navContainer.innerHTML = `
+            <div class="p-4 space-y-1">
+                ${navItems.map(item => `
+                    <a href="#" data-view="${item.view}" class="flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
+                        <i data-lucide="${item.icon}" class="h-5 w-5 mr-3"></i>
+                        <span>${item.label}</span>
+                    </a>
+                `).join('')}
+            </div>
+        `;
+        
+        // FIX: Attach navigation listener immediately after creation for stability.
+        navContainer.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.dataset.view) {
+                e.preventDefault();
+                state.activeView = link.dataset.view;
+                render();
+            }
+        });
+    };
+
+    // --- NOTIFICATION / MODAL UI ---
+    const showToast = (message, type = 'success') => {
+        const toast = $('#toast-notification');
+        const toastMessage = $('#toast-message');
+        
+        toast.classList.remove('bg-green-500', 'bg-red-500');
+        toast.classList.add(type === 'success' ? 'bg-green-500' : 'bg-red-500');
+        toastMessage.textContent = message;
+
+        toast.classList.remove('translate-x-full');
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+        }, 3000);
+    };
+
+    const openModal = (modalId) => $(`#${modalId}`).style.display = 'flex';
+    const closeModal = (modalId) => $(`#${modalId}`).style.display = 'none';
+
+    const confirmAction = (text, onConfirm) => {
+        $('#confirm-modal-text').textContent = text;
+        openModal('confirm-modal');
+
+        const okBtn = $('#confirm-modal-ok-btn');
+        const cancelBtn = $('#confirm-modal-cancel-btn');
+
+        const confirmHandler = () => {
+            onConfirm();
+            closeModal('confirm-modal');
+            cleanup();
+        };
+
+        const cancelHandler = () => {
+            closeModal('confirm-modal');
+            cleanup();
+        };
+        
+        const cleanup = () => {
+            okBtn.removeEventListener('click', confirmHandler);
+            cancelBtn.removeEventListener('click', cancelHandler);
+        }
+
+        okBtn.addEventListener('click', confirmHandler);
+        cancelBtn.addEventListener('click', cancelHandler);
+    };
+
+    // --- MODULE-SPECIFIC RENDER FUNCTIONS ---
+
+    // MODULE 1: DASHBOARD
+    let charts = {};
+    const renderDashboard = () => {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const monthlyActivities = state.activities.filter(a => {
+            const activityDate = new Date(a.date);
+            return activityDate >= startOfMonth && activityDate <= endOfMonth;
+        });
+
+        // 1. Key Metrics
+        const totalActivities = monthlyActivities.length;
+        const totalReach = monthlyActivities.reduce((sum, a) => sum + (parseInt(a.reach) || 0), 0);
+        const socialPosts = monthlyActivities.filter(a => a.method === 'Bài viết Mạng xã hội').length;
+        
+        $('#dashboard-metrics').innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 mr-4"><i data-lucide="activity" class="h-8 w-8 text-blue-500"></i></div>
+                <div>
+                    <p class="text-sm text-gray-500">Tổng hoạt động (tháng)</p>
+                    <p class="text-3xl font-bold">${totalActivities}</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow flex items-center">
+                <div class="p-3 rounded-full bg-green-100 mr-4"><i data-lucide="users" class="h-8 w-8 text-green-500"></i></div>
+                <div>
+                    <p class="text-sm text-gray-500">Tổng người tiếp cận (tháng)</p>
+                    <p class="text-3xl font-bold">${totalReach.toLocaleString('vi-VN')}</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow flex items-center">
+                <div class="p-3 rounded-full bg-yellow-100 mr-4"><i data-lucide="share-2" class="h-8 w-8 text-yellow-500"></i></div>
+                <div>
+                    <p class="text-sm text-gray-500">Bài viết MXH (tháng)</p>
+                    <p class="text-3xl font-bold">${socialPosts}</p>
+                </div>
+            </div>
+        `;
+
+        // 2. Charts
+        renderDashboardCharts(monthlyActivities);
+
+        // 3. Upcoming Activities
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const sevenDaysLater = new Date(today);
+        sevenDaysLater.setDate(today.getDate() + 7);
+
+        const upcoming = state.plannedActivities
+            .filter(pa => {
+                const paDate = new Date(pa.date);
+                return paDate >= today && paDate <= sevenDaysLater;
+            })
+            .sort((a,b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 5);
+        
+        const upcomingList = $('#upcoming-activities-list');
+        if (upcoming.length > 0) {
+            upcomingList.innerHTML = upcoming.map(pa => `
+                <div class="flex items-start">
+                    <div class="text-center mr-4">
+                        <p class="font-bold text-blue-600">${new Date(pa.date).getDate()}</p>
+                        <p class="text-xs text-gray-500">Thg ${new Date(pa.date).getMonth() + 1}</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">${pa.name}</p>
+                        <p class="text-sm text-gray-500">Phụ trách: ${pa.staffName || 'Chưa phân công'}</p>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            upcomingList.innerHTML = `<p class="text-gray-500 text-sm">Không có hoạt động nào được lên lịch trong 7 ngày tới.</p>`;
+        }
+        
+        // 4. Reminders
+        const remindersList = $('#reminders-list');
+        const reminders = [];
+        const isReportDue = new Date().getDate() >= 25;
+        if(isReportDue) {
+            reminders.push({text: "Sắp đến hạn nộp báo cáo tháng.", type: 'warning'});
+        }
+        // Can add more reminder logic here
+        if (reminders.length > 0) {
+            remindersList.innerHTML = reminders.map(r => `
+                <div class="flex items-start p-3 rounded-md ${r.type === 'warning' ? 'bg-yellow-50' : 'bg-blue-50'}">
+                    <i data-lucide="alert-circle" class="h-5 w-5 ${r.type === 'warning' ? 'text-yellow-500' : 'text-blue-500'} mr-3 mt-0.5"></i>
+                    <p class="text-sm ${r.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'}">${r.text}</p>
+                </div>
+            `).join('');
+        } else {
+             remindersList.innerHTML = `<p class="text-gray-500 text-sm">Không có nhắc nhở quan trọng nào.</p>`;
+        }
+    };
+
+    const renderDashboardCharts = (monthlyActivities) => {
+        // Data for charts
+        const topicCounts = monthlyActivities.reduce((acc, activity) => {
+            acc[activity.topicName] = (acc[activity.topicName] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const sortedTopics = Object.entries(topicCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
+
+        const topicLabels = sortedTopics.map(item => item[0]);
+        const topicData = sortedTopics.map(item => item[1]);
+
+        const methodCounts = monthlyActivities.reduce((acc, activity) => {
+            acc[activity.method] = (acc[activity.method] || 0) + 1;
+            return acc;
+        }, {});
+        const methodLabels = Object.keys(methodCounts);
+        const methodData = Object.values(methodCounts);
+
+        // Destroy existing charts to prevent conflicts
+        if (charts.topicsChart) charts.topicsChart.destroy();
+        if (charts.methodsChart) charts.methodsChart.destroy();
+
+        // Topics Chart (Bar)
+        const topicsCtx = $('#topics-chart').getContext('2d');
+        charts.topicsChart = new Chart(topicsCtx, {
+            type: 'bar',
+            data: {
+                labels: topicLabels,
+                datasets: [{
+                    label: 'Số lần thực hiện',
+                    data: topicData,
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Methods Chart (Pie)
+        const methodsCtx = $('#methods-chart').getContext('2d');
+        charts.methodsChart = new Chart(methodsCtx, {
+            type: 'pie',
+            data: {
+                labels: methodLabels,
+                datasets: [{
+                    label: 'Tỷ trọng',
+                    data: methodData,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)'
+                    ],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    };
+    
+    // MODULE 2: ACTIVITY MANAGEMENT
+    const renderActivityManagement = () => {
+        // Populate filter dropdowns
+        const topicFilter = $('#filter-topic');
+        topicFilter.innerHTML = '<option value="">Tất cả Chủ đề</option>' + state.topics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        topicFilter.value = state.filters.activity.topic;
+
+        const staffFilter = $('#filter-staff');
+        staffFilter.innerHTML = '<option value="">Tất cả Cán bộ</option>' + state.staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        staffFilter.value = state.filters.activity.staff;
+        
+        $('#filter-date-from').value = state.filters.activity.from;
+        $('#filter-date-to').value = state.filters.activity.to;
+
+        // Render table
+        renderActivityLog();
+    };
+    
+    const applyActivityFilters = () => {
+        state.filters.activity = {
+            from: $('#filter-date-from').value,
+            to: $('#filter-date-to').value,
+            topic: $('#filter-topic').value,
+            staff: $('#filter-staff').value
+        };
+        // Reset to first page when filters change
+        state.pagination.activity.currentPage = 1;
+        renderActivityLog();
+    };
+    
+    const resetActivityFilters = () => {
+        state.filters.activity = { from: '', to: '', topic: '', staff: '' };
+        $('#filter-date-from').value = '';
+        $('#filter-date-to').value = '';
+        $('#filter-topic').value = '';
+        $('#filter-staff').value = '';
+        state.pagination.activity.currentPage = 1;
+        renderActivityLog();
+    };
+
+    const renderActivityLog = () => {
+        const { from, to, topic, staff } = state.filters.activity;
+        let filteredActivities = state.activities
+            .filter(a => {
+                const activityDate = new Date(a.date);
+                const fromDate = from ? new Date(from) : null;
+                const toDate = to ? new Date(to) : null;
+                if (fromDate && activityDate < fromDate) return false;
+                if (toDate && activityDate > toDate) return false;
+                if (topic && a.topicId !== topic) return false;
+                if (staff && a.staffId !== staff) return false;
+                return true;
+            })
+            .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        // Pagination logic
+        const { currentPage, itemsPerPage } = state.pagination.activity;
+        const totalItems = filteredActivities.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
+
+        const tableBody = $('#activity-log-table-body');
+        if (paginatedActivities.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">Không tìm thấy hoạt động nào.</td></tr>`;
+        } else {
+            tableBody.innerHTML = paginatedActivities.map(activity => `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${formatDate(activity.date, 'dd/mm/yyyy')}</td>
+                    <td class="px-6 py-4">${activity.topicName || 'N/A'}</td>
+                    <td class="px-6 py-4">${activity.method}</td>
+                    <td class="px-6 py-4">${activity.staffName || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">${activity.reach || 0}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button class="text-blue-600 hover:text-blue-800 p-1" onclick="app.editActivity('${activity.id}')"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                        <button class="text-red-600 hover:text-red-800 p-1" onclick="app.deleteActivity('${activity.id}')"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        renderPaginationControls('activity', totalPages);
+        lucide.createIcons();
+    };
+    
+    const renderPaginationControls = (context, totalPages) => {
+        const paginationContainer = $(`#${context}-log-pagination`);
+        if (!paginationContainer) return;
+
+        const currentPage = state.pagination[context].currentPage;
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let html = '<div class="flex items-center justify-center space-x-1">';
+        // Previous button
+        html += `<button class="p-2 rounded-md ${currentPage === 1 ? 'text-gray-300' : 'hover:bg-gray-100'}" ${currentPage === 1 ? 'disabled' : ''} onclick="app.changePage('${context}', ${currentPage - 1})"><i data-lucide="chevron-left" class="h-5 w-5"></i></button>`;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                html += `<span class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold">${i}</span>`;
+            } else {
+                 html += `<button class="px-4 py-2 rounded-md hover:bg-gray-100" onclick="app.changePage('${context}', ${i})">${i}</button>`;
+            }
+        }
+        
+        // Next button
+        html += `<button class="p-2 rounded-md ${currentPage === totalPages ? 'text-gray-300' : 'hover:bg-gray-100'}" ${currentPage === totalPages ? 'disabled' : ''} onclick="app.changePage('${context}', ${currentPage + 1})"><i data-lucide="chevron-right" class="h-5 w-5"></i></button>`;
+
+        html += '</div>';
+        paginationContainer.innerHTML = html;
+        lucide.createIcons();
+    };
+    
+    const changePage = (context, page) => {
+        state.pagination[context].currentPage = page;
+        if (context === 'activity') renderActivityLog();
+        // Add other contexts if needed
+    };
+
+    const handleActivityForm = (e) => {
+        e.preventDefault();
+        const id = $('#activity-id').value;
+        
+        const topicSelect = $('#activity-topic');
+        const staffSelect = $('#activity-staff');
+        
+        const activityData = {
+            date: $('#activity-date').value,
+            topicId: topicSelect.value,
+            topicName: topicSelect.options[topicSelect.selectedIndex].text,
+            method: $('#activity-method').value,
+            staffId: staffSelect.value,
+            staffName: staffSelect.options[staffSelect.selectedIndex].text,
+            location: $('#activity-location').value,
+            reach: $('#activity-reach').value,
+            materials: $('#activity-materials').value,
+            notes: $('#activity-notes').value,
+        };
+
+        if (id) { // Editing existing
+            const index = state.activities.findIndex(a => a.id === id);
+            if (index > -1) {
+                state.activities[index] = { ...state.activities[index], ...activityData };
+                showToast('Đã cập nhật hoạt động thành công!');
+            }
+        } else { // Adding new
+            activityData.id = generateId('act');
+            state.activities.push(activityData);
+            showToast('Đã thêm hoạt động mới!');
+        }
+        
+        saveState();
+        renderActivityLog();
+        closeModal('activity-modal');
+    };
+    
+    const openActivityForm = (activity = null) => {
+        const form = $('#activity-form');
+        form.reset();
+        $('#activity-id').value = '';
+
+        // Populate dropdowns
+        const topicSelect = $('#activity-topic');
+        topicSelect.innerHTML = state.topics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        const staffSelect = $('#activity-staff');
+        staffSelect.innerHTML = state.staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+        if (activity) {
+            $('#activity-modal-title').textContent = 'Chỉnh sửa hoạt động';
+            $('#activity-id').value = activity.id;
+            $('#activity-date').value = formatDate(activity.date);
+            $('#activity-topic').value = activity.topicId;
+            $('#activity-method').value = activity.method;
+            $('#activity-staff').value = activity.staffId;
+            $('#activity-location').value = activity.location || '';
+            $('#activity-reach').value = activity.reach || '';
+            $('#activity-materials').value = activity.materials || '';
+            $('#activity-notes').value = activity.notes || '';
+        } else {
+            $('#activity-modal-title').textContent = 'Thêm hoạt động mới';
+            $('#activity-date').value = formatDate(new Date());
+        }
+        openModal('activity-modal');
+    };
+    
+    const editActivity = (id) => {
+        const activity = state.activities.find(a => a.id === id);
+        if (activity) openActivityForm(activity);
+    };
+
+    const deleteActivity = (id) => {
+        confirmAction('Bạn có chắc chắn muốn xóa hoạt động này?', () => {
+            state.activities = state.activities.filter(a => a.id !== id);
+            saveState();
+            renderActivityLog();
+            showToast('Đã xóa hoạt động.');
+        });
+    };
+    
+    const suggestStaffForTopic = () => {
+        const topicId = $('#activity-topic').value;
+        const topic = state.topics.find(t => t.id === topicId);
+        if(!topic) return;
+
+        const topicName = topic.name.toLowerCase();
+        let suggestedStaff = null;
+        
+        // Find staff whose program list includes the topic name
+        for (const staffMember of state.staff) {
+            if (staffMember.programs && staffMember.programs.some(p => topicName.includes(p.toLowerCase()) || p.toLowerCase().includes(topicName))) {
+                suggestedStaff = staffMember;
+                break;
+            }
+        }
+        
+        if (suggestedStaff) {
+            $('#activity-staff').value = suggestedStaff.id;
+        }
+    };
+    
+    const downloadExcelTemplate = () => {
+        const worksheet = XLSX.utils.json_to_sheet([
+            {
+                ngay_thuc_hien: 'yyyy-mm-dd',
+                chu_de: 'Nhập chính xác tên chủ đề đã có trong thư viện',
+                hinh_thuc: 'Phát thanh, Tư vấn trực tiếp, ...',
+                nguoi_thuc_hien: 'Nhập chính xác tên cán bộ đã có trong thư viện',
+                dia_diem: 'Ấp 1A',
+                so_nguoi_tiep_can: 15,
+                so_tai_lieu_phat: 30,
+                ghi_chu: 'Ghi chú thêm'
+            }
+        ]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+        XLSX.writeFile(workbook, "Mau_Nhap_Hoat_Dong.xlsx");
+        showToast("Đã tải về file mẫu Excel.");
+    };
+
+    const importFromExcel = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            
+            let addedCount = 0;
+            let errorCount = 0;
+
+            jsonData.forEach(row => {
+                const topic = state.topics.find(t => t.name.toLowerCase() === row.chu_de?.toLowerCase());
+                const staff = state.staff.find(s => s.name.toLowerCase() === row.nguoi_thuc_hien?.toLowerCase());
+                
+                // Data validation
+                if (row.ngay_thuc_hien && topic && staff) {
+                    const newActivity = {
+                        id: generateId('act'),
+                        date: new Date((row.ngay_thuc_hien - (25567 + 2)) * 86400 * 1000), // Convert Excel date to JS Date
+                        topicId: topic.id,
+                        topicName: topic.name,
+                        method: row.hinh_thuc,
+                        staffId: staff.id,
+                        staffName: staff.name,
+                        location: row.dia_diem,
+                        reach: row.so_nguoi_tiep_can,
+                        materials: row.so_tai_lieu_phat,
+                        notes: row.ghi_chu
+                    };
+                    state.activities.push(newActivity);
+                    addedCount++;
+                } else {
+                    errorCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                saveState();
+                renderActivityLog();
+            }
+            showToast(`Nhập thành công ${addedCount} hoạt động. ${errorCount > 0 ? `Có ${errorCount} dòng lỗi.` : ''}`);
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    };
+    
+    const exportActivityLog = () => {
+        const { from, to, topic, staff } = state.filters.activity;
+        let filteredActivities = state.activities
+            .filter(a => {
+                const activityDate = new Date(a.date);
+                const fromDate = from ? new Date(from) : null;
+                const toDate = to ? new Date(to) : null;
+                if (fromDate && activityDate < fromDate) return false;
+                if (toDate && activityDate > toDate) return false;
+                if (topic && a.topicId !== topic) return false;
+                if (staff && a.staffId !== staff) return false;
+                return true;
+            })
+            .sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+        if (filteredActivities.length === 0) {
+            showToast("Không có dữ liệu để xuất.", "error");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // This is a simplified export. A more complex one would use a library for table generation.
+        doc.setFont("Helvetica", "bold");
+        doc.text("SỔ HOẠT ĐỘNG TRUYỀN THÔNG", 105, 15, null, null, "center");
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(10);
+        
+        const stationInfo = `${state.settings.stationName}\n${state.settings.stationAddress}`;
+        doc.text(stationInfo, 14, 25);
+
+        let y = 40;
+        doc.setFont("Helvetica", "bold");
+        doc.text("Ngày", 14, y);
+        doc.text("Chủ đề", 35, y);
+        doc.text("Người thực hiện", 100, y);
+        doc.text("Tiếp cận", 150, y);
+        doc.text("Ghi chú", 170, y);
+        y += 7;
+        doc.line(14, y-2, 196, y-2); // horizontal line
+        
+        doc.setFont("Helvetica", "normal");
+        filteredActivities.forEach(act => {
+             if (y > 280) { // page break
+                doc.addPage();
+                y = 15;
+            }
+            doc.text(formatDate(act.date, 'dd/mm/yyyy'), 14, y);
+            doc.text(act.topicName, 35, y, { maxWidth: 60 });
+            doc.text(act.staffName, 100, y);
+            doc.text(String(act.reach || 0), 150, y);
+            doc.text(act.notes || '', 170, y, { maxWidth: 30 });
+            y += 7;
+        });
+
+        doc.save(`SoHoatDong_${formatDate(new Date())}.pdf`);
+        showToast("Đã xuất sổ hoạt động thành công.");
+    };
+
+    // MODULE 3: PLANNING
+    const renderPlanning = () => {
+        renderCalendar();
+    };
+
+    const renderCalendar = () => {
+        const calendarBody = $('#calendar-body');
+        const currentDate = state.calendar.currentDate;
+        
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+
+        $('#current-month-year').textContent = `Tháng ${month + 1}, ${year}`;
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const lastDayOfPrevMonth = new Date(year, month, 0);
+
+        const daysInMonth = lastDayOfMonth.getDate();
+        const startDayOfWeek = firstDayOfMonth.getDay();
+        
+        calendarBody.innerHTML = '';
+        
+        // Days from previous month
+        for (let i = startDayOfWeek; i > 0; i--) {
+            const day = lastDayOfPrevMonth.getDate() - i + 1;
+            calendarBody.innerHTML += `<div class="p-2 border border-gray-200 other-month"><div class="day-number">${day}</div></div>`;
+        }
+
+        // Days of current month
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = formatDate(new Date(year, month, i));
+            const isToday = formatDate(new Date()) === dateStr;
+            const dayActivities = state.plannedActivities.filter(pa => pa.date === dateStr);
+
+            calendarBody.innerHTML += `
+                <div class="calendar-day p-2 border border-gray-200 relative" data-date="${dateStr}">
+                    <div class="day-number font-semibold ${isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}">${i}</div>
+                    <div class="planned-activities-container mt-1 space-y-1">
+                        ${dayActivities.map(pa => `
+                            <div class="planned-activity" data-id="${pa.id}">
+                                ${pa.name}
+                            </div>
+                        `).join('')}
+                    </div>
+                     <button class="absolute bottom-1 right-1 h-6 w-6 rounded-full bg-gray-100 hover:bg-blue-100 flex items-center justify-center text-blue-500 opacity-50 hover:opacity-100 transition-opacity" data-date="${dateStr}">
+                        <i data-lucide="plus" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Attach event listeners
+        $$('.calendar-day').forEach(day => {
+            day.querySelector('button')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openPlannedActivityForm(null, e.currentTarget.dataset.date);
+            });
+            day.querySelectorAll('.planned-activity').forEach(act => {
+                act.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editPlannedActivity(e.currentTarget.dataset.id);
+                });
+            });
+        });
+        
+        lucide.createIcons();
+    };
+    
+    const changeMonth = (offset) => {
+        const newDate = new Date(state.calendar.currentDate);
+        newDate.setMonth(newDate.getMonth() + offset);
+        state.calendar.currentDate = newDate;
+        renderCalendar();
+    };
+
+    const goToToday = () => {
+        state.calendar.currentDate = new Date();
+        renderCalendar();
+    };
+    
+    const openPlannedActivityForm = (activity = null, date) => {
+        const form = $('#planned-activity-form');
+        form.reset();
+        $('#planned-activity-id').value = '';
+
+        const staffSelect = $('#planned-activity-staff');
+        staffSelect.innerHTML = '<option value="">Chưa phân công</option>' + state.staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        const confirmBtn = $('#confirm-planned-activity-btn');
+        const deleteBtn = $('#delete-planned-activity-btn');
+        
+        if(activity) { // Editing
+            $('#planned-activity-modal-title').textContent = 'Chỉnh sửa hoạt động dự kiến';
+            $('#planned-activity-id').value = activity.id;
+            $('#planned-activity-date').value = activity.date;
+            $('#planned-activity-date-display').textContent = formatDate(activity.date, 'dd/mm/yyyy');
+            $('#planned-activity-name').value = activity.name;
+            $('#planned-activity-staff').value = activity.staffId || '';
+            $('#planned-activity-notes').value = activity.notes || '';
+            confirmBtn.classList.remove('hidden');
+            deleteBtn.classList.remove('hidden');
+        } else { // Adding new
+            $('#planned-activity-modal-title').textContent = 'Thêm hoạt động dự kiến';
+            $('#planned-activity-date').value = date;
+            $('#planned-activity-date-display').textContent = formatDate(date, 'dd/mm/yyyy');
+            confirmBtn.classList.add('hidden');
+            deleteBtn.classList.add('hidden');
+        }
+        openModal('planned-activity-modal');
+    };
+    
+    const editPlannedActivity = (id) => {
+        const activity = state.plannedActivities.find(pa => pa.id === id);
+        if (activity) openPlannedActivityForm(activity);
+    };
+
+    const handlePlannedActivityForm = (e) => {
+        e.preventDefault();
+        const id = $('#planned-activity-id').value;
+        const staffSelect = $('#planned-activity-staff');
+        
+        const data = {
+            date: $('#planned-activity-date').value,
+            name: $('#planned-activity-name').value,
+            staffId: staffSelect.value,
+            staffName: staffSelect.value ? staffSelect.options[staffSelect.selectedIndex].text : null,
+            notes: $('#planned-activity-notes').value,
+        };
+
+        if (id) {
+            const index = state.plannedActivities.findIndex(pa => pa.id === id);
+            state.plannedActivities[index] = { ...state.plannedActivities[index], ...data };
+            showToast('Đã cập nhật kế hoạch.');
+        } else {
+            data.id = generateId('plan');
+            state.plannedActivities.push(data);
+            showToast('Đã thêm kế hoạch mới.');
+        }
+        
+        saveState();
+        renderCalendar();
+        closeModal('planned-activity-modal');
+    };
+    
+    const deletePlannedActivity = () => {
+        const id = $('#planned-activity-id').value;
+        if (!id) return;
+        confirmAction('Bạn có chắc chắn muốn xóa kế hoạch này?', () => {
+            state.plannedActivities = state.plannedActivities.filter(pa => pa.id !== id);
+            saveState();
+            renderCalendar();
+            closeModal('planned-activity-modal');
+            showToast('Đã xóa kế hoạch.');
+        });
+    };
+    
+    const confirmPlannedActivity = () => {
+        const id = $('#planned-activity-id').value;
+        const plannedActivity = state.plannedActivities.find(pa => pa.id === id);
+        if(!plannedActivity) return;
+        
+        const correspondingTopic = state.topics.find(t => t.name.toLowerCase() === plannedActivity.name.toLowerCase());
+
+        // Pre-fill activity form
+        const activityData = {
+            date: plannedActivity.date,
+            topicId: correspondingTopic ? correspondingTopic.id : null,
+            staffId: plannedActivity.staffId,
+            notes: plannedActivity.notes
+        };
+        
+        closeModal('planned-activity-modal');
+        // Switch view to activity management and open the form
+        state.activeView = 'activity-management';
+        render(); // Render the activity management page first
+        
+        // Need a slight delay for the DOM to update
+        setTimeout(() => {
+            openActivityForm(); // Open blank form
+            // Now populate with data
+            $('#activity-date').value = formatDate(activityData.date);
+            if (activityData.topicId) $('#activity-topic').value = activityData.topicId;
+            if (activityData.staffId) $('#activity-staff').value = activityData.staffId;
+            $('#activity-notes').value = activityData.notes || '';
+            showToast('Điền thông tin thực tế và lưu lại.');
+            
+            // After confirming, delete the planned activity
+            state.plannedActivities = state.plannedActivities.filter(pa => pa.id !== id);
+            saveState();
+            // We don't need to re-render calendar here, it will re-render next time the view is switched to planning
+        }, 100);
+    };
+
+    // MODULE 4: REPORTS
+    const renderReports = () => {
+        const today = new Date();
+        const firstDayOfMonth = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        const lastDayOfMonth = formatDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+
+        $('#report-date-from').value = firstDayOfMonth;
+        $('#report-date-to').value = lastDayOfMonth;
+    };
+    
+    const generateReport = () => {
+        const from = $('#report-date-from').value;
+        const to = $('#report-date-to').value;
+        const type = $('#report-type').value;
+
+        if (!from || !to) {
+            showToast('Vui lòng chọn khoảng thời gian báo cáo.', 'error');
+            return;
+        }
+
+        const reportData = state.activities.filter(a => {
+            const activityDate = formatDate(new Date(a.date));
+            return activityDate >= from && activityDate <= to;
+        });
+
+        if (reportData.length === 0) {
+            showToast('Không có dữ liệu trong khoảng thời gian đã chọn.', 'error');
+            return;
+        }
+
+        switch(type) {
+            case 'monthly_stats':
+                // For this, we'd need a very specific template, which is complex to generate.
+                // A simplified version could be a printable HTML page.
+                showToast('Chức năng "Báo cáo Thống kê Tháng" đang được phát triển.', 'warning');
+                break;
+            case 'six_month_summary':
+                 showToast('Chức năng "Báo cáo Tổng hợp 6 Tháng" đang được phát triển.', 'warning');
+                break;
+            case 'detailed_list':
+                exportDetailedListToExcel(reportData);
+                break;
+        }
+    };
+    
+    const exportDetailedListToExcel = (data) => {
+        const exportData = data.map(act => ({
+            'Ngày thực hiện': formatDate(act.date, 'dd/mm/yyyy'),
+            'Chủ đề': act.topicName,
+            'Hình thức': act.method,
+            'Người thực hiện': act.staffName,
+            'Địa điểm': act.location,
+            'Số người tiếp cận': act.reach,
+            'Số tài liệu cấp phát': act.materials,
+            'Ghi chú': act.notes
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "ChiTietHoatDong");
+        XLSX.writeFile(workbook, `BaoCao_ChiTiet_${formatDate(new Date())}.xlsx`);
+        showToast("Đã xuất báo cáo chi tiết thành công.");
+    };
+
+    // MODULE 5: LIBRARY
+    const renderLibrary = () => {
+        renderStaffList();
+        renderTopicList();
+        renderDocumentList();
+    };
+
+    const renderStaffList = () => {
+        const list = $('#staff-list');
+        list.innerHTML = state.staff.map(s => `
+            <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-50">
+                <div>
+                    <p class="font-semibold">${s.name}</p>
+                    <p class="text-xs text-gray-500">${s.programs ? s.programs.join(', ') : 'Chưa có chương trình'}</p>
+                </div>
+                <div>
+                    <button class="text-blue-600 hover:text-blue-800 p-1" onclick="app.editLibraryItem('staff', '${s.id}')"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                    <button class="text-red-600 hover:text-red-800 p-1" onclick="app.deleteLibraryItem('staff', '${s.id}')"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                </div>
+            </li>
+        `).join('');
+    };
+
+    const renderTopicList = () => {
+        const list = $('#topic-list');
+        list.innerHTML = state.topics.map(t => `
+             <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-50">
+                <p>${t.name}</p>
+                <div>
+                    <button class="text-blue-600 hover:text-blue-800 p-1" onclick="app.editLibraryItem('topic', '${t.id}')"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                    <button class="text-red-600 hover:text-red-800 p-1" onclick="app.deleteLibraryItem('topic', '${t.id}')"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                </div>
+            </li>
+        `).join('');
+    };
+    
+    const renderDocumentList = () => {
+        const listBody = $('#document-list-body');
+        const searchTerm = $('#doc-search-input').value.toLowerCase();
+        
+        const filteredDocs = state.documents.filter(doc => 
+            doc.name.toLowerCase().includes(searchTerm) || 
+            (doc.tags && doc.tags.toLowerCase().includes(searchTerm))
+        );
+
+        if (filteredDocs.length === 0) {
+            listBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Chưa có văn bản nào.</td></tr>`;
+            return;
+        }
+
+        listBody.innerHTML = filteredDocs.map(doc => `
+            <tr class="bg-white border-b hover:bg-gray-50">
+                <td class="px-6 py-4 font-medium text-gray-900">${doc.name}</td>
+                <td class="px-6 py-4">${doc.description || ''}</td>
+                <td class="px-6 py-4">
+                    ${doc.tags ? doc.tags.split(',').map(tag => `<span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">${tag.trim()}</span>`).join('') : ''}
+                </td>
+                <td class="px-6 py-4">${formatDate(doc.uploadDate, 'dd/mm/yyyy')}</td>
+                <td class="px-6 py-4 text-center">
+                    <button class="text-blue-600 hover:text-blue-800 p-1" onclick="app.editLibraryItem('document', '${doc.id}')"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                    <button class="text-red-600 hover:text-red-800 p-1" onclick="app.deleteLibraryItem('document', '${doc.id}')"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    const handleLibraryForm = (type, id = null) => {
+        const form = $('#prompt-form');
+        let data = {};
+        
+        switch(type) {
+            case 'staff':
+                data = { name: $('#prompt-field-name').value, programs: $('#prompt-field-programs').value.split(',').map(p => p.trim()) };
+                break;
+            case 'topic':
+                data = { name: $('#prompt-field-name').value };
+                break;
+            case 'document':
+                data = {
+                    name: $('#prompt-field-name').value,
+                    description: $('#prompt-field-description').value,
+                    tags: $('#prompt-field-tags').value,
+                };
+                break;
+        }
+
+        if (id) {
+            const index = state[type + 's'].findIndex(item => item.id === id);
+            state[type + 's'][index] = { ...state[type + 's'][index], ...data };
+            showToast(`Đã cập nhật ${type} thành công.`);
+        } else {
+            data.id = generateId(type);
+            if (type === 'document') data.uploadDate = new Date().toISOString();
+            state[type + 's'].push(data);
+            showToast(`Đã thêm ${type} mới.`);
+        }
+        
+        saveState();
+        renderLibrary();
+        closeModal('prompt-modal');
+    };
+    
+    const openLibraryForm = (type, item = null) => {
+        const modalTitle = $('#prompt-modal-title');
+        const modalFields = $('#prompt-modal-fields');
+        modalFields.innerHTML = '';
+        
+        let title = '';
+        let fieldsHtml = '';
+
+        switch(type) {
+            case 'staff':
+                title = item ? 'Chỉnh sửa Cán bộ' : 'Thêm Cán bộ mới';
+                fieldsHtml = `
+                    <div>
+                        <label for="prompt-field-name" class="block text-sm font-medium text-gray-700">Tên cán bộ</label>
+                        <input type="text" id="prompt-field-name" value="${item?.name || ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="prompt-field-programs" class="block text-sm font-medium text-gray-700">Chương trình phụ trách (phân cách bằng dấu phẩy)</label>
+                        <input type="text" id="prompt-field-programs" value="${item?.programs?.join(', ') || ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                `;
+                break;
+            case 'topic':
+                 title = item ? 'Chỉnh sửa Chủ đề' : 'Thêm Chủ đề mới';
+                 fieldsHtml = `
+                    <div>
+                        <label for="prompt-field-name" class="block text-sm font-medium text-gray-700">Tên chủ đề</label>
+                        <input type="text" id="prompt-field-name" value="${item?.name || ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                 `;
+                break;
+            case 'document':
+                 title = item ? 'Chỉnh sửa Văn bản' : 'Thêm Văn bản mới';
+                 fieldsHtml = `
+                    <div>
+                        <label for="prompt-field-name" class="block text-sm font-medium text-gray-700">Tên văn bản</label>
+                        <input type="text" id="prompt-field-name" value="${item?.name || ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                     <div>
+                        <label for="prompt-field-description" class="block text-sm font-medium text-gray-700">Mô tả</label>
+                        <textarea id="prompt-field-description" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${item?.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label for="prompt-field-tags" class="block text-sm font-medium text-gray-700">Thẻ (phân cách bằng dấu phẩy)</label>
+                        <input type="text" id="prompt-field-tags" value="${item?.tags || ''}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <p class="text-xs text-gray-500">Lưu ý: Chức năng này chỉ lưu trữ thông tin về văn bản. Bác sĩ cần tự quản lý file gốc trên máy tính hoặc dịch vụ đám mây của mình.</p>
+                 `;
+                break;
+        }
+
+        modalTitle.textContent = title;
+        modalFields.innerHTML = fieldsHtml;
+
+        const form = $('#prompt-form');
+        // Clone and replace to remove old event listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLibraryForm(type, item?.id);
+        });
+
+        openModal('prompt-modal');
+    };
+    
+    const editLibraryItem = (type, id) => {
+        const item = state[type + 's'].find(i => i.id === id);
+        if (item) openLibraryForm(type, item);
+    };
+
+    const deleteLibraryItem = (type, id) => {
+        confirmAction(`Bạn có chắc chắn muốn xóa mục này?`, () => {
+            state[type + 's'] = state[type + 's'].filter(i => i.id !== id);
+            saveState();
+            renderLibrary();
+            showToast(`Đã xóa mục.`);
+        });
+    };
+
+    // MODULE 6: SETTINGS
+    const renderSettings = () => {
+        $('#setting-station-name').value = state.settings.stationName || '';
+        $('#setting-station-address').value = state.settings.stationAddress || '';
+        $('#setting-station-contact').value = state.settings.stationContact || '';
+    };
+
+    const handleSettingsForm = (e) => {
+        e.preventDefault();
+        state.settings.stationName = $('#setting-station-name').value;
+        state.settings.stationAddress = $('#setting-station-address').value;
+        state.settings.stationContact = $('#setting-station-contact').value;
+        saveState();
+        showToast('Đã lưu cài đặt thành công!');
+    };
+    
+    const resetAllData = () => {
+        confirmAction('HÀNH ĐỘNG NÀY SẼ XÓA TẤT CẢ DỮ LIỆU. Bạn có chắc chắn muốn tiếp tục không?', () => {
+            localStorage.removeItem('healthCommAsstState');
+            state = JSON.parse(JSON.stringify(defaultState));
+            init();
+            showToast('Toàn bộ dữ liệu đã được xóa.');
+        });
+    };
+
+    // --- EVENT LISTENERS ---
+    const setupEventListeners = () => {
+        // Data Import/Export
+        $('#export-data-btn')?.addEventListener('click', exportData);
+        $('#import-file-input')?.addEventListener('change', importData);
+
+        // --- Activity Management Listeners ---
+        $('#add-new-activity-btn')?.addEventListener('click', () => openActivityForm());
+        $('#activity-form')?.addEventListener('submit', handleActivityForm);
+        $('#activity-topic')?.addEventListener('change', suggestStaffForTopic);
+        // Filters
+        $('#apply-filters-btn')?.addEventListener('click', applyActivityFilters);
+        $('#reset-filters-btn')?.addEventListener('click', resetActivityFilters);
+        // Excel
+        $('#download-excel-template-btn')?.addEventListener('click', downloadExcelTemplate);
+        $('#import-excel-input')?.addEventListener('change', importFromExcel);
+        $('#export-log-btn')?.addEventListener('click', exportActivityLog);
+
+        // --- Planning Listeners ---
+        $('#prev-month-btn')?.addEventListener('click', () => changeMonth(-1));
+        $('#next-month-btn')?.addEventListener('click', () => changeMonth(1));
+        $('#today-btn')?.addEventListener('click', goToToday);
+        $('#planned-activity-form')?.addEventListener('submit', handlePlannedActivityForm);
+        $('#delete-planned-activity-btn')?.addEventListener('click', deletePlannedActivity);
+        $('#confirm-planned-activity-btn')?.addEventListener('click', confirmPlannedActivity);
+        
+        // --- Reports Listeners ---
+        $('#generate-report-btn')?.addEventListener('click', generateReport);
+        
+        // --- Library Listeners ---
+        $('#add-new-staff-btn')?.addEventListener('click', () => openLibraryForm('staff'));
+        $('#add-new-topic-btn')?.addEventListener('click', () => openLibraryForm('topic'));
+        $('#add-new-doc-btn')?.addEventListener('click', () => openLibraryForm('document'));
+        $('#doc-search-input')?.addEventListener('input', renderDocumentList);
+
+        // --- Settings Listeners ---
+        $('#settings-form')?.addEventListener('submit', handleSettingsForm);
+        $('#reset-all-data-btn')?.addEventListener('click', resetAllData);
+        
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target.id);
+            }
+        });
+    };
+
+    // --- INITIALIZATION ---
+    const init = () => {
+        loadState();
+        renderNavigation();
+        render(); // Initial render
+        setupEventListeners();
+        console.log("App initialized with state:", state);
+        $('#app-version').textContent = `v${state.version}`;
+    };
+
+    // Public API
+    return {
+        init,
+        // Methods called from inline HTML event handlers
+        closeModal,
+        editActivity,
+        deleteActivity,
+        editLibraryItem,
+        deleteLibraryItem,
+        changePage,
+        editPlannedActivity,
+    };
+};
+
+// Start the application when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = App();
+    window.app.init();
+});
+
+</script>
+</body>
+</html>
