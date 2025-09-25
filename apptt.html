@@ -115,6 +115,15 @@
             background-color: #D1FAE5; /* Green 100 */
             color: #065F46; /* Green 800 */
         }
+        .file-upload-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -170,6 +179,8 @@
             <form id="activity-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Các trường input sẽ ở đây -->
                 <input type="hidden" id="activity-id">
+                <input type="hidden" id="bien-ban-data-url">
+                <input type="hidden" id="tai-lieu-data-url">
                 
                 <!-- Cột 1 -->
                 <div class="space-y-4">
@@ -238,16 +249,42 @@
                         <input type="text" id="nguoi-thuc-hien" list="nguoi-thuc-hien-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         <datalist id="nguoi-thuc-hien-list"></datalist>
                     </div>
-                    <div>
+                     <div>
                         <label for="ghi-chu" class="block text-sm font-medium text-gray-700">Ghi chú</label>
-                        <textarea id="ghi-chu" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                        <textarea id="ghi-chu" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
                     </div>
-                    <div>
+                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700">Trạng thái</label>
                         <select id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="planned">Kế hoạch</option>
                             <option value="approved">Đã phê duyệt</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Cột file đính kèm -->
+                <div class="md:col-span-3 border-t pt-4 mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Biên bản truyền thông</label>
+                        <div id="bien-ban-display" class="mt-1 hidden"></div>
+                        <label class="mt-1 cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <i data-lucide="upload" class="w-4 h-4 mr-2"></i> Chọn file...
+                            <input id="bien-ban-input" type="file" class="hidden" accept=".pdf,.doc,.docx">
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">File PDF, Word. Sẽ được lưu cùng hoạt động này.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tài liệu truyền thông</label>
+                         <div id="tai-lieu-display" class="mt-1 hidden"></div>
+                         <div class="flex items-center gap-2 mt-1">
+                             <input type="text" id="tai-lieu-input-text" list="tai-lieu-list" placeholder="Chọn tài liệu có sẵn hoặc tải mới" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                             <datalist id="tai-lieu-list"></datalist>
+                             <label class="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                <input id="tai-lieu-input-file" type="file" class="hidden" accept=".pdf,.doc,.docx">
+                            </label>
+                         </div>
+                        <p class="text-xs text-gray-500 mt-1">Tài liệu sẽ được gợi ý cho các lần sau.</p>
                     </div>
                 </div>
             </form>
@@ -305,7 +342,8 @@
                     direct: ["Mít tinh", "Hội nghị", "Truyền thông nhóm-lồng ghép", "Tuyên truyền tại Hộ gia đình", "Truyền thông trường học", "Tư vấn tại trạm"],
                     indirect: ["Bài tuyên truyền", "Phát thanh", "Tin bài đăng mạng xã hội"]
                 },
-                implementers: []
+                implementers: [],
+                materials: [] // { name: 'filename.pdf', dataURL: '...' }
             },
             currentView: 'dashboard',
             filters: {
@@ -316,6 +354,11 @@
                 contentType: '',
                 hinhThuc: 'all',
                 phuongTien: ''
+            },
+            reportSettings: {
+                periodStart: '',
+                periodEnd: '',
+                cumulativeStart: ''
             },
             calendar: {
                 currentDate: new Date()
@@ -334,7 +377,7 @@
         saveData() {
             try {
                 localStorage.setItem('communicationAppData', JSON.stringify(this.data));
-                this.showToast('Dữ liệu đã được tự động lưu.');
+                // Không hiển thị toast khi lưu tự động để tránh làm phiền
             } catch (error) {
                 console.error("Lỗi khi lưu dữ liệu:", error);
                 this.showToast('Lỗi: Không thể lưu dữ liệu. Bộ nhớ có thể đã đầy.', 'error');
@@ -347,6 +390,11 @@
                 const parsedData = JSON.parse(savedData);
                 // Hợp nhất dữ liệu để đảm bảo các trường mới được thêm vào
                 this.data = { ...this.data, ...parsedData };
+                // Đảm bảo các options mặc định không bị ghi đè nếu chưa có
+                 this.data.options = { ...App.data.options, ...parsedData.options };
+                 if (!this.data.options.materials) this.data.options.materials = [];
+
+
                 // Chuyển đổi chuỗi ngày tháng thành đối tượng Date
                 if(this.data.activities) {
                     this.data.activities.forEach(act => {
@@ -368,6 +416,13 @@
                     datalist.innerHTML = items.map(item => `<option value="${item}"></option>`).join('');
                 }
             };
+            
+            const populateMaterials = () => {
+                const datalist = document.getElementById('tai-lieu-list');
+                if(datalist) {
+                     datalist.innerHTML = (this.data.options.materials || []).map(m => `<option value="${m.name}"></option>`).join('');
+                }
+            };
 
             populate('dia-diem-list', this.data.options.locations || []);
             populate('loai-noi-dung-list', this.data.options.contentTypes || []);
@@ -375,6 +430,7 @@
             const allMedia = [...(this.data.options.media.direct || []), ...(this.data.options.media.indirect || [])];
             populate('phuong-tien-list', allMedia);
             populate('nguoi-thuc-hien-list', this.data.options.implementers || []);
+            populateMaterials();
         },
         
         // --- ĐIỀU HƯỚNG & RENDER ---
@@ -402,6 +458,7 @@
                 case 'activities':
                     contentArea.innerHTML = this.renderActivitiesList();
                     this.setupActivitiesListEventListeners();
+                    this.restoreFilterState(); // Khôi phục trạng thái bộ lọc
                     this.applyFilters();
                     break;
                 case 'calendar':
@@ -411,6 +468,7 @@
                 case 'reports':
                     contentArea.innerHTML = this.renderReports();
                     this.setupReportsEventListeners();
+                    this.restoreReportSettings(); // Khôi phục ngày báo cáo
                     break;
                 case 'settings':
                     contentArea.innerHTML = this.renderSettings();
@@ -419,6 +477,23 @@
             }
             lucide.createIcons(); // Tái tạo icons sau mỗi lần render
         },
+        
+        restoreFilterState() {
+            document.getElementById('filter-keyword').value = this.data.filters.keyword;
+            document.getElementById('filter-start-date').value = this.data.filters.startDate;
+            document.getElementById('filter-end-date').value = this.data.filters.endDate;
+            document.getElementById('filter-status').value = this.data.filters.status;
+            document.getElementById('filter-content-type').value = this.data.filters.contentType;
+            document.getElementById('filter-hinh-thuc').value = this.data.filters.hinhThuc;
+            document.getElementById('filter-phuong-tien').value = this.data.filters.phuongTien;
+        },
+
+        restoreReportSettings() {
+            document.getElementById('report-period-start').value = this.data.reportSettings.periodStart;
+            document.getElementById('report-period-end').value = this.data.reportSettings.periodEnd;
+            document.getElementById('report-cumulative-start').value = this.data.reportSettings.cumulativeStart;
+        },
+
 
         // --- CÁC HÀM RENDER GIAO DIỆN ---
         renderDashboard() {
@@ -660,9 +735,12 @@
         },
         
         generateAndDisplayReport() {
-            const periodStart = document.getElementById('report-period-start').value;
-            const periodEnd = document.getElementById('report-period-end').value;
-            const cumulativeStart = document.getElementById('report-cumulative-start').value;
+            // Lưu trạng thái ngày tháng
+            this.data.reportSettings.periodStart = document.getElementById('report-period-start').value;
+            this.data.reportSettings.periodEnd = document.getElementById('report-period-end').value;
+            this.data.reportSettings.cumulativeStart = document.getElementById('report-cumulative-start').value;
+            
+            const { periodStart, periodEnd, cumulativeStart } = this.data.reportSettings;
 
             if (!periodStart || !periodEnd) {
                 alert('Vui lòng chọn ngày bắt đầu và kết thúc cho kỳ báo cáo.');
@@ -683,7 +761,7 @@
             const reportOutput = document.getElementById('report-output');
             reportOutput.innerHTML = this.renderVisualReport(this.reportData);
             document.getElementById('export-report-excel-btn').classList.remove('hidden');
-
+            this.saveData();
             lucide.createIcons();
         },
 
@@ -995,6 +1073,12 @@
             const form = document.getElementById('activity-form');
             form.reset();
             
+            // Xóa hiển thị file cũ
+            this.updateFileDisplay('bien-ban', null);
+            this.updateFileDisplay('tai-lieu', null);
+            document.getElementById('tai-lieu-input-text').value = '';
+
+
             const title = document.getElementById('modal-title');
             const deleteBtn = document.getElementById('delete-activity-in-modal-btn');
 
@@ -1002,7 +1086,6 @@
                 title.textContent = 'Chỉnh sửa Hoạt động Truyền thông';
                 document.getElementById('activity-id').value = activity.id;
                 
-                // Chuyển đổi Date object thành yyyy-mm-dd
                 const activityDate = new Date(activity.thoiGian);
                 const formattedDate = activityDate.toISOString().split('T')[0];
                 document.getElementById('thoi-gian').value = formattedDate;
@@ -1019,6 +1102,13 @@
                 document.getElementById('nguoi-thuc-hien').value = activity.nguoiThucHien;
                 document.getElementById('ghi-chu').value = activity.ghiChu;
                 document.getElementById('status').value = activity.status;
+
+                if (activity.bienBan) this.updateFileDisplay('bien-ban', activity.bienBan);
+                if (activity.taiLieu) {
+                    this.updateFileDisplay('tai-lieu', activity.taiLieu);
+                    document.getElementById('tai-lieu-input-text').value = activity.taiLieu.name;
+                }
+
                 
                 deleteBtn.classList.remove('hidden');
                 deleteBtn.classList.add('inline-flex');
@@ -1042,72 +1132,161 @@
             modal.classList.remove('flex');
         },
 
-        saveActivity(e) {
+        async saveActivity(e) {
             e.preventDefault();
             const id = document.getElementById('activity-id').value;
+            const saveButton = document.getElementById('save-activity-btn');
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> Đang lưu...`;
+            lucide.createIcons();
 
-            const activityData = {
-                id: id || this.generateId(),
-                thoiGian: new Date(document.getElementById('thoi-gian').value),
-                diaDiem: document.getElementById('dia-diem').value.trim(),
-                loaiNoiDung: document.getElementById('loai-noi-dung').value.trim(),
-                noiDungCuThe: document.getElementById('noi-dung-cu-the').value.trim() || document.getElementById('loai-noi-dung').value.trim(),
-                hinhThuc: document.getElementById('hinh-thuc').value,
-                doiTuong: document.getElementById('doi-tuong').value.trim(),
-                soNguoiThamDu: document.getElementById('so-nguoi-tham-du').value,
-                phuongTien: document.getElementById('phuong-tien').value.trim(),
-                thoiLuong: document.getElementById('thoi-luong').value,
-                donViThoiLuong: document.getElementById('don-vi-thoi-luong').value,
-                nguoiThucHien: document.getElementById('nguoi-thuc-hien').value.trim(),
-                ghiChu: document.getElementById('ghi-chu').value.trim(),
-                status: document.getElementById('status').value
+            // Lấy dữ liệu file từ các hidden input nếu không có file mới được chọn
+            let bienBanData = {
+                name: document.getElementById('bien-ban-display')?.querySelector('.file-name')?.textContent || null,
+                dataURL: document.getElementById('bien-ban-data-url').value || null
             };
-            
-            // Cập nhật các danh sách tùy chọn
-            this.addOptionIfNeeded('locations', activityData.diaDiem);
-            this.addOptionIfNeeded('contentTypes', activityData.loaiNoiDung);
-            this.addOptionIfNeeded('targetAudiences', activityData.doiTuong);
-            this.addOptionIfNeeded('implementers', activityData.nguoiThucHien);
-            // Cập nhật media tùy vào hình thức
-            if (activityData.hinhThuc === 'Trực tiếp') {
-                 this.addOptionIfNeeded('media.direct', activityData.phuongTien);
-            } else {
-                 this.addOptionIfNeeded('media.indirect', activityData.phuongTien);
-            }
+            let taiLieuData = {
+                name: document.getElementById('tai-lieu-input-text').value || null,
+                dataURL: document.getElementById('tai-lieu-data-url').value || null
+            };
 
+            const bienBanFile = document.getElementById('bien-ban-input').files[0];
+            const taiLieuFile = document.getElementById('tai-lieu-input-file').files[0];
 
-            if (id) {
-                // Cập nhật
-                const index = this.data.activities.findIndex(a => a.id === id);
-                if (index !== -1) {
-                    this.data.activities[index] = activityData;
+            try {
+                if (bienBanFile) {
+                    bienBanData = await this.readFileAsDataURL(bienBanFile);
                 }
-            } else {
-                // Thêm mới
-                this.data.activities.push(activityData);
-            }
+                if (taiLieuFile) {
+                    taiLieuData = await this.readFileAsDataURL(taiLieuFile);
+                }
 
-            this.saveData();
-            this.updateDatalists();
-            this.closeActivityModal();
-            this.render();
-            this.showToast('Lưu hoạt động thành công!');
+                // Nếu người dùng chọn từ datalist, tìm dataURL tương ứng
+                 if (!taiLieuFile && taiLieuData.name && !taiLieuData.dataURL) {
+                    const existingMaterial = (this.data.options.materials || []).find(m => m.name === taiLieuData.name);
+                    if (existingMaterial) {
+                        taiLieuData.dataURL = existingMaterial.dataURL;
+                    }
+                }
+
+                const activityData = {
+                    id: id || this.generateId(),
+                    thoiGian: new Date(document.getElementById('thoi-gian').value),
+                    diaDiem: document.getElementById('dia-diem').value.trim(),
+                    loaiNoiDung: document.getElementById('loai-noi-dung').value.trim(),
+                    noiDungCuThe: document.getElementById('noi-dung-cu-the').value.trim() || document.getElementById('loai-noi-dung').value.trim(),
+                    hinhThuc: document.getElementById('hinh-thuc').value,
+                    doiTuong: document.getElementById('doi-tuong').value.trim(),
+                    soNguoiThamDu: document.getElementById('so-nguoi-tham-du').value,
+                    phuongTien: document.getElementById('phuong-tien').value.trim(),
+                    thoiLuong: document.getElementById('thoi-luong').value,
+                    donViThoiLuong: document.getElementById('don-vi-thoi-luong').value,
+                    nguoiThucHien: document.getElementById('nguoi-thuc-hien').value.trim(),
+                    ghiChu: document.getElementById('ghi-chu').value.trim(),
+                    status: document.getElementById('status').value,
+                    bienBan: bienBanData.name ? bienBanData : null,
+                    taiLieu: taiLieuData.name ? taiLieuData : null,
+                };
+                
+                // Cập nhật các danh sách tùy chọn
+                this.addOptionIfNeeded('locations', activityData.diaDiem);
+                this.addOptionIfNeeded('contentTypes', activityData.loaiNoiDung);
+                this.addOptionIfNeeded('targetAudiences', activityData.doiTuong);
+                this.addOptionIfNeeded('implementers', activityData.nguoiThucHien);
+                if (activityData.hinhThuc === 'Trực tiếp') this.addOptionIfNeeded('media.direct', activityData.phuongTien);
+                else this.addOptionIfNeeded('media.indirect', activityData.phuongTien);
+                
+                // Thêm tài liệu mới vào danh sách gợi ý
+                if (activityData.taiLieu) this.addOptionIfNeeded('materials', activityData.taiLieu, true);
+
+                if (id) {
+                    const index = this.data.activities.findIndex(a => a.id === id);
+                    if (index !== -1) this.data.activities[index] = activityData;
+                } else {
+                    this.data.activities.push(activityData);
+                }
+
+                this.saveData();
+                this.updateDatalists();
+                this.closeActivityModal();
+                this.render();
+                this.showToast('Lưu hoạt động thành công!');
+
+            } catch (error) {
+                console.error("Lỗi khi đọc file:", error);
+                this.showToast('Có lỗi xảy ra khi xử lý file đính kèm.', 'error');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Lưu thay đổi';
+            }
         },
 
-        addOptionIfNeeded(optionType, value) {
-            if (!value) return;
+        addOptionIfNeeded(optionType, value, isObject = false) {
+            if (!value || (isObject && !value.name)) return;
+            
             let optionsList;
-            if(optionType.includes('.')) {
+            if (optionType.includes('.')) {
                 const [main, sub] = optionType.split('.');
                 optionsList = this.data.options[main][sub];
             } else {
                 optionsList = this.data.options[optionType];
             }
-            
-            if (optionsList && !optionsList.find(opt => opt.toLowerCase() === value.toLowerCase())) {
-                optionsList.push(value);
+            if (!optionsList) return;
+
+            if (isObject) {
+                 if (!optionsList.find(opt => opt.name.toLowerCase() === value.name.toLowerCase())) {
+                    optionsList.push(value);
+                }
+            } else {
+                if (!optionsList.find(opt => opt.toLowerCase() === value.toLowerCase())) {
+                    optionsList.push(value);
+                }
             }
         },
+        
+        readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ name: file.name, dataURL: reader.result });
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        },
+        
+        updateFileDisplay(type, fileData) {
+            const displayDiv = document.getElementById(`${type}-display`);
+            const dataUrlInput = document.getElementById(`${type}-data-url`);
+            
+            if (fileData && fileData.name) {
+                displayDiv.innerHTML = `
+                    <div class="file-upload-display">
+                       <div class="flex items-center overflow-hidden">
+                          <i data-lucide="file-check-2" class="w-4 h-4 mr-2 text-green-600 flex-shrink-0"></i>
+                          <span class="file-name text-gray-700 truncate" title="${fileData.name}">${fileData.name}</span>
+                       </div>
+                       <div class="flex items-center">
+                          <button type="button" class="view-file-btn p-1 text-blue-600 hover:text-blue-800" title="Xem file"><i data-lucide="eye"></i></button>
+                          <button type="button" class="remove-file-btn p-1 text-red-600 hover:text-red-800" data-type="${type}" title="Xóa file"><i data-lucide="x"></i></button>
+                       </div>
+                    </div>
+                `;
+                displayDiv.querySelector('.view-file-btn').onclick = () => window.open(fileData.dataURL);
+                displayDiv.querySelector('.remove-file-btn').onclick = () => {
+                    this.updateFileDisplay(type, null);
+                    if (type === 'tai-lieu') {
+                        document.getElementById('tai-lieu-input-text').value = '';
+                    }
+                };
+                if (dataUrlInput) dataUrlInput.value = fileData.dataURL;
+                displayDiv.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                displayDiv.innerHTML = '';
+                displayDiv.classList.add('hidden');
+                if (dataUrlInput) dataUrlInput.value = '';
+            }
+        },
+
 
         deleteActivity(id) {
             if (confirm('Bạn có chắc chắn muốn xóa hoạt động này?')) {
@@ -1240,7 +1419,7 @@
                     // Thực hiện một số kiểm tra cơ bản
                     if (importedData.activities && importedData.options) {
                         this.data = importedData;
-                        this.saveData();
+                        // this.saveData();
                         this.loadData(); // Tải lại để đảm bảo date objects được chuyển đổi
                         this.navigateTo(this.data.currentView || 'dashboard');
                         this.showToast('Nhập dữ liệu từ JSON thành công!', 'success');
@@ -1444,6 +1623,7 @@
                 this.data.options.locations = [];
                 this.data.options.targetAudiences = [];
                 this.data.options.implementers = [];
+                this.data.options.materials = [];
                 this.navigateTo('dashboard');
                 this.showToast('Toàn bộ dữ liệu đã được xóa.', 'warning');
             } else {
@@ -1501,12 +1681,10 @@
                 const id = e.currentTarget.dataset.id;
                 if (id) {
                     this.closeActivityModal();
-                    // Đặt timeout nhỏ để modal kịp đóng trước khi confirm hiện ra
                     setTimeout(() => this.deleteActivity(id), 50); 
                 }
             });
 
-             // Auto-suggest for hình thức based on phương tiện
             document.getElementById('phuong-tien')?.addEventListener('change', (e) => {
                 const phuongTien = e.target.value.toLowerCase();
                 const hinhThucSelect = document.getElementById('hinh-thuc');
@@ -1515,6 +1693,28 @@
 
                 if (isDirect) hinhThucSelect.value = 'Trực tiếp';
                 else if (isIndirect) hinhThucSelect.value = 'Gián tiếp';
+            });
+            
+            // File input listeners in modal
+            document.getElementById('bien-ban-input').addEventListener('change', async (e) => {
+                if (e.target.files[0]) {
+                    const fileData = await this.readFileAsDataURL(e.target.files[0]);
+                    this.updateFileDisplay('bien-ban', fileData);
+                }
+            });
+            document.getElementById('tai-lieu-input-file').addEventListener('change', async (e) => {
+                if (e.target.files[0]) {
+                    const fileData = await this.readFileAsDataURL(e.target.files[0]);
+                    this.updateFileDisplay('tai-lieu', fileData);
+                    document.getElementById('tai-lieu-input-text').value = fileData.name;
+                }
+            });
+             document.getElementById('tai-lieu-input-text').addEventListener('change', (e) => {
+                const materialName = e.target.value;
+                const existingMaterial = (this.data.options.materials || []).find(m => m.name === materialName);
+                if (existingMaterial) {
+                    this.updateFileDisplay('tai-lieu', existingMaterial);
+                }
             });
         },
 
@@ -1525,7 +1725,7 @@
             // Filter listeners
             ['filter-keyword', 'filter-start-date', 'filter-end-date', 'filter-status', 'filter-content-type', 'filter-hinh-thuc', 'filter-phuong-tien'].forEach(id => {
                 const element = document.getElementById(id);
-                element.addEventListener('input', () => {
+                element.addEventListener('change', () => { // Change event is better for performance than input
                     this.data.filters.keyword = document.getElementById('filter-keyword').value;
                     this.data.filters.startDate = document.getElementById('filter-start-date').value;
                     this.data.filters.endDate = document.getElementById('filter-end-date').value;
@@ -1533,11 +1733,9 @@
                     this.data.filters.contentType = document.getElementById('filter-content-type').value;
                     this.data.filters.hinhThuc = document.getElementById('filter-hinh-thuc').value;
                     this.data.filters.phuongTien = document.getElementById('filter-phuong-tien').value;
+                    this.saveData(); // Lưu trạng thái bộ lọc
                     this.applyFilters();
                 });
-                if(element.tagName === 'SELECT') {
-                     element.addEventListener('change', () => this.applyFilters());
-                }
             });
             
             // Table action buttons
