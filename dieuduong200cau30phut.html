@@ -334,7 +334,40 @@
             
             userAnswers = {};
             quizQuestions = shuffleArray(allQuestions).slice(0, QUESTIONS_COUNT);
-            
+// --- BẮT ĐẦU ĐOẠN MÃ MỚI ĐỂ XÁO TRỘN ĐÁP ÁN ---
+            quizQuestions.forEach(question => {
+                // 1. Lưu lại nội dung của đáp án đúng ban đầu
+                const correctAnswerText = question.o[question.a];
+
+                // 2. Tách riêng đáp án chứa "tất cả" (nếu có)
+                let allOfTheAboveOption = null;
+                let optionsToShuffle = question.o.filter(option => {
+                    // Dùng toLowerCase() để không phân biệt chữ hoa/thường
+                    if (option.toLowerCase().includes('tất cả')) {
+                        allOfTheAboveOption = option;
+                        return false; // Loại nó ra khỏi danh sách cần xáo trộn
+                    }
+                    return true;
+                });
+
+                // 3. Xáo trộn các đáp án còn lại (không chứa "tất cả")
+                for (let i = optionsToShuffle.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [optionsToShuffle[i], optionsToShuffle[j]] = [optionsToShuffle[j], optionsToShuffle[i]];
+                }
+
+                // 4. Gộp lại: thêm đáp án "tất cả" vào cuối nếu nó tồn tại
+                if (allOfTheAboveOption) {
+                    optionsToShuffle.push(allOfTheAboveOption);
+                }
+
+                // 5. Cập nhật lại danh sách đáp án đã được xáo trộn cho câu hỏi
+                question.o = optionsToShuffle;
+
+                // 6. Tìm lại VỊ TRÍ MỚI của đáp án đúng và cập nhật lại chỉ số 'a'
+                question.a = question.o.findIndex(option => option === correctAnswerText);
+            });
+            // --- KẾT THÚC ĐOẠN MÃ MỚI ---            
             displayQuestions(quizQuestions);
             startTimer();
         }
@@ -476,5 +509,6 @@
 
 </body>
 </html>
+
 
 
