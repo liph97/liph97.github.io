@@ -556,22 +556,11 @@
                 <div>
                     <!-- Thanh công cụ và bộ lọc -->
                     <div class="bg-gray-50 p-4 rounded-lg mb-4 border">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Hàng 1 -->
                             <div>
                                 <label class="text-sm font-medium">Tìm kiếm</label>
                                 <input type="text" id="filter-keyword" placeholder="Nội dung, địa điểm..." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">Thời gian</label>
-                                <div class="flex items-center mt-1">
-                                     <input type="date" id="filter-start-date" class="w-full px-3 py-2 border rounded-lg text-sm">
-                                     <span class="mx-2">-</span>
-                                     <input type="date" id="filter-end-date" class="w-full px-3 py-2 border rounded-lg text-sm">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">Loại nội dung</label>
-                                <input id="filter-content-type" list="loai-noi-dung-list" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="Tất cả">
                             </div>
                             <div>
                                 <label class="text-sm font-medium">Hình thức</label>
@@ -581,17 +570,31 @@
                                     <option>Gián tiếp</option>
                                 </select>
                             </div>
-                             <div>
+                            <div>
                                 <label class="text-sm font-medium">Phương tiện</label>
                                 <input id="filter-phuong-tien" list="phuong-tien-list" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="Tất cả">
                             </div>
-                             <div>
+                            
+                            <!-- Hàng 2 -->
+                            <div>
+                                <label class="text-sm font-medium">Loại nội dung</label>
+                                <input id="filter-content-type" list="loai-noi-dung-list" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="Tất cả">
+                            </div>
+                            <div>
                                 <label class="text-sm font-medium">Trạng thái</label>
                                  <select id="filter-status" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm">
                                     <option value="all">Tất cả</option>
                                     <option value="planned">Kế hoạch</option>
                                     <option value="approved">Đã phê duyệt</option>
                                 </select>
+                            </div>
+                             <div>
+                                <label class="text-sm font-medium">Thời gian</label>
+                                <div class="flex items-center mt-1">
+                                     <input type="date" id="filter-start-date" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                     <span class="mx-2">-</span>
+                                     <input type="date" id="filter-end-date" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
                             </div>
                         </div>
                     </div>
