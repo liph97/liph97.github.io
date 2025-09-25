@@ -139,7 +139,7 @@
             </div>
             <div class="mt-4 md:mt-0 text-right">
                 <p class="font-semibold text-var(--mau-chu)">BS. Phạm Hải Linh</p>
-                <p class="text-xs text-var(--mau-chu-phu)">Trạm Y tế xã Xuân Bắc, Đồng Nai</p>
+                <p class="text-xs text-var(--mau-chu-phu)">Trạm Y tế xã Xuân Bắc, tỉnh Đồng Nai</p>
             </div>
         </header>
 
@@ -190,12 +190,12 @@
                     </div>
                     <div>
                         <label for="dia-diem" class="block text-sm font-medium text-gray-700">Địa điểm <span class="text-red-500">*</span></label>
-                        <input type="text" id="dia-diem" list="dia-diem-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        <input type="text" id="dia-diem" list="dia-diem-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required autocomplete="off">
                         <datalist id="dia-diem-list"></datalist>
                     </div>
                     <div>
                         <label for="loai-noi-dung" class="block text-sm font-medium text-gray-700">Loại nội dung <span class="text-red-500">*</span></label>
-                        <input type="text" id="loai-noi-dung" list="loai-noi-dung-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        <input type="text" id="loai-noi-dung" list="loai-noi-dung-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required autocomplete="off">
                         <datalist id="loai-noi-dung-list"></datalist>
                     </div>
                      <div>
@@ -215,12 +215,12 @@
                     </div>
                     <div>
                         <label for="phuong-tien" class="block text-sm font-medium text-gray-700">Phương tiện <span class="text-red-500">*</span></label>
-                        <input type="text" id="phuong-tien" list="phuong-tien-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        <input type="text" id="phuong-tien" list="phuong-tien-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required autocomplete="off">
                         <datalist id="phuong-tien-list"></datalist>
                     </div>
                     <div>
                         <label for="doi-tuong" class="block text-sm font-medium text-gray-700">Đối tượng <span class="text-red-500">*</span></label>
-                        <input type="text" id="doi-tuong" list="doi-tuong-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        <input type="text" id="doi-tuong" list="doi-tuong-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required autocomplete="off">
                         <datalist id="doi-tuong-list"></datalist>
                     </div>
                     <div>
@@ -246,7 +246,7 @@
                     </div>
                     <div>
                         <label for="nguoi-thuc-hien" class="block text-sm font-medium text-gray-700">Đơn vị/Người thực hiện</label>
-                        <input type="text" id="nguoi-thuc-hien" list="nguoi-thuc-hien-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <input type="text" id="nguoi-thuc-hien" list="nguoi-thuc-hien-list" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" autocomplete="off">
                         <datalist id="nguoi-thuc-hien-list"></datalist>
                     </div>
                      <div>
@@ -277,7 +277,7 @@
                         <label class="block text-sm font-medium text-gray-700">Tài liệu truyền thông</label>
                          <div id="tai-lieu-display" class="mt-1 hidden"></div>
                          <div class="flex items-center gap-2 mt-1">
-                             <input type="text" id="tai-lieu-input-text" list="tai-lieu-list" placeholder="Chọn tài liệu có sẵn hoặc tải mới" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                             <input type="text" id="tai-lieu-input-text" list="tai-lieu-list" placeholder="Chọn tài liệu có sẵn hoặc tải mới" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" autocomplete="off">
                              <datalist id="tai-lieu-list"></datalist>
                              <label class="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                                 <i data-lucide="upload" class="w-4 h-4"></i>
@@ -1035,12 +1035,16 @@
                              <div class="p-4 border rounded-lg">
                                  <h4 class="font-semibold">Sao lưu & Phục hồi</h4>
                                  <p class="text-sm text-gray-600 mb-2">Lưu toàn bộ dữ liệu ra file JSON hoặc khôi phục từ file đã lưu.</p>
-                                 <div class="flex gap-2">
+                                 <div class="flex flex-wrap gap-2">
                                      <button id="export-json-btn" class="bg-blue-600 text-white px-3 py-2 text-sm rounded-lg flex items-center gap-2"><i data-lucide="download"></i> Xuất File JSON</button>
                                      <label class="bg-yellow-500 text-white px-3 py-2 text-sm rounded-lg flex items-center gap-2 cursor-pointer">
-                                         <i data-lucide="upload"></i> Nhập File JSON
+                                         <i data-lucide="upload"></i> Nhập (Thay thế)
                                          <input type="file" id="import-json-input" class="hidden" accept=".json">
                                      </label>
+                                     <label class="bg-teal-500 text-white px-3 py-2 text-sm rounded-lg flex items-center gap-2 cursor-pointer">
+                                        <i data-lucide="plus-square"></i> Nhập (Bổ sung)
+                                        <input type="file" id="import-json-additive-input" class="hidden" accept=".json" multiple>
+                                    </label>
                                  </div>
                             </div>
                             <div class="p-4 border rounded-lg">
@@ -1075,6 +1079,7 @@
 
         // --- QUẢN LÝ HOẠT ĐỘNG (CRUD) ---
         openActivityModal(activity = null) {
+            this.updateDatalists();
             const modal = document.getElementById('activity-modal');
             const form = document.getElementById('activity-form');
             form.reset();
@@ -1173,7 +1178,7 @@
 
                 const activityData = {
                     id: id || this.generateId(),
-                    thoiGian: new Date(document.getElementById('thoi-gian').value),
+                    thoiGian: new Date(document.getElementById('thoi-gian').value + 'T00:00:00'), // Fix timezone
                     diaDiem: document.getElementById('dia-diem').value.trim(),
                     loaiNoiDung: document.getElementById('loai-noi-dung').value.trim(),
                     noiDungCuThe: document.getElementById('noi-dung-cu-the').value.trim() || document.getElementById('loai-noi-dung').value.trim(),
@@ -1291,7 +1296,7 @@
             document.getElementById('modal-title').textContent = 'Nhân đôi Hoạt động Truyền thông';
             document.getElementById('activity-id').value = '';
             const dateInput = document.getElementById('thoi-gian');
-            dateInput.value = '';
+            dateInput.value = new Date().toISOString().split('T')[0];
             dateInput.focus();
             this.updateFileDisplay('bien-ban', null);
             document.getElementById('delete-activity-in-modal-btn').classList.add('hidden');
@@ -1443,6 +1448,57 @@
                 }
             };
             reader.readAsText(file);
+        },
+
+        importJsonAdditive(files) {
+            let addedCount = 0;
+            let skippedCount = 0;
+            const reader = new FileReader();
+
+            const processFile = (fileIndex) => {
+                if (fileIndex >= files.length) {
+                    this.saveData();
+                    this.updateDatalists();
+                    this.render();
+                    this.showToast(`Hoàn tất! Đã thêm ${addedCount} và bỏ qua ${skippedCount} hoạt động trùng.`, 'success');
+                    return;
+                }
+
+                const file = files[fileIndex];
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (!importedData.activities || !Array.isArray(importedData.activities)) {
+                            throw new Error('File JSON không chứa danh sách hoạt động hợp lệ.');
+                        }
+
+                        importedData.activities.forEach(impAct => {
+                            const isDuplicate = this.data.activities.some(exAct => 
+                                new Date(exAct.thoiGian).toDateString() === new Date(impAct.thoiGian).toDateString() &&
+                                exAct.hinhThuc === impAct.hinhThuc &&
+                                exAct.loaiNoiDung === impAct.loaiNoiDung &&
+                                exAct.noiDungCuThe === impAct.noiDungCuThe &&
+                                exAct.nguoiThucHien === impAct.nguoiThucHien
+                            );
+
+                            if (isDuplicate) {
+                                skippedCount++;
+                            } else {
+                                impAct.id = this.generateId();
+                                this.data.activities.push(impAct);
+                                addedCount++;
+                            }
+                        });
+                    } catch (error) {
+                        console.error(`Lỗi xử lý file ${file.name}:`, error);
+                        this.showToast(`Lỗi file ${file.name}: ${error.message}`, 'error');
+                    } finally {
+                        processFile(fileIndex + 1);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            processFile(0);
         },
         
         downloadExcelTemplate() {
@@ -1651,7 +1707,7 @@
                 
                 if (activity) {
                     const originalDate = new Date(activity.thoiGian);
-                    const newDateObj = new Date(newDate);
+                    const newDateObj = new Date(newDate + 'T00:00:00');
                     newDateObj.setHours(originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds());
                     activity.thoiGian = newDateObj;
                     
@@ -1832,6 +1888,9 @@
             document.getElementById('import-json-input').addEventListener('change', (e) => {
                 if (e.target.files[0]) this.importJson(e.target.files[0]);
             });
+            document.getElementById('import-json-additive-input').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) this.importJsonAdditive(e.target.files);
+            });
             document.getElementById('download-template-btn').addEventListener('click', this.downloadExcelTemplate.bind(this));
             document.getElementById('import-excel-input').addEventListener('change', (e) => {
                 if (e.target.files.length > 0) this.importExcel(e.target.files);
@@ -1846,25 +1905,21 @@
 
             const approvedActivities = this.data.activities.filter(a => a.status === 'approved');
             
-            const directMetrics = {
-                mitTinh: { count: 0, attendees: 0 }, hoiNghi: { count: 0, attendees: 0 },
-                nhom: { count: 0, attendees: 0 }, hoGiaDinh: { count: 0, attendees: 0 },
-                truongHoc: { count: 0, attendees: 0 },
-            };
+            const directMetrics = {};
             const consultingData = {};
 
             approvedActivities.forEach(act => {
                 if (act.hinhThuc === 'Trực tiếp') {
                     const attendees = parseInt(act.soNguoiThamDu) || 0;
-                    const phuongTien = act.phuongTien.toLowerCase();
-                    if (phuongTien.includes('mít tinh')) { directMetrics.mitTinh.count++; directMetrics.mitTinh.attendees += attendees; }
-                    else if (phuongTien.includes('hội nghị')) { directMetrics.hoiNghi.count++; directMetrics.hoiNghi.attendees += attendees; }
-                    else if (phuongTien.includes('nhóm') || phuongTien.includes('lồng ghép')) { directMetrics.nhom.count++; directMetrics.nhom.attendees += attendees; }
-                    else if (phuongTien.includes('hộ gia đình')) { directMetrics.hoGiaDinh.count++; directMetrics.hoGiaDinh.attendees += attendees; }
-                    else if (phuongTien.includes('trường học')) { directMetrics.truongHoc.count++; directMetrics.truongHoc.attendees += attendees; }
-                    else if (phuongTien.includes('tư vấn tại trạm')) {
+                    const phuongTien = act.phuongTien;
+
+                    if (phuongTien.toLowerCase().includes('tư vấn')) {
                         if (!consultingData[act.loaiNoiDung]) consultingData[act.loaiNoiDung] = 0;
                         consultingData[act.loaiNoiDung] += attendees;
+                    } else {
+                        if (!directMetrics[phuongTien]) directMetrics[phuongTien] = { count: 0, attendees: 0 };
+                        directMetrics[phuongTien].count++;
+                        directMetrics[phuongTien].attendees += attendees;
                     }
                 }
             });
@@ -1876,27 +1931,27 @@
              const pieColors = ['#6D98BA', '#B3D1E6', '#E6A57E', '#A4C3A2', '#E6CBA5', '#C9A9C9'];
 
             const directCountCtx = document.getElementById('direct-count-chart')?.getContext('2d');
-            if (directCountCtx) {
+            if (directCountCtx && Object.keys(directMetrics).length > 0) {
                 this.charts.directCount = new Chart(directCountCtx, {
                     type: 'pie', data: {
-                        labels: Object.keys(directMetrics).map(k => this.data.options.media.direct.find(m => m.toLowerCase().includes(k)) || k),
+                        labels: Object.keys(directMetrics),
                         datasets: [{ data: Object.values(directMetrics).map(m => m.count), backgroundColor: pieColors }]
                     }, options: chartOptions
                 });
             }
 
             const directAttendeesCtx = document.getElementById('direct-attendees-chart')?.getContext('2d');
-            if (directAttendeesCtx) {
+            if (directAttendeesCtx && Object.keys(directMetrics).length > 0) {
                 this.charts.directAttendees = new Chart(directAttendeesCtx, {
                     type: 'pie', data: {
-                        labels: Object.keys(directMetrics).map(k => this.data.options.media.direct.find(m => m.toLowerCase().includes(k)) || k),
+                        labels: Object.keys(directMetrics),
                         datasets: [{ data: Object.values(directMetrics).map(m => m.attendees), backgroundColor: pieColors }]
                     }, options: chartOptions
                 });
             }
             
             const consultingCtx = document.getElementById('consulting-chart')?.getContext('2d');
-            if (consultingCtx) {
+            if (consultingCtx && Object.keys(consultingData).length > 0) {
                 this.charts.consulting = new Chart(consultingCtx, {
                     type: 'pie', data: {
                         labels: Object.keys(consultingData),
