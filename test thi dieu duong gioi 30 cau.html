@@ -37,7 +37,7 @@
         <!-- Start Screen -->
         <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-lg">
             <h1 class="text-4xl font-bold text-blue-700 mb-4">Bài Thi Trắc Nghiệm Điều Dưỡng</h1>
-            <p class="text-lg text-gray-600 mb-2">Bạn sẽ có <strong class="text-red-500">15 phút</strong> để hoàn thành <strong class="text-red-500">30 câu hỏi</strong> trắc nghiệm.</p>
+            <p class="text-lg text-gray-600 mb-2">Bạn sẽ có <strong class="text-red-500">30 phút</strong> để hoàn thành <strong class="text-red-500">200 câu hỏi</strong> trắc nghiệm.</p>
             <p class="text-gray-500 mb-8">Các câu hỏi được chọn ngẫu nhiên từ bộ đề cương ôn thi. Chúc bạn làm bài tốt!</p>
             <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg transition duration-300 ease-in-out text-xl shadow-md">
                 Bắt đầu làm bài
@@ -308,8 +308,8 @@
         const scoreContainer = document.getElementById('score-container');
         const feedbackMessage = document.getElementById('feedback-message');
 
-        const QUIZ_DURATION = 15 * 60; // 15 minutes in seconds
-        const QUESTIONS_COUNT = 30;
+        const QUIZ_DURATION = 30 * 60; // 15 minutes in seconds
+        const QUESTIONS_COUNT = 200;
 
         let timerInterval;
         let quizQuestions = [];
@@ -476,5 +476,4 @@
 
 </body>
 </html>
-
 
