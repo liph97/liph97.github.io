@@ -318,10 +318,6 @@
         // Khởi tạo Lucide Icons
         lucide.createIcons();
         
-        const App = {
-            // ... (Phần code JavaScript đầy đủ sẽ nằm ở đây)
-        };
-
         // Bắt đầu ứng dụng
         App.init();
     });
@@ -616,6 +612,7 @@
                                     <th scope="col" class="px-6 py-3">Loại nội dung</th>
                                     <th scope="col" class="px-6 py-3">Nội dung cụ thể</th>
                                     <th scope="col" class="px-6 py-3">Địa điểm</th>
+                                    <th scope="col" class="px-6 py-3">Phương tiện TT</th>
                                     <th scope="col" class="px-6 py-3">Trạng thái</th>
                                     <th scope="col" class="px-6 py-3">Người tham dự</th>
                                     <th scope="col" class="px-4 py-3 text-center">Đính kèm</th>
@@ -1018,16 +1015,40 @@
             XLSX.writeFile(wb, `BaoCao_TruyenThong_${periodStart}_${periodEnd}.xlsx`);
         },
 
+        isOptionInUse(optionKey, optionValue) {
+            const keyMap = {
+                locations: 'diaDiem',
+                contentTypes: 'loaiNoiDung',
+                targetAudiences: 'doiTuong',
+                implementers: 'nguoiThucHien'
+            };
+            const activityKey = keyMap[optionKey];
+            if (!activityKey) return false;
+
+            return this.data.activities.some(act => act[activityKey] && act[activityKey].toLowerCase() === optionValue.toLowerCase());
+        },
+
         renderSettings() {
-             const createOptionManager = (title, optionKey, options) => `
-                <div class="mb-4">
+             const createOptionManager = (title, optionKey, options) => {
+                const optionsHtml = options.map(opt => {
+                    const isInUse = this.isOptionInUse(optionKey, opt);
+                    const deleteButton = isInUse ? '' :
+                        `<button class="delete-option-btn text-red-500 hover:text-red-700 ml-1 font-bold leading-none align-middle" style="font-size: 1.2rem; line-height: 1;" data-key="${optionKey}" data-value="${opt}" title="Xóa tùy chọn này">&times;</button>`;
+                    return `<span class="inline-flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">${opt}${deleteButton}</span>`;
+                }).join('') || '<p class="text-sm text-gray-500">Chưa có tùy chọn nào.</p>';
+                
+                return `
+                <div class="mb-4" data-option-manager="${optionKey}">
                     <h4 class="font-semibold">${title}</h4>
                     <div class="p-2 border rounded-md mt-2 max-h-40 overflow-y-auto">
-                        ${options.map(opt => `<span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">${opt}</span>`).join('') || '<p class="text-sm text-gray-500">Chưa có tùy chọn nào.</p>'}
+                        ${optionsHtml}
                     </div>
-                     <p class="text-xs text-gray-500 mt-1">Các tùy chọn này được tự động thêm khi bạn nhập mới ở form hoạt động.</p>
+                    <div class="mt-2">
+                        <input type="text" class="add-options-input w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nhập lựa chọn mới (cách nhau bởi dấu ; ) rồi nhấn Enter">
+                    </div>
                 </div>
-            `;
+                `;
+            };
 
             return `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1070,8 +1091,9 @@
                     </div>
 
                     <!-- Cột quản lý tùy chọn -->
-                    <div class="bg-white p-6 rounded-lg shadow">
+                    <div id="options-management-container" class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-xl font-bold mb-4">Quản lý các Tùy chọn</h3>
+                        ${createOptionManager('Loại nội dung', 'contentTypes', this.data.options.contentTypes)}
                         ${createOptionManager('Địa điểm', 'locations', this.data.options.locations)}
                         ${createOptionManager('Đối tượng', 'targetAudiences', this.data.options.targetAudiences)}
                         ${createOptionManager('Đơn vị/Người thực hiện', 'implementers', this.data.options.implementers)}
@@ -1379,6 +1401,7 @@
                         <td class="px-6 py-4">${act.loaiNoiDung}</td>
                         <td class="px-6 py-4">${act.noiDungCuThe}</td>
                         <td class="px-6 py-4">${act.diaDiem}</td>
+                        <td class="px-6 py-4">${act.phuongTien || ''}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${statusText}</span></td>
                         <td class="px-6 py-4">${act.soNguoiThamDu || 'N/A'}</td>
                         <td class="px-4 py-4">${attachmentsHtml}</td>
@@ -1899,6 +1922,58 @@
                 if (e.target.files.length > 0) this.importExcel(e.target.files);
             });
             document.getElementById('delete-all-data-btn').addEventListener('click', this.deleteAllData.bind(this));
+
+            const optionsContainer = document.getElementById('options-management-container');
+            if (optionsContainer) {
+                // Listener for adding new options
+                optionsContainer.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter' && e.target.classList.contains('add-options-input')) {
+                        const input = e.target;
+                        const managerDiv = input.closest('[data-option-manager]');
+                        const optionKey = managerDiv.dataset.optionManager;
+                        const values = input.value.split(';').map(v => v.trim()).filter(Boolean);
+                        
+                        if (values.length > 0) {
+                            let addedCount = 0;
+                            const optionsList = this.data.options[optionKey];
+                            values.forEach(value => {
+                                if (!optionsList.find(opt => opt.toLowerCase() === value.toLowerCase())) {
+                                    optionsList.push(value);
+                                    addedCount++;
+                                }
+                            });
+                            
+                            if (addedCount > 0) {
+                                this.saveData();
+                                this.render(); // Re-render to show changes
+                                this.showToast(`Đã thêm ${addedCount} tùy chọn mới.`);
+                            }
+                            input.value = '';
+                        }
+                    }
+                });
+
+                // Listener for deleting an option
+                optionsContainer.addEventListener('click', (e) => {
+                    const button = e.target.closest('.delete-option-btn');
+                    if (button) {
+                        const { key, value } = button.dataset;
+                        
+                        if (key && value) {
+                            const optionsList = this.data.options[key];
+                            if (optionsList) {
+                                const index = optionsList.findIndex(opt => opt === value);
+                                if (index > -1) {
+                                    optionsList.splice(index, 1);
+                                    this.saveData();
+                                    this.render();
+                                    this.showToast(`Đã xóa tùy chọn "${value}".`);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         },
 
         setupDashboardCharts() {
@@ -1966,10 +2041,6 @@
 
     };
 
-    // Khởi chạy ứng dụng
-    App.init();
-
     </script>
 </body>
 </html>
-
