@@ -719,7 +719,7 @@
                 const [mA, yA] = a.split('/');
                 const [mB, yB] = b.split('/');
                 return new Date(yA, mA - 1) - new Date(yB, mB-1);
-            });
+            }).reverse();
 
             const medsStats = {};
             const medList = filter === 'tha' ? appState.thaMeds : (filter === 'dtd' ? appState.dtdMeds : [...appState.thaMeds, ...appState.dtdMeds]);
