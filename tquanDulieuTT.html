@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Trực quan hóa Dữ liệu Truyền thông</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for creating beautiful charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- JSZip for creating .zip files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FileSaver.js for saving files locally -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        /* Custom styles for a modern, clean interface */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            color: #cbd5e1; /* slate-300 */
+        }
+        .chart-container {
+            background-color: #1e293b; /* slate-800 */
+            border: 1px solid #334155; /* slate-700 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .filter-control {
+            background-color: #334155; /* slate-700 */
+            border-color: #475569; /* slate-600 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        .btn-primary {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0f766e; /* teal-700 */
+        }
+        /* Custom scrollbar for a better look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar for Controls -->
+        <aside class="w-full lg:w-80 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 p-6 flex-shrink-0">
+            <div class="flex items-center gap-3 mb-6">
+                <svg class="w-8 h-8 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>
+                <h1 class="text-xl font-bold text-white">Bảng điều khiển</h1>
+            </div>
+            <p class="text-sm text-slate-400 mb-6">Trực quan hóa dữ liệu Hoạt động Truyền thông.</p>
+            
+            <!-- File Upload -->
+            <div class="mb-6">
+                <label for="json-file-input" class="block text-sm font-medium text-slate-300 mb-2">1. Tải lên tệp JSON</label>
+                <input type="file" id="json-file-input" accept=".json" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-500/10 file:text-teal-300 hover:file:bg-teal-500/20 cursor-pointer">
+            </div>
+
+            <!-- Filters Section -->
+            <div id="filters-container" class="space-y-4 hidden">
+                 <h2 class="text-lg font-semibold text-white border-b border-slate-700 pb-2">2. Bộ lọc Dữ liệu</h2>
+                <!-- Date Range Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Khoảng thời gian</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="start-date-filter" class="w-full p-2 rounded-md text-sm filter-control">
+                        <input type="date" id="end-date-filter" class="w-full p-2 rounded-md text-sm filter-control">
+                    </div>
+                </div>
+                <!-- Content Type Filter -->
+                <div>
+                    <label for="content-type-filter" class="block text-sm font-medium text-slate-300 mb-1">Loại nội dung</label>
+                    <select id="content-type-filter" class="w-full p-2 rounded-md text-sm filter-control">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <!-- Form Filter -->
+                <div>
+                    <label for="hinh-thuc-filter" class="block text-sm font-medium text-slate-300 mb-1">Hình thức</label>
+                    <select id="hinh-thuc-filter" class="w-full p-2 rounded-md text-sm filter-control">
+                        <option value="">Tất cả</option>
+                        <option value="Trực tiếp">Trực tiếp</option>
+                        <option value="Gián tiếp">Gián tiếp</option>
+                    </select>
+                </div>
+                <!-- Implementer Filter -->
+                <div>
+                    <label for="implementer-filter" class="block text-sm font-medium text-slate-300 mb-1">Người thực hiện</label>
+                    <select id="implementer-filter" class="w-full p-2 rounded-md text-sm filter-control">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button id="reset-filters-btn" class="w-full py-2 px-4 rounded-md text-sm font-semibold bg-slate-600 hover:bg-slate-700 transition">Xóa bộ lọc</button>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div id="download-section" class="mt-6 pt-6 border-t border-slate-700 hidden">
+                 <h2 class="text-lg font-semibold text-white pb-2">3. Xuất Báo cáo</h2>
+                 <p class="text-sm text-slate-400 mb-4">Tải tất cả biểu đồ dưới dạng file ảnh JPG, được nén trong một tệp .ZIP duy nhất.</p>
+                <button id="download-charts-btn" class="w-full py-2.5 px-4 rounded-md font-semibold text-sm btn-primary flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 13.5 3 3m0 0 3-3m-3 3v-6m1.06-4.19-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg>
+                    Tải Biểu đồ (.zip)
+                </button>
+            </div>
+            
+            <div class="mt-8 text-center text-xs text-slate-500">
+                <p>Phát triển bởi BS. Phạm Hải Linh & Gemini</p>
+                <p>Trạm Y tế xã Xuân Bắc, 2025</p>
+            </div>
+        </aside>
+
+        <!-- Main Content for Charts -->
+        <main class="flex-1 p-6 lg:p-8">
+            <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center">
+                <svg class="w-24 h-24 text-slate-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h12M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-12a2.25 2.25 0 0 1-2.25-2.25V3M3.75 21v-6.5m0 0a2.25 2.25 0 0 1 2.25-2.25h12a2.25 2.25 0 0 1 2.25 2.25m-16.5 0h16.5" /></svg>
+                <h2 class="text-2xl font-bold text-white mb-2">Chào mừng bạn!</h2>
+                <p class="max-w-md">Để bắt đầu, vui lòng tải lên tệp dữ liệu hoạt động truyền thông (`.json`) bằng cách sử dụng bảng điều khiển bên trái.</p>
+            </div>
+
+            <div id="dashboard" class="hidden">
+                 <h2 class="text-3xl font-bold text-white mb-6">Tổng quan Phân tích Hoạt động Truyền thông</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Chart 1: Hoạt động theo Hình thức -->
+                    <div class="chart-container md:col-span-1 xl:col-span-1">
+                        <h3 class="text-lg font-semibold text-white mb-4">Hoạt động theo Hình thức</h3>
+                        <div class="relative h-72">
+                            <canvas id="chart-by-hinh-thuc"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 2: Top 10 Nội dung -->
+                    <div class="chart-container md:col-span-2 xl:col-span-2">
+                        <h3 class="text-lg font-semibold text-white mb-4">Top 10 Nội dung có nhiều Hoạt động nhất</h3>
+                        <div class="relative h-80">
+                            <canvas id="chart-by-content-type"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 3: Top 10 Người thực hiện -->
+                    <div class="chart-container md:col-span-2 xl:col-span-2">
+                        <h3 class="text-lg font-semibold text-white mb-4">Top 10 Người thực hiện tích cực nhất</h3>
+                        <div class="relative h-80">
+                            <canvas id="chart-by-implementer"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 4: Phân bổ theo Phương tiện -->
+                    <div class="chart-container md:col-span-1 xl:col-span-1">
+                        <h3 class="text-lg font-semibold text-white mb-4">Phân bổ theo Phương tiện</h3>
+                        <div class="relative h-72">
+                            <canvas id="chart-by-phuong-tien"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 5: Hoạt động theo Tháng -->
+                    <div class="chart-container md:col-span-3">
+                        <h3 class="text-lg font-semibold text-white mb-4">Số lượng Hoạt động & Lượt tham dự theo Tháng</h3>
+                        <div class="relative h-96">
+                            <canvas id="chart-by-month"></canvas>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const fileInput = document.getElementById('json-file-input');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const dashboard = document.getElementById('dashboard');
+            const filtersContainer = document.getElementById('filters-container');
+            const downloadSection = document.getElementById('download-section');
+            const downloadBtn = document.getElementById('download-charts-btn');
+            const resetFiltersBtn = document.getElementById('reset-filters-btn');
+
+            // Filter controls
+            const startDateFilter = document.getElementById('start-date-filter');
+            const endDateFilter = document.getElementById('end-date-filter');
+            const contentTypeFilter = document.getElementById('content-type-filter');
+            const hinhThucFilter = document.getElementById('hinh-thuc-filter');
+            const implementerFilter = document.getElementById('implementer-filter');
+
+            // Global state
+            let fullData = null;
+            const charts = {}; // To hold chart instances
+
+            // --- File Handling ---
+            fileInput.addEventListener('change', handleFileSelect);
+
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        fullData = JSON.parse(e.target.result);
+                        if (!fullData.activities || !fullData.options) {
+                            throw new Error('Invalid JSON format');
+                        }
+                        initializeDashboard();
+                    } catch (error) {
+                        alert('Lỗi: Tệp JSON không hợp lệ hoặc có cấu trúc sai. Vui lòng kiểm tra lại.');
+                        console.error("JSON Parsing Error:", error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // --- Initialization ---
+            function initializeDashboard() {
+                welcomeScreen.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                filtersContainer.classList.remove('hidden');
+                downloadSection.classList.remove('hidden');
+
+                populateFilters();
+                renderAllCharts(fullData.activities);
+            }
+
+            function populateFilters() {
+                // Populate Content Type Filter
+                populateSelect(contentTypeFilter, fullData.options.contentTypes);
+                // Populate Implementer Filter
+                populateSelect(implementerFilter, fullData.options.implementers);
+
+                // Add event listeners to all filters
+                [startDateFilter, endDateFilter, contentTypeFilter, hinhThucFilter, implementerFilter].forEach(filter => {
+                    filter.addEventListener('change', applyFilters);
+                });
+                resetFiltersBtn.addEventListener('click', resetFilters);
+            }
+
+            function populateSelect(selectElement, optionsArray) {
+                // Clear existing options except the first one ("Tất cả")
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+                // Populate new options
+                optionsArray.sort().forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    selectElement.appendChild(opt);
+                });
+            }
+
+            // --- Filtering Logic ---
+            function applyFilters() {
+                if (!fullData) return;
+                
+                let filteredActivities = [...fullData.activities];
+
+                // Status filter (always 'approved')
+                filteredActivities = filteredActivities.filter(act => act.status === 'approved');
+
+                // Date filter
+                const startDate = startDateFilter.value ? new Date(startDateFilter.value) : null;
+                const endDate = endDateFilter.value ? new Date(endDateFilter.value) : null;
+                if(startDate) startDate.setHours(0,0,0,0);
+                if(endDate) endDate.setHours(23,59,59,999);
+
+                if (startDate || endDate) {
+                    filteredActivities = filteredActivities.filter(act => {
+                        const actDate = new Date(act.thoiGian);
+                        if (startDate && endDate) return actDate >= startDate && actDate <= endDate;
+                        if (startDate) return actDate >= startDate;
+                        if (endDate) return actDate <= endDate;
+                        return true;
+                    });
+                }
+
+                // Content Type filter
+                const contentType = contentTypeFilter.value;
+                if (contentType) {
+                    filteredActivities = filteredActivities.filter(act => act.loaiNoiDung === contentType);
+                }
+
+                // Hình thức filter
+                const hinhThuc = hinhThucFilter.value;
+                if (hinhThuc) {
+                    filteredActivities = filteredActivities.filter(act => act.hinhThuc === hinhThuc);
+                }
+                
+                // Implementer filter
+                const implementer = implementerFilter.value;
+                if (implementer) {
+                    filteredActivities = filteredActivities.filter(act => act.nguoiThucHien === implementer);
+                }
+
+                renderAllCharts(filteredActivities);
+            }
+            
+            function resetFilters() {
+                startDateFilter.value = '';
+                endDateFilter.value = '';
+                contentTypeFilter.value = '';
+                hinhThucFilter.value = '';
+                implementerFilter.value = '';
+                applyFilters();
+            }
+
+            // --- Chart Rendering ---
+            function renderAllCharts(data) {
+                renderHinhThucChart(data);
+                renderTopNChart(data, 'loaiNoiDung', 'chart-by-content-type', 'Top 10 Nội dung', 10);
+                renderTopNChart(data, 'nguoiThucHien', 'chart-by-implementer', 'Top 10 Người thực hiện', 10);
+                renderPhuongTienChart(data);
+                renderActivityByMonthChart(data);
+            }
+
+            const chartColors = ['#2dd4bf', '#60a5fa', '#f87171', '#fbbf24', '#a78bfa', '#4ade80', '#f472b6', '#38bdf8', '#fb923c', '#818cf8'];
+
+            function createOrUpdateChart(chartId, type, data, options) {
+                const ctx = document.getElementById(chartId).getContext('2d');
+                if (charts[chartId]) {
+                    charts[chartId].destroy();
+                }
+                charts[chartId] = new Chart(ctx, { type, data, options });
+            }
+            
+            const commonChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#cbd5e1' } // slate-300
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' }, // slate-400
+                        grid: { color: '#334155' } // slate-700
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' }, // slate-400
+                        grid: { color: '#334155' } // slate-700
+                    }
+                }
+            };
+
+            function renderHinhThucChart(data) {
+                const counts = data.reduce((acc, act) => {
+                    const hinhThuc = act.hinhThuc || 'Không rõ';
+                    acc[hinhThuc] = (acc[hinhThuc] || 0) + 1;
+                    return acc;
+                }, {});
+
+                createOrUpdateChart('chart-by-hinh-thuc', 'doughnut', {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: chartColors,
+                        borderColor: '#1e293b', // slate-800
+                    }]
+                }, { ...commonChartOptions, scales: {} });
+            }
+
+            function renderTopNChart(data, property, chartId, label, N) {
+                const counts = data.reduce((acc, act) => {
+                    const item = act[property] || 'Không rõ';
+                    acc[item] = (acc[item] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a).slice(0, N);
+
+                createOrUpdateChart(chartId, 'bar', {
+                    labels: sorted.map(item => item[0]),
+                    datasets: [{
+                        label: label,
+                        data: sorted.map(item => item[1]),
+                        backgroundColor: chartColors,
+                    }]
+                }, { ...commonChartOptions, indexAxis: 'y' });
+            }
+            
+            function renderPhuongTienChart(data) {
+                const counts = data.reduce((acc, act) => {
+                    const phuongTien = act.phuongTien || 'Không rõ';
+                    acc[phuongTien] = (acc[phuongTien] || 0) + 1;
+                    return acc;
+                }, {});
+
+                createOrUpdateChart('chart-by-phuong-tien', 'polarArea', {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: chartColors.map(color => color + 'B3'), // Add transparency
+                    }]
+                }, { ...commonChartOptions, scales: { r: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', backdropColor: 'transparent' } } } });
+            }
+            
+            function renderActivityByMonthChart(data) {
+                const counts = {};
+                 data.forEach(act => {
+                    const month = new Date(act.thoiGian).toISOString().slice(0, 7); // YYYY-MM
+                    if (!counts[month]) {
+                        counts[month] = { activities: 0, participants: 0 };
+                    }
+                    counts[month].activities++;
+                    counts[month].participants += parseInt(act.soNguoiThamDu) || 0;
+                });
+
+                const sortedMonths = Object.keys(counts).sort();
+
+                createOrUpdateChart('chart-by-month', 'bar', {
+                    labels: sortedMonths,
+                    datasets: [
+                        {
+                            label: 'Số Hoạt động',
+                            data: sortedMonths.map(m => counts[m].activities),
+                            backgroundColor: '#2dd4bf', // teal-400
+                            yAxisID: 'yActivities',
+                        },
+                        {
+                            label: 'Số Lượt tham dự',
+                            data: sortedMonths.map(m => counts[m].participants),
+                            backgroundColor: '#60a5fa', // blue-400
+                            type: 'line',
+                            yAxisID: 'yParticipants',
+                            tension: 0.3,
+                        }
+                    ]
+                }, {
+                    ...commonChartOptions,
+                    scales: {
+                        x: {
+                           ticks: { color: '#94a3b8' },
+                           grid: { display: false }
+                        },
+                        yActivities: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Số Hoạt động', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        yParticipants: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Số Lượt tham dự', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
+                        }
+                    }
+                });
+            }
+
+            // --- Download Logic ---
+            downloadBtn.addEventListener('click', handleDownload);
+
+            async function handleDownload() {
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xử lý...`;
+                downloadBtn.disabled = true;
+
+                const zip = new JSZip();
+                
+                for (const chartId in charts) {
+                    if (charts.hasOwnProperty(chartId)) {
+                        const canvas = document.getElementById(chartId);
+                        if (canvas) {
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.9); // Quality 90%
+                            // Convert base64 to blob
+                            const response = await fetch(dataUrl);
+                            const blob = await response.blob();
+                            zip.file(`${chartId}.jpg`, blob);
+                        }
+                    }
+                }
+
+                zip.generateAsync({ type: 'blob' })
+                    .then(function(content) {
+                        saveAs(content, `BieuDo_PhanTich_${new Date().toISOString().slice(0,10)}.zip`);
+                    })
+                    .finally(() => {
+                        downloadBtn.innerHTML = originalText;
+                        downloadBtn.disabled = false;
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
