@@ -79,11 +79,14 @@
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 4px;
+            table-layout: fixed;
+            width: 100%;
         }
         .calendar-day {
             min-height: 120px;
             border: 1px solid var(--mau-nen);
             transition: background-color 0.2s;
+            overflow-y: auto;
         }
         .calendar-day:hover {
             background-color: #EBF1F6;
@@ -97,15 +100,19 @@
             padding: 2px 4px;
             border-radius: 4px;
             margin-bottom: 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            word-break: break-word;
         }
         .activity-type {
             font-weight: 600;
             display: block;
             font-size: 10px;
             opacity: 0.8;
+        }
+        .activity-content-clamp {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
         }
         .status-planned {
             background-color: #FEF3C7; /* Amber 100 */
@@ -594,13 +601,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-2 mb-4">
-                         <button id="add-activity-btn" class="btn-primary px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90">
-                            <i data-lucide="plus-circle" class="w-5 h-5"></i>Thêm mới
-                        </button>
-                        <button id="export-excel-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700">
-                            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>Xuất Excel
-                        </button>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <div id="activity-stats" class="text-sm text-gray-700 bg-blue-50 p-2 rounded-lg border border-blue-200"></div>
+                        <div class="flex gap-2">
+                             <button id="add-activity-btn" class="btn-primary px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90">
+                                <i data-lucide="plus-circle" class="w-5 h-5"></i>Thêm mới
+                            </button>
+                            <button id="export-excel-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700">
+                                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>Xuất Excel
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Bảng danh sách -->
@@ -687,7 +698,7 @@
                 const activitiesHtml = dayActivities.map(act => `
                     <div class="calendar-activity ${act.status === 'planned' ? 'status-planned' : 'status-approved'}" draggable="true" data-id="${act.id}" title="${act.loaiNoiDung}: ${act.noiDungCuThe}">
                        <span class="activity-type">${act.loaiNoiDung}</span>
-                       ${act.noiDungCuThe}
+                       <p class="activity-content-clamp">${act.noiDungCuThe}</p>
                     </div>
                 `).join('');
 
@@ -1388,6 +1399,17 @@
                 })
                 .sort((a, b) => new Date(b.thoiGian) - new Date(a.thoiGian));
             
+            const statsDiv = document.getElementById('activity-stats');
+            if(statsDiv) {
+                const totalActivities = this.data.activities.length;
+                const filteredCount = filteredActivities.length;
+                if (totalActivities === filteredCount) {
+                    statsDiv.innerHTML = `Hiển thị tất cả <strong>${totalActivities}</strong> hoạt động.`;
+                } else {
+                    statsDiv.innerHTML = `Đã lọc, hiển thị <strong>${filteredCount}</strong> trên tổng số <strong>${totalActivities}</strong> hoạt động.`;
+                }
+            }
+
             const totalItems = filteredActivities.length;
             const totalPages = Math.ceil(totalItems / itemsPerPage);
             const start = (page - 1) * itemsPerPage;
@@ -1689,10 +1711,18 @@
                                 activityData.id = this.generateId();
                                 activityData.status = 'approved';
                                 this.data.activities.push(activityData);
+                                
                                 this.addOptionIfNeeded('locations', activityData.diaDiem);
                                 this.addOptionIfNeeded('contentTypes', activityData.loaiNoiDung);
                                 this.addOptionIfNeeded('targetAudiences', activityData.doiTuong);
                                 this.addOptionIfNeeded('implementers', activityData.nguoiThucHien);
+                                const hinhThucLower = (activityData.hinhThuc || '').toLowerCase();
+                                if (hinhThucLower.includes('trực tiếp')) {
+                                    this.addOptionIfNeeded('media.direct', activityData.phuongTien);
+                                } else if (hinhThucLower.includes('gián tiếp')) {
+                                    this.addOptionIfNeeded('media.indirect', activityData.phuongTien);
+                                }
+                                
                                 addedCount++;
                             }
                         }
@@ -1886,11 +1916,11 @@
         setupCalendarEventListeners() {
             document.getElementById('prev-month-btn').addEventListener('click', () => {
                 this.data.calendar.currentDate.setMonth(this.data.calendar.currentDate.getMonth() - 1);
-                this.render();
+                this.navigateTo('calendar');
             });
             document.getElementById('next-month-btn').addEventListener('click', () => {
                  this.data.calendar.currentDate.setMonth(this.data.calendar.currentDate.getMonth() + 1);
-                 this.render();
+                 this.navigateTo('calendar');
             });
 
             const calendarGrid = document.querySelector('.calendar-grid');
