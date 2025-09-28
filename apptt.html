@@ -1140,7 +1140,7 @@
                 document.getElementById('activity-id').value = activity.id;
                 
                 const activityDate = new Date(activity.thoiGian);
-                const formattedDate = activityDate.toISOString().split('T')[0];
+                const formattedDate = this.formatDateForInput(activityDate);
                 document.getElementById('thoi-gian').value = formattedDate;
 
                 document.getElementById('dia-diem').value = activity.diaDiem;
@@ -1784,6 +1784,18 @@
         },
         
         // --- HELPERS ---
+        formatDateForInput(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        },
+
         generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substring(2);
         },
@@ -2081,4 +2093,5 @@
     </script>
 </body>
 </html>
+
 
