@@ -703,7 +703,7 @@
                 `).join('');
 
                 daysHtml += `
-                    <div class="calendar-day p-2 rounded ${isWeekend ? 'weekend' : ''}" data-date="${currentDate.toISOString().split('T')[0]}">
+                    <div class="calendar-day p-2 rounded ${isWeekend ? 'weekend' : ''}" data-date="${this.formatDateForInput(currentDate)}">
                         <div class="font-semibold text-sm ${isToday ? 'bg-var(--mau-chinh-dam) text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}">${day}</div>
                         <div class="mt-1">${activitiesHtml}</div>
                     </div>
@@ -764,7 +764,7 @@
                 return;
             }
             
-            const activities = this.data.activities; // FIX: Count ALL activities, not just approved ones
+            const activities = this.data.activities; 
 
             const periodData = this.calculateReportMetrics(activities, periodStart, periodEnd);
             let cumulativeData = null;
@@ -800,12 +800,11 @@
                     nhom: { count: 0, attendees: 0 },
                     hoGiaDinh: { count: 0, attendees: 0 },
                     truongHoc: { count: 0, attendees: 0 },
-                    tuVan: {} // { 'Loại nội dung': count }
+                    tuVan: {} // { 'Loại nội dung': { count: 0, attendees: 0 } }
                 }
             };
 
             filtered.forEach(act => {
-                 // Only count metrics for approved activities in the detailed breakdown
                 if (act.status !== 'approved') return;
 
                 const attendees = parseInt(act.soNguoiThamDu) || 0;
@@ -817,7 +816,7 @@
                 if (hinhThuc === 'gián tiếp') {
                     if (phuongTien.includes('bài tuyên truyền')) metrics.indirect.articles++;
                     if (phuongTien.includes('phát thanh')) {
-                        const times = attendees > 0 ? attendees : 1; // Số người tham dự là số lần phát
+                        const times = attendees > 0 ? attendees : 1;
                         metrics.indirect.broadcasts += times;
                         let durationInMinutes = thoiLuong;
                         if (donViThoiLuong === 'giờ') durationInMinutes *= 60;
@@ -830,15 +829,15 @@
                     else if (phuongTien.includes('nhóm') || phuongTien.includes('lồng ghép')) { metrics.direct.nhom.count++; metrics.direct.nhom.attendees += attendees; }
                     else if (phuongTien.includes('hộ gia đình')) { metrics.direct.hoGiaDinh.count++; metrics.direct.hoGiaDinh.attendees += attendees; }
                     else if (phuongTien.includes('trường học')) { metrics.direct.truongHoc.count++; metrics.direct.truongHoc.attendees += attendees; }
-                    else if (phuongTien.includes('tư vấn tại trạm') || phuongTien.includes('tư vấn sức khỏe')) {
+                    else if (phuongTien.includes('tư vấn')) {
                         if (!metrics.direct.tuVan[act.loaiNoiDung]) {
-                            metrics.direct.tuVan[act.loaiNoiDung] = 0;
+                            metrics.direct.tuVan[act.loaiNoiDung] = { count: 0, attendees: 0 };
                         }
-                        metrics.direct.tuVan[act.loaiNoiDung] += attendees;
+                        metrics.direct.tuVan[act.loaiNoiDung].count++;
+                        metrics.direct.tuVan[act.loaiNoiDung].attendees += attendees;
                     }
                 }
             });
-             // Add total activities count (both planned and approved)
             metrics.totalActivities = filtered.length;
             
             return metrics;
@@ -855,25 +854,23 @@
                 </div>
             `;
             
-            const totalAttendeesPeriod = Object.values(periodData.direct).reduce((sum, type) => {
-                let currentAttendees = type.attendees || 0;
-                if (typeof type === 'object' && !type.attendees) {
-                     currentAttendees += Object.values(type).reduce((s, v) => s + v, 0);
-                }
-                return sum + currentAttendees;
-            }, 0);
-            
+            const calculateTotalAttendees = (data) => {
+                if (!data) return 0;
+                let total = 0;
+                total += (data.direct.mitTinh.attendees || 0);
+                total += (data.direct.hoiNghi.attendees || 0);
+                total += (data.direct.nhom.attendees || 0);
+                total += (data.direct.hoGiaDinh.attendees || 0);
+                total += (data.direct.truongHoc.attendees || 0);
+                total += Object.values(data.direct.tuVan).reduce((sum, topic) => sum + (topic.attendees || 0), 0);
+                return total;
+            };
+
+            const totalAttendeesPeriod = calculateTotalAttendees(periodData);
             const totalActivitiesPeriod = periodData.totalActivities;
             
-             const cumulativeActivities = cumulativeData ? cumulativeData.totalActivities : 0;
-             const cumulativeAttendees = cumulativeData ? Object.values(cumulativeData.direct).reduce((sum, type) => {
-                let currentAttendees = type.attendees || 0;
-                if (typeof type === 'object' && !type.attendees) {
-                     currentAttendees += Object.values(type).reduce((s, v) => s + v, 0);
-                }
-                return sum + currentAttendees;
-            }, 0) : 0;
-
+            const cumulativeActivities = cumulativeData ? cumulativeData.totalActivities : 0;
+            const cumulativeAttendees = calculateTotalAttendees(cumulativeData);
 
             let html = `
                 <div class="not-prose">
@@ -949,11 +946,20 @@
 
             // Data for Consulting
             const allConsultingTopics = new Set([...Object.keys(data.direct.tuVan), ...(cumulative ? Object.keys(cumulative.direct.tuVan) : [])]);
-            const consultingRows = Array.from(allConsultingTopics).map(topic => ({
-                label: topic,
-                periodValue: data.direct.tuVan[topic],
-                cumulativeValue: cumulative?.direct.tuVan[topic]
-            }));
+            const consultingRows = [];
+            allConsultingTopics.forEach(topic => {
+                consultingRows.push({
+                    label: `${topic} (Số lần)`,
+                    periodValue: data.direct.tuVan[topic]?.count,
+                    cumulativeValue: cumulative?.direct.tuVan[topic]?.count
+                });
+                consultingRows.push({
+                    label: `${topic} (Số người)`,
+                    periodValue: data.direct.tuVan[topic]?.attendees,
+                    cumulativeValue: cumulative?.direct.tuVan[topic]?.attendees
+                });
+            });
+
 
             let finalHtml = '';
             finalHtml += createTable('I. Truyền thông Gián tiếp', indirectRows);
@@ -1008,9 +1014,14 @@
             const consultingDataRows = [];
             allConsultingTopics.forEach(topic => {
                 consultingDataRows.push([
-                    topic,
-                    periodData.direct.tuVan[topic] || 0,
-                    ...(cumulativeData ? [cumulativeData.direct.tuVan[topic] || 0] : [])
+                    `${topic} (Số lần)`,
+                    periodData.direct.tuVan[topic]?.count || 0,
+                    ...(cumulativeData ? [cumulativeData.direct.tuVan[topic]?.count || 0] : [])
+                ]);
+                consultingDataRows.push([
+                    `${topic} (Số người)`,
+                    periodData.direct.tuVan[topic]?.attendees || 0,
+                    ...(cumulativeData ? [cumulativeData.direct.tuVan[topic]?.attendees || 0] : [])
                 ]);
             });
 
@@ -1590,18 +1601,24 @@
         downloadExcelTemplate() {
             const wb = XLSX.utils.book_new();
             
-            const templateData = [
+            const mainSheetData = [
                 ["Thời gian (dd/mm/yyyy)", "Địa điểm", "Loại nội dung truyền thông", "Nội dung cụ thể", "Hình thức truyền thông (Trực tiếp/Gián tiếp)", "Đối tượng", "Số người tham dự", "Phương tiện truyền thông", "Thời lượng", "Đơn vị thời lượng (giờ/phút)", "Đơn vị-Người thực hiện", "Ghi chú"]
             ];
-            const ws1 = XLSX.utils.aoa_to_sheet(templateData);
-            XLSX.utils.book_append_sheet(wb, ws1, "Mau Nhap Lieu");
+            const ws = XLSX.utils.aoa_to_sheet(mainSheetData);
+            XLSX.utils.book_append_sheet(wb, ws, "Mau Nhap Lieu");
             
-            const optionsData = [
-                ["DANH MỤC CÁC LOẠI NỘI DUNG TRUYỀN THÔNG"],
-                ...this.data.options.contentTypes.map(c => [c])
-            ];
-            const ws2 = XLSX.utils.aoa_to_sheet(optionsData);
-            XLSX.utils.book_append_sheet(wb, ws2, "DM Loai Noi Dung");
+            const createSheet = (title, data) => {
+                const sheetData = [[title], ...data.map(item => [item])];
+                const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+                return worksheet;
+            };
+
+            XLSX.utils.book_append_sheet(wb, createSheet("DM Loai Noi Dung", this.data.options.contentTypes), "DM Loai Noi Dung");
+            XLSX.utils.book_append_sheet(wb, createSheet("DM Dia Diem", this.data.options.locations), "DM Dia Diem");
+            XLSX.utils.book_append_sheet(wb, createSheet("DM Doi Tuong", this.data.options.targetAudiences), "DM Doi Tuong");
+            XLSX.utils.book_append_sheet(wb, createSheet("DM Nguoi Thuc Hien", this.data.options.implementers), "DM Nguoi Thuc Hien");
+            XLSX.utils.book_append_sheet(wb, createSheet("DM PTTT Truc Tiep", this.data.options.media.direct), "DM PTTT Truc Tiep");
+            XLSX.utils.book_append_sheet(wb, createSheet("DM PTTT Gian Tiep", this.data.options.media.indirect), "DM PTTT Gian Tiep");
 
             XLSX.writeFile(wb, "FileMau_NhapLieu_TruyenThong.xlsx");
         },
@@ -1800,10 +1817,7 @@
                 const activity = this.data.activities.find(a => a.id === this.draggedActivityId);
                 
                 if (activity) {
-                    const originalDate = new Date(activity.thoiGian);
-                    const newDateObj = new Date(newDate + 'T00:00:00');
-                    newDateObj.setHours(originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds());
-                    activity.thoiGian = newDateObj;
+                    activity.thoiGian = new Date(newDate);
                     
                     this.saveData();
                     this.render(); 
