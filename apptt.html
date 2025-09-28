@@ -1221,7 +1221,7 @@
 
                 const activityData = {
                     id: id || this.generateId(),
-                    thoiGian: new Date(document.getElementById('thoi-gian').value + 'T00:00:00'), // Fix timezone
+                    thoiGian: new Date(document.getElementById('thoi-gian').value),
                     diaDiem: document.getElementById('dia-diem').value.trim(),
                     loaiNoiDung: document.getElementById('loai-noi-dung').value.trim(),
                     noiDungCuThe: document.getElementById('noi-dung-cu-the').value.trim() || document.getElementById('loai-noi-dung').value.trim(),
@@ -1472,6 +1472,35 @@
 
         
         // --- CHỨC NĂNG IMPORT/EXPORT ---
+        scanAndBuildOptions() {
+            const allActivities = this.data.activities;
+            
+            const addUnique = (list, item) => {
+                if (item && !list.find(i => i.toLowerCase() === item.toLowerCase())) {
+                    list.push(item);
+                }
+            };
+
+            allActivities.forEach(act => {
+                addUnique(this.data.options.locations, act.diaDiem);
+                addUnique(this.data.options.contentTypes, act.loaiNoiDung);
+                addUnique(this.data.options.targetAudiences, act.doiTuong);
+                addUnique(this.data.options.implementers, act.nguoiThucHien);
+                
+                if (act.hinhThuc && act.phuongTien) {
+                     const hinhThucLower = (act.hinhThuc || '').toLowerCase();
+                     if (hinhThucLower.includes('trực tiếp')) {
+                         addUnique(this.data.options.media.direct, act.phuongTien);
+                     } else if (hinhThucLower.includes('gián tiếp')) {
+                         addUnique(this.data.options.media.indirect, act.phuongTien);
+                     }
+                }
+            });
+
+            this.saveData();
+            this.updateDatalists();
+        },
+
         exportJson() {
             const dataStr = JSON.stringify(this.data, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1491,7 +1520,8 @@
                     const importedData = JSON.parse(e.target.result);
                     if (importedData.activities && importedData.options) {
                         this.data = importedData;
-                        this.loadData(); 
+                        this.loadData();
+                        this.scanAndBuildOptions(); 
                         this.navigateTo(this.data.currentView || 'dashboard');
                         this.showToast('Nhập dữ liệu từ JSON thành công!', 'success');
                     } else {
@@ -1512,6 +1542,7 @@
 
             const processFile = (fileIndex) => {
                 if (fileIndex >= files.length) {
+                    this.scanAndBuildOptions();
                     this.saveData();
                     this.updateDatalists();
                     this.render();
@@ -2093,5 +2124,4 @@
     </script>
 </body>
 </html>
-
 
