@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Lọc và Lấy Mẫu Bệnh Nhân Ngẫu Nhiên</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx.full.min.js) for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Lucide Icons for UI elements -->
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
+    <style>
+        /* Custom styles for a better look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-secondary {
+            background-color: #4ade80;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #22c55e;
+        }
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        /* Custom scrollbar for results table */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Style for loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            -webkit-animation: spin 2s linear infinite; /* Safari */
+            animation: spin 2s linear infinite;
+        }
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header Section -->
+        <div class="card p-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Công Cụ Lọc và Lấy Mẫu Bệnh Nhân Ngẫu Nhiên</h1>
+            <p class="mt-2 text-gray-600">Một công cụ mạnh mẽ để trích xuất dữ liệu y tế theo các tiêu chí tùy chỉnh.</p>
+        </div>
+
+        <!-- Step 1: Upload Data -->
+        <div class="card p-6">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl">1</div>
+                <h2 class="text-2xl font-bold text-gray-700">Tải Lên Dữ Liệu Nguồn</h2>
+            </div>
+            <p class="text-gray-600 mt-2 ml-14">Vui lòng chọn file dữ liệu bệnh nhân. Hỗ trợ định dạng Excel (.xlsx, .xls, .csv) hoặc JSON (.json).</p>
+            <div class="mt-4 ml-14">
+                <input type="file" id="fileInput" accept=".json, .xlsx, .xls, .csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                <p id="fileStatus" class="mt-2 text-sm font-medium"></p>
+            </div>
+        </div>
+
+        <!-- Step 2: Define Filters -->
+        <div class="card p-6">
+            <div class="flex items-center gap-4">
+                 <div class="bg-blue-100 text-blue-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl">2</div>
+                <h2 class="text-2xl font-bold text-gray-700">Thiết Lập Bộ Lọc Chi Tiết</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4 ml-14">
+                <!-- Filter Group: Date Range -->
+                <div>
+                    <label class="font-semibold text-gray-700">Khoảng Thời Gian Khám</label>
+                    <div class="mt-2 space-y-2">
+                        <input type="date" id="startDate" value="2025-07-01" class="w-full p-2 border border-gray-300 rounded-md">
+                        <input type="date" id="endDate" value="2025-09-30" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+                <!-- Filter Group: Age Range -->
+                <div>
+                    <label class="font-semibold text-gray-700">Độ Tuổi</label>
+                    <div class="mt-2 space-y-2">
+                        <input type="number" id="minAge" placeholder="Tối thiểu" value="30" class="w-full p-2 border border-gray-300 rounded-md">
+                        <input type="number" id="maxAge" placeholder="Tối đa" value="60" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+                <!-- Filter Group: Sample Size -->
+                <div>
+                     <label for="sampleSize" class="font-semibold text-gray-700">Số Lượng Mẫu / Tháng</label>
+                     <input type="number" id="sampleSize" value="110" class="w-full mt-2 p-2 border border-gray-300 rounded-md">
+                </div>
+                 <!-- Filter Group: Exclusion Diagnosis -->
+                <div>
+                    <label for="exclusionDiagnosis" class="font-semibold text-gray-700">Loại Trừ Chẩn Đoán</label>
+                    <input type="text" id="exclusionDiagnosis" placeholder="Nhập từ khóa, vd: đái tháo đường" value="đái tháo đường" class="w-full mt-2 p-2 border border-gray-300 rounded-md">
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Define Random Data Fields -->
+        <div class="card p-6">
+             <div class="flex items-center gap-4">
+                 <div class="bg-blue-100 text-blue-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl">3</div>
+                <h2 class="text-2xl font-bold text-gray-700">Tạo Trường Dữ Liệu Ngẫu Nhiên (Tùy chọn)</h2>
+            </div>
+            <div id="randomFieldsContainer" class="mt-4 ml-14 space-y-4">
+                <!-- Initial random field -->
+                <div class="p-4 border rounded-lg bg-gray-50 grid grid-cols-1 md:grid-cols-4 gap-4 items-end random-field-group">
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Tên trường</label>
+                        <input type="text" value="Chỉ số đường huyết bất kỳ" class="fieldName mt-1 w-full p-2 border border-gray-300 rounded-md" placeholder="VD: Đường huyết">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Giá trị nhỏ nhất</label>
+                        <input type="number" step="0.1" value="4.0" class="minVal mt-1 w-full p-2 border border-gray-300 rounded-md" placeholder="VD: 4.0">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Giá trị lớn nhất</label>
+                        <input type="number" step="0.1" value="7.7" class="maxVal mt-1 w-full p-2 border border-gray-300 rounded-md" placeholder="VD: 7.7">
+                    </div>
+                     <div>
+                        <label class="text-sm font-medium text-gray-600">Số chữ số thập phân</label>
+                        <input type="number" value="1" min="0" class="decimals mt-1 w-full p-2 border border-gray-300 rounded-md" placeholder="VD: 1">
+                    </div>
+                </div>
+            </div>
+            <!-- This feature is for future enhancement
+            <button id="addRandomField" class="btn bg-gray-200 text-gray-700 hover:bg-gray-300 mt-4 ml-14">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                Thêm Trường Ngẫu Nhiên
+            </button>
+            -->
+        </div>
+
+        <!-- Step 4: Execute and Export -->
+        <div class="card p-6">
+             <div class="flex items-center gap-4">
+                 <div class="bg-blue-100 text-blue-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl">4</div>
+                <h2 class="text-2xl font-bold text-gray-700">Thực Hiện và Xem Kết Quả</h2>
+            </div>
+            <div class="mt-4 ml-14 flex flex-wrap gap-4">
+                <button id="processButton" class="btn btn-primary">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.54 11.23c.2.84-.3 1.7-.98 2.21l-2.07 1.5c-.88.64-2.03.35-2.52-.6L14.4 11.9c-.5-1-1.68-1.3-2.55-.77l-2.45 1.53c-.9.55-2.06.15-2.5-  .77L5.35 9.7c-.42-.84.21-1.83 1.1-2.18l2.6-1.02c.83-.33 1.76.12 2.06.96l.66 1.83c.3.84 1.28 1.28 2.12.98l2.58-.93c.9-.32 1.88.16 2.08 1.05z"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
+                    Lọc và Lấy Mẫu
+                </button>
+                <button id="exportButton" class="btn btn-secondary" disabled>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Xuất File Excel
+                </button>
+            </div>
+            <div id="loadingIndicator" class="hidden mt-4 ml-14 flex flex-col items-center justify-center">
+                <div class="loader"></div>
+                <p class="text-gray-600 mt-2">Đang xử lý, vui lòng chờ...</p>
+            </div>
+            <p id="resultsSummary" class="mt-4 ml-14 font-medium text-gray-700"></p>
+        </div>
+
+        <!-- Results Table -->
+        <div id="resultsContainer" class="hidden">
+            <div class="card p-6">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">Danh Sách Bệnh Nhân Ngẫu Nhiên</h3>
+                 <div class="table-container overflow-x-auto max-h-[600px] border rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                            <tr>
+                                <!-- Table headers will be dynamically inserted here -->
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody">
+                            <!-- Table rows will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// =================================================================================
+// SCRIPT LOGIC FOR THE PATIENT SAMPLER APPLICATION
+// =================================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // -----------------------------------------------------------------------------
+    // 1. STATE MANAGEMENT AND DOM ELEMENT SELECTION
+    // -----------------------------------------------------------------------------
+
+    // Store the main dataset once loaded from the file
+    let fullPatientData = [];
+    // Store the final sampled list of patients
+    let sampledPatientData = [];
+
+    // --- DOM Element References ---
+    const fileInput = document.getElementById('fileInput');
+    const fileStatus = document.getElementById('fileStatus');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const minAgeInput = document.getElementById('minAge');
+    const maxAgeInput = document.getElementById('maxAge');
+    const sampleSizeInput = document.getElementById('sampleSize');
+    const exclusionDiagnosisInput = document.getElementById('exclusionDiagnosis');
+    const processButton = document.getElementById('processButton');
+    const exportButton = document.getElementById('exportButton');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultsTableBody = document.getElementById('resultsTableBody');
+    const resultsSummary = document.getElementById('resultsSummary');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const randomFieldsContainer = document.getElementById('randomFieldsContainer');
+
+
+    // -----------------------------------------------------------------------------
+    // 2. EVENT LISTENERS
+    // -----------------------------------------------------------------------------
+
+    /**
+     * Listens for a file to be selected by the user.
+     * Triggers the file reading and parsing process.
+     */
+    fileInput.addEventListener('change', handleFileSelect);
+
+    /**
+     * Listens for clicks on the main "Process" button.
+     * Triggers the entire filtering and sampling logic.
+     */
+    processButton.addEventListener('click', runProcessingPipeline);
+
+    /**
+     * Listens for clicks on the "Export to Excel" button.
+     * Triggers the function to generate and download an XLSX file.
+     */
+    exportButton.addEventListener('click', exportDataToExcel);
+
+
+    // -----------------------------------------------------------------------------
+    // 3. CORE FUNCTIONS
+    // -----------------------------------------------------------------------------
+
+    /**
+     * Handles the file input change event. Validates the file and initiates reading.
+     * @param {Event} event - The file input change event object.
+     */
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            fileStatus.textContent = 'Chưa có file nào được chọn.';
+            fileStatus.className = 'mt-2 text-sm font-medium text-yellow-600';
+            return;
+        }
+
+        const fileName = file.name.toLowerCase();
+        const isJson = fileName.endsWith('.json');
+        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv');
+
+        if (!isJson && !isExcel) {
+            fileStatus.textContent = 'Lỗi: Định dạng file không được hỗ trợ. Vui lòng chọn file Excel (.xlsx, .xls, .csv) hoặc JSON (.json).';
+            fileStatus.className = 'mt-2 text-sm font-medium text-red-600';
+            fullPatientData = [];
+            return;
+        }
+
+        fileStatus.textContent = `Đang đọc file: ${file.name}...`;
+        fileStatus.className = 'mt-2 text-sm font-medium text-blue-600';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                if (isJson) {
+                    // Handle JSON file by parsing the text content
+                    fullPatientData = JSON.parse(e.target.result);
+                } else { 
+                    // Handle Excel/CSV file using SheetJS
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    fullPatientData = XLSX.utils.sheet_to_json(worksheet);
+                }
+                
+                fileStatus.textContent = `✓ Đã tải thành công ${fullPatientData.length.toLocaleString('vi-VN')} hồ sơ bệnh nhân từ file ${file.name}.`;
+                fileStatus.className = 'mt-2 text-sm font-medium text-green-600';
+
+            } catch (error) {
+                console.error("File parsing error:", error);
+                fileStatus.textContent = `Lỗi: Không thể phân tích cú pháp file. File có thể bị lỗi hoặc sai định dạng. Lỗi: ${error.message}`;
+                fileStatus.className = 'mt-2 text-sm font-medium text-red-600';
+                fullPatientData = [];
+            }
+        };
+        
+        reader.onerror = function() {
+            fileStatus.textContent = `Lỗi: Không thể đọc file.`;
+            fileStatus.className = 'mt-2 text-sm font-medium text-red-600';
+            fullPatientData = [];
+        };
+
+        // Read file based on its type
+        if (isJson) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
+        }
+    }
+
+    /**
+     * The main function that orchestrates the filtering and sampling process.
+     */
+    async function runProcessingPipeline() {
+        // --- Preliminary Checks ---
+        if (fullPatientData.length === 0) {
+            alert('Vui lòng tải lên file dữ liệu bệnh nhân trước khi xử lý.');
+            return;
+        }
+
+        // --- UI Updates: Show Loading State ---
+        setLoadingState(true);
+        clearPreviousResults();
+
+        // Use a short timeout to allow the UI to update before the heavy processing starts
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        try {
+            // --- 1. Get Filter Criteria from UI ---
+            const filters = getFiltersFromUI();
+            
+            // --- 2. Filter the Full Dataset ---
+            const filteredData = filterPatientData(fullPatientData, filters);
+            
+            // --- 3. Group by Month ---
+            const groupedByMonth = groupDataByMonth(filteredData);
+            
+            // --- 4. Perform Random Sampling ---
+            const finalSample = performRandomSampling(groupedByMonth, filters.sampleSize);
+
+            // --- 5. Add Random Data Fields ---
+            sampledPatientData = addRandomFields(finalSample);
+
+            // --- 6. Render Results ---
+            renderResults(sampledPatientData);
+
+        } catch (error) {
+            console.error("Lỗi trong quá trình xử lý:", error);
+            resultsSummary.textContent = `Đã xảy ra lỗi: ${error.message}`;
+            resultsSummary.className = 'mt-4 ml-14 font-medium text-red-600';
+        } finally {
+            // --- UI Updates: Hide Loading State ---
+            setLoadingState(false);
+        }
+    }
+    
+    /**
+     * Filters the main patient dataset based on user-defined criteria.
+     * @param {Array} data - The array of all patient records.
+     * @param {Object} filters - An object containing all filter criteria.
+     * @returns {Array} - An array of patient records that match the criteria.
+     */
+    function filterPatientData(data, filters) {
+        const exclusionText = filters.exclusionDiagnosis.toLowerCase().trim();
+
+        return data.filter(patient => {
+            // Validate essential patient data exists
+            if (!patient["Năm sinh"] || !patient["ngay kham"] || !patient["CHẨN ĐOÁN"]) {
+                return false;
+            }
+
+            // --- Date Filtering ---
+            const visitDate = parseDate(patient["ngay kham"]);
+            if (!visitDate || visitDate < filters.startDate || visitDate > filters.endDate) {
+                return false;
+            }
+            
+            // --- Age Filtering ---
+            const visitYear = visitDate.getFullYear();
+            const age = visitYear - parseInt(patient["Năm sinh"], 10);
+            if (isNaN(age) || age < filters.minAge || age > filters.maxAge) {
+                return false;
+            }
+
+            // --- Diagnosis Exclusion Filtering ---
+            if (exclusionText) {
+                const diagnosis = (patient["CHẨN ĐOÁN"] || '').toLowerCase();
+                if (diagnosis.includes(exclusionText)) {
+                    return false;
+                }
+            }
+            
+            // If all checks pass, include the patient
+            return true;
+        });
+    }
+    
+    /**
+     * Groups the filtered data by month (e.g., '2025-07').
+     * @param {Array} data - The filtered patient data.
+     * @returns {Object} - An object where keys are months and values are arrays of patients.
+     */
+    function groupDataByMonth(data) {
+        return data.reduce((acc, patient) => {
+            const visitDate = parseDate(patient["ngay kham"]);
+            if(visitDate){
+                const monthKey = `${visitDate.getFullYear()}-${(visitDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                if (!acc[monthKey]) {
+                    acc[monthKey] = [];
+                }
+                acc[monthKey].push(patient);
+            }
+            return acc;
+        }, {});
+    }
+    
+    /**
+     * Performs random sampling on the data grouped by month.
+     * @param {Object} groupedData - Data grouped by month.
+     * @param {number} sampleSize - The number of patients to select per month.
+     * @returns {Array} - The final flat array of sampled patients.
+     */
+    function performRandomSampling(groupedData, sampleSize) {
+        let finalSample = [];
+        for (const month in groupedData) {
+            let monthData = groupedData[month];
+            // Shuffle the array to ensure randomness
+            shuffleArray(monthData);
+            // Take the required number of samples
+            const monthSample = monthData.slice(0, sampleSize);
+            finalSample = finalSample.concat(monthSample);
+        }
+        return finalSample;
+    }
+
+    /**
+     * Adds new, randomly generated data fields to each patient record in the sample.
+     * @param {Array} data - The sampled patient data.
+     * @returns {Array} - The data with new random fields added.
+     */
+    function addRandomFields(data) {
+        const randomFieldGroups = document.querySelectorAll('.random-field-group');
+        const fieldConfigs = [];
+
+        randomFieldGroups.forEach(group => {
+            const fieldName = group.querySelector('.fieldName').value.trim();
+            const minVal = parseFloat(group.querySelector('.minVal').value);
+            const maxVal = parseFloat(group.querySelector('.maxVal').value);
+            const decimals = parseInt(group.querySelector('.decimals').value, 10);
+            if (fieldName && !isNaN(minVal) && !isNaN(maxVal) && !isNaN(decimals)) {
+                 fieldConfigs.push({ fieldName, minVal, maxVal, decimals });
+            }
+        });
+
+        if (fieldConfigs.length === 0) return data;
+
+        return data.map(patient => {
+            const newPatient = { ...patient };
+            fieldConfigs.forEach(config => {
+                const randomValue = Math.random() * (config.maxVal - config.minVal) + config.minVal;
+                newPatient[config.fieldName] = parseFloat(randomValue.toFixed(config.decimals));
+            });
+            return newPatient;
+        });
+    }
+
+    /**
+     * Renders the final sampled data into the HTML table and updates the summary.
+     * @param {Array} data - The final array of sampled patients.
+     */
+    function renderResults(data) {
+        if (data.length === 0) {
+            resultsSummary.textContent = 'Không tìm thấy bệnh nhân nào phù hợp với tiêu chí đã chọn.';
+            resultsSummary.className = 'mt-4 ml-14 font-medium text-yellow-600';
+            exportButton.disabled = true;
+            return;
+        }
+
+        // Update summary text
+        resultsSummary.textContent = `Tìm thấy và đã lấy mẫu ngẫu nhiên được ${data.length} bệnh nhân.`;
+        resultsSummary.className = 'mt-4 ml-14 font-medium text-green-600';
+
+        // --- Prepare table headers ---
+        const tableHead = resultsContainer.querySelector('thead tr');
+        tableHead.innerHTML = ''; // Clear existing headers
+        
+        // Define desired columns and their order
+        const columns = [
+            { key: "ngay kham", title: "Ngày Khám" },
+            { key: "HỌ VÀ TÊN", title: "Họ và Tên" },
+            { key: "giới", title: "Giới Tính" },
+            { key: "Năm sinh", title: "Năm Sinh" },
+            { key: "ĐỊA CHỈ", title: "Địa Chỉ" },
+        ];
+        // Add random fields to the columns definition if they exist in the data
+        const firstRecord = data[0];
+        const randomFieldGroups = document.querySelectorAll('.random-field-group');
+        randomFieldGroups.forEach(group => {
+             const fieldName = group.querySelector('.fieldName').value.trim();
+             if(fieldName && firstRecord.hasOwnProperty(fieldName)){
+                 columns.push({ key: fieldName, title: fieldName });
+             }
+        });
+
+        columns.forEach(col => {
+            const th = document.createElement('th');
+            th.scope = 'col';
+            th.className = 'px-6 py-3';
+            th.textContent = col.title;
+            tableHead.appendChild(th);
+        });
+        
+        // --- Populate table body ---
+        resultsTableBody.innerHTML = ''; // Clear existing rows
+        data.forEach(patient => {
+            const row = document.createElement('tr');
+            row.className = 'bg-white border-b hover:bg-gray-50';
+
+            columns.forEach(col => {
+                 const cell = document.createElement('td');
+                 cell.className = 'px-6 py-4';
+                 cell.textContent = patient[col.key] || '';
+                 row.appendChild(cell);
+            });
+            resultsTableBody.appendChild(row);
+        });
+
+        // Show the results and enable export
+        resultsContainer.classList.remove('hidden');
+        exportButton.disabled = false;
+    }
+
+    /**
+     * Exports the sampled data to an Excel (.xlsx) file.
+     */
+    function exportDataToExcel() {
+        if (sampledPatientData.length === 0) {
+            alert('Không có dữ liệu để xuất.');
+            return;
+        }
+        
+        // Prepare data for SheetJS. We want specific columns.
+        const columnsToExport = [
+            { key: "ngay kham", title: "Ngày Khám" },
+            { key: "HỌ VÀ TÊN", title: "Họ và Tên" },
+            { key: "giới", title: "Giới Tính" },
+            { key: "Năm sinh", title: "Năm Sinh" },
+            { key: "ĐỊA CHỈ", title: "Địa Chỉ" },
+        ];
+        
+        // Add random fields to the export columns
+        const randomFieldGroups = document.querySelectorAll('.random-field-group');
+        randomFieldGroups.forEach(group => {
+             const fieldName = group.querySelector('.fieldName').value.trim();
+             if(fieldName && sampledPatientData[0].hasOwnProperty(fieldName)){
+                 columnsToExport.push({ key: fieldName, title: fieldName });
+             }
+        });
+        
+        // Map data to the desired structure with correct headers
+        const exportData = sampledPatientData.map(patient => {
+            let row = {};
+            columnsToExport.forEach(col => {
+                row[col.title] = patient[col.key] || '';
+            });
+            return row;
+        });
+        
+        // Create a new workbook and a worksheet
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
+
+        // Generate and trigger download
+        const today = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(workbook, `DanhSachNgauNhien_${today}.xlsx`);
+    }
+
+
+    // -----------------------------------------------------------------------------
+    // 4. UTILITY AND HELPER FUNCTIONS
+    // -----------------------------------------------------------------------------
+    
+    /**
+     * Retrieves and sanitizes filter values from the UI input elements.
+     * @returns {Object} An object containing all filter criteria.
+     */
+    function getFiltersFromUI() {
+        return {
+            startDate: new Date(startDateInput.value),
+            endDate: new Date(endDateInput.value),
+            minAge: parseInt(minAgeInput.value, 10) || 0,
+            maxAge: parseInt(maxAgeInput.value, 10) || 150,
+            sampleSize: parseInt(sampleSizeInput.value, 10) || 110,
+            exclusionDiagnosis: exclusionDiagnosisInput.value || '',
+        };
+    }
+
+    /**
+     * Manages the visibility of UI elements during processing.
+     * @param {boolean} isLoading - True to show loading indicators, false to hide them.
+     */
+    function setLoadingState(isLoading) {
+        if (isLoading) {
+            loadingIndicator.classList.remove('hidden');
+            processButton.disabled = true;
+            processButton.classList.add('opacity-50');
+        } else {
+            loadingIndicator.classList.add('hidden');
+            processButton.disabled = false;
+            processButton.classList.remove('opacity-50');
+        }
+    }
+
+    /**
+     * Clears all previous results from the UI.
+     */
+    function clearPreviousResults() {
+        resultsTableBody.innerHTML = '';
+        resultsSummary.textContent = '';
+        resultsContainer.classList.add('hidden');
+        exportButton.disabled = true;
+        sampledPatientData = [];
+    }
+
+    /**
+     * Parses a date string in DD/MM/YYYY format into a Date object.
+     * @param {string} dateString - The date string to parse.
+     * @returns {Date|null} A Date object or null if parsing fails.
+     */
+    function parseDate(dateString) {
+        if (!dateString || typeof dateString !== 'string') return null;
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+            // new Date(year, monthIndex, day)
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+            const year = parseInt(parts[2], 10);
+            if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                 return new Date(year, month, day);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Shuffles an array in place using the Fisher-Yates algorithm.
+     * @param {Array} array - The array to be shuffled.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+});
+</script>
+</body>
+</html>
+
