@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ Gộp File Sổ Khám Bệnh v1.4</title>
+    <title>Công cụ Gộp File Sổ Khám Bệnh v1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,14 +59,14 @@
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="relative w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
             <!-- Top Signature -->
-            <div id="top-signature" class="absolute top-4 left-6 text-3xl text-slate-700" style="font-family: 'Dancing Script', cursive;">Dr.Liph</div>
+            <div id="top-signature" class="absolute top-4 left-6 text-3xl text-slate-700" style="font-family: 'Dancing Script', cursive;">Dr.Linh</div>
             
             <header class="text-center mb-6 md:mb-8">
                 <div class="flex justify-center items-center gap-4 mb-3">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0D 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Gộp Sổ Khám Bệnh v1.4</h1>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Gộp Sổ Khám Bệnh v1.5</h1>
                 </div>
-                <p class="text-slate-500 max-w-2xl mx-auto">Tải lên nhiều file Excel để gộp thành một file duy nhất với định dạng cột chuẩn và dữ liệu được tự động tính toán, sắp xếp.</p>
+                <p class="text-slate-500 max-w-2xl mx-auto">Tải lên nhiều file Excel (bao gồm cả file đã gộp trước đó) để tổng hợp, lọc trùng và xuất ra một file duy nhất.</p>
             </header>
 
             <main>
@@ -94,7 +94,7 @@
                     <button id="merge-btn" disabled class="btn-primary w-full sm:w-auto text-white bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:cursor-not-allowed font-semibold rounded-lg text-base px-8 py-3 text-center">
                         <span class="flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M12 11v6"></path><path d="M9 14h6"></path></svg>
-                            Bắt đầu Gộp
+                            Bắt đầu Gộp & Lọc trùng
                         </span>
                     </button>
                     <button id="clear-btn" class="w-full sm:w-auto text-slate-600 bg-slate-200 hover:bg-slate-300 font-semibold rounded-lg text-base px-8 py-3 text-center hidden">
@@ -146,7 +146,7 @@
             </div>
         </div>
         <footer class="text-center mt-6 text-slate-500 text-sm">
-            <p>Công cụ hỗ trợ Trạm Y tế xã Xuân Bắc. Phiên bản 1.4.</p>
+            <p>Công cụ hỗ trợ Trạm Y tế xã Xuân Bắc. Phiên bản 1.5.</p>
         </footer>
     </div>
 
@@ -171,26 +171,22 @@
 
         let selectedFiles = [];
         let mergedData = [];
-        let finalHeaders = [];
+        const finalHeaders = [
+            'STT', 'ngay kham', 'thang kham', 'HỌ VÀ TÊN', 'Tên', 'Ngày sinh', 'Năm sinh',
+            'giới', 'CCCD', 'SỐ THẺ BHYT', 'ĐỊA CHỈ', 'NGHỀ NGHIỆP', 'DÂN TỘC',
+            'TRIỆU CHỨNG', 'CHẨN ĐOÁN', 'PHƯƠƠNG PHÁP ĐIỀU TRỊ', 'Y, BÁC SĨ KHÁM BỆNH',
+            'GHI CHÚ', 'BỆNH ÁN'
+        ];
 
         // Drag and Drop functionality
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            handleFiles(files);
+            handleFiles(e.dataTransfer.files);
         });
-        fileUpload.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+        fileUpload.addEventListener('change', (e) => handleFiles(e.target.files));
 
         // Handle selected files
         function handleFiles(files) {
@@ -200,8 +196,7 @@
                 selectedFiles.forEach(file => {
                     const li = document.createElement('li');
                     li.className = 'file-item flex items-center bg-slate-100 p-2 rounded-md text-sm';
-                    li.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 mr-2 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    li.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 mr-2 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                         <span class="font-medium truncate">${file.name}</span>
                         <span class="ml-auto text-slate-500">${(file.size / 1024).toFixed(2)} KB</span>`;
                     fileList.appendChild(li);
@@ -217,24 +212,78 @@
         // Helper function to process date of birth string
         function processDateOfBirth(dobString) {
             if (!dobString) return { ngaySinh: '', namSinh: '' };
-            
             dobString = String(dobString).trim();
-
-            if (/^\d{4}$/.test(dobString)) { // Case: '1999'
-                return { ngaySinh: dobString, namSinh: dobString };
-            }
-
+            if (/^\d{4}$/.test(dobString)) return { ngaySinh: dobString, namSinh: dobString };
             const match = dobString.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
-            if (match) { // Case: 'dd/mm/yyyy'
+            if (match) {
                 const day = match[1].padStart(2, '0');
                 const month = match[2].padStart(2, '0');
                 const year = match[3];
                 return { ngaySinh: `${day}/${month}/${year}`, namSinh: year };
             }
-            
-            const yearMatch = dobString.match(/\d{4}/); // Fallback to find any 4-digit year
+            const yearMatch = dobString.match(/\d{4}/);
             const namSinh = yearMatch ? yearMatch[0] : '';
             return { ngaySinh: dobString, namSinh: namSinh };
+        }
+
+        function parseDate(dateString) {
+            const parts = String(dateString).match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+            if (parts) return new Date(parts[3], parts[2] - 1, parts[1]);
+            return null;
+        }
+
+        // Main processing function
+        async function processFiles() {
+            let allPatientRecords = [];
+
+            for (const file of selectedFiles) {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                // Try parsing as original format
+                let parsedAsOriginal = false;
+                const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('sổ khám bệnh'));
+                if (sheetName) {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                    let currentDate = null;
+                    let recordsFromFile = [];
+                    for (const row of rows) {
+                        if (typeof row[0] === 'string' && row[0].trim().toLowerCase().startsWith('ngày')) {
+                            const dateString = row[0].replace(/ngày/i, '').trim();
+                            const parsedDate = parseDate(dateString);
+                            if(parsedDate) currentDate = parsedDate;
+                        } else if (!isNaN(parseInt(row[0])) && row[1] && row[0] > 0) {
+                            if (currentDate) {
+                                recordsFromFile.push({ examDate: currentDate, dataRow: row });
+                            }
+                        }
+                    }
+                    if (recordsFromFile.length > 0) {
+                        parsedAsOriginal = true;
+                        allPatientRecords.push(...recordsFromFile);
+                    }
+                }
+
+                // If not parsed as original, try parsing as a previously merged file
+                if (!parsedAsOriginal) {
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                    if (rows.length > 1 && String(rows[0][1]).toLowerCase() === 'ngay kham' && String(rows[0][3]).toLowerCase() === 'họ và tên') {
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            const examDate = parseDate(row[1]);
+                            if (examDate && row[3]) { // Must have date and name
+                                allPatientRecords.push({
+                                    examDate: examDate,
+                                    dataRow: ['', row[3], row[7], row[5], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16], row[17]]
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            return allPatientRecords;
         }
 
         // Merge button click handler
@@ -245,101 +294,94 @@
             mergeBtn.disabled = true;
             clearBtn.disabled = true;
 
-            let allPatientData = [];
-            
             try {
-                for (const file of selectedFiles) {
-                    const data = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.onerror = (err) => reject(err);
-                        reader.readAsArrayBuffer(file);
-                    });
-
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('sổ khám bệnh'));
-                    if (!sheetName) {
-                        console.warn(`Không tìm thấy sheet "Sổ khám bệnh" trong file: ${file.name}. Bỏ qua.`);
-                        continue;
-                    }
-
-                    const worksheet = workbook.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-                    let currentDate = null;
-                    for (const row of rows) {
-                        if (typeof row[0] === 'string' && row[0].trim().toLowerCase().startsWith('ngày')) {
-                            const dateString = row[0].replace(/ngày/i, '').trim();
-                            const parts = dateString.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
-                            if (parts) {
-                                currentDate = new Date(parts[3], parts[2] - 1, parts[1]);
-                            }
-                        } 
-                        else if (!isNaN(parseInt(row[0])) && row[1] && row[0] > 0) {
-                            if (currentDate) {
-                                allPatientData.push({ ngayKham: currentDate, dataRow: row });
-                            }
-                        }
-                    }
-                }
-
-                if (allPatientData.length === 0) {
+                // 1. Parse all files and gather raw data
+                let rawData = await processFiles();
+                
+                if (rawData.length === 0) {
                     throw new Error("Không tìm thấy dữ liệu bệnh nhân hợp lệ trong các file đã chọn.");
                 }
 
-                allPatientData.sort((a, b) => a.ngayKham - b.ngayKham);
-
-                finalHeaders = [
-                    'STT', 'ngay kham', 'thang kham', 'HỌ VÀ TÊN', 'Tên', 'Ngày sinh', 'Năm sinh',
-                    'giới', 'CCCD', 'SỐ THẺ BHYT', 'ĐỊA CHỈ', 'NGHỀ NGHIỆP', 'DÂN TỘC',
-                    'TRIỆU CHỨNG', 'CHẨN ĐOÁN', 'PHƯƠNG PHÁP ĐIỀU TRỊ', 'Y, BÁC SĨ KHÁM BỆNH',
-                    'GHI CHÚ', 'BỆNH ÁN'
-                ];
-                
-                mergedData = [finalHeaders];
-                let stt = 1;
-
-                allPatientData.forEach(patient => {
-                    const data = patient.dataRow;
-                    const examDate = patient.ngayKham;
-
-                    const ngayKhamText = examDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    const thangKhamText = examDate.getFullYear() + '.' + String(examDate.getMonth() + 1).padStart(2, '0');
-                    const hoVaTen = data[1] || '';
-                    const ten = hoVaTen.split(' ').pop() || '';
+                // 2. Normalize data into a consistent structure
+                const normalizedRecords = rawData.map(record => {
+                    const data = record.dataRow;
                     const { ngaySinh, namSinh } = processDateOfBirth(data[3]);
+                    const hoVaTen = data[1] || '';
                     let gioi = data[2] || '';
-                    if (gioi) {
-                       gioi = gioi.trim().toLowerCase().startsWith('na') ? 'Nam' : (gioi.trim().toLowerCase().startsWith('n') ? 'Nữ' : gioi);
-                    }
-
-                    const newRow = [
-                        stt++,
-                        ngayKhamText,
-                        thangKhamText,
-                        hoVaTen,
-                        ten,
-                        ngaySinh,
-                        namSinh,
-                        gioi,
-                        data[4] || '',  // CCCD
-                        data[5] || '',  // SỐ THẺ BHYT
-                        data[6] || '',  // ĐỊA CHỈ
-                        data[7] || '',  // NGHỀ NGHIỆP
-                        data[8] || '',  // DÂN TỘC
-                        data[9] || '',  // TRIỆU CHỨNG
-                        data[10] || '', // CHẨN ĐOÁN
-                        data[11] || '', // PHƯƠNG PHÁP ĐIỀU TRỊ
-                        data[12] || '', // Y, BÁC SĨ KHÁM BỆNH
-                        data[13] || '', // GHI CHÚ
-                        ''              // BỆNH ÁN (empty)
-                    ];
-                    mergedData.push(newRow);
+                    if (gioi) gioi = gioi.toString().trim().toLowerCase().startsWith('na') ? 'Nam' : (gioi.toString().trim().toLowerCase().startsWith('n') ? 'Nữ' : gioi);
+                    
+                    return {
+                        examDate: record.examDate,
+                        ngayKhamText: record.examDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+                        thangKhamText: record.examDate.getFullYear() + '.' + String(record.examDate.getMonth() + 1).padStart(2, '0'),
+                        hoVaTen: hoVaTen,
+                        ten: hoVaTen.split(' ').pop() || '',
+                        ngaySinh: ngaySinh,
+                        namSinh: namSinh,
+                        gioi: gioi,
+                        cccd: data[4] || '',
+                        bhyt: data[5] || '',
+                        diaChi: data[6] || '',
+                        ngheNghiep: data[7] || '',
+                        danToc: data[8] || '',
+                        trieuChung: data[9] || '',
+                        chanDoan: data[10] || '',
+                        dieuTri: data[11] || '',
+                        bacSi: data[12] || '',
+                        ghiChu: data[13] || '',
+                        benhAn: ''
+                    };
                 });
                 
+                // 3. Deduplicate
+                const uniqueKeys = new Set();
+                const uniqueRecords = normalizedRecords.filter(record => {
+                    const key = `${String(record.hoVaTen).trim().toLowerCase()}|${record.namSinh}|${record.ngayKhamText}|${String(record.trieuChung).trim().toLowerCase()}`;
+                    if (uniqueKeys.has(key)) {
+                        return false;
+                    }
+                    uniqueKeys.add(key);
+                    return true;
+                });
+                const duplicatesRemoved = normalizedRecords.length - uniqueRecords.length;
+
+                // 4. Sort by examination date
+                uniqueRecords.sort((a, b) => a.examDate - b.examDate);
+                
+                // 5. Format for final Excel output
+                mergedData = [finalHeaders];
+                uniqueRecords.forEach((record, index) => {
+                    mergedData.push([
+                        index + 1,
+                        record.ngayKhamText,
+                        record.thangKhamText,
+                        record.hoVaTen,
+                        record.ten,
+                        record.ngaySinh,
+                        record.namSinh,
+                        record.gioi,
+                        record.cccd,
+                        record.bhyt,
+                        record.diaChi,
+                        record.ngheNghiep,
+                        record.danToc,
+                        record.trieuChung,
+                        record.chanDoan,
+                        record.dieuTri,
+                        record.bacSi,
+                        record.ghiChu,
+                        record.benhAn
+                    ]);
+                });
+
+                // 6. Update UI
                 loading.classList.add('hidden');
                 result.classList.remove('hidden');
-                resultMessage.textContent = `Đã gộp thành công ${allPatientData.length} lượt khám từ ${selectedFiles.length} file.`;
+                let resultText = `Đã gộp thành công ${uniqueRecords.length} lượt khám từ ${selectedFiles.length} file.`;
+                if (duplicatesRemoved > 0) {
+                    resultText += ` Đã lọc và loại bỏ ${duplicatesRemoved} lượt khám trùng lặp.`;
+                }
+                resultMessage.textContent = resultText;
                 
                 renderPreview();
                 previewSection.classList.remove('hidden');
@@ -382,24 +424,20 @@
             });
         }
         
-        // Download button click handler
         downloadBtn.addEventListener('click', () => {
             if (mergedData.length > 1) {
                 const ws = XLSX.utils.aoa_to_sheet(mergedData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'SoKhamBenh_TongHop');
-                XLSX.writeFile(wb, 'SoKhamBenh_TongHop_v1.4.xlsx');
+                XLSX.writeFile(wb, 'SoKhamBenh_TongHop_v1.5.xlsx');
             }
         });
 
-        // Clear button click handler
         clearBtn.addEventListener('click', resetUI);
         
-        // UI Reset functions
         function resetUI() {
             selectedFiles = [];
             mergedData = [];
-            finalHeaders = [];
             fileUpload.value = '';
             fileList.innerHTML = '';
             fileListContainer.classList.add('hidden');
@@ -415,10 +453,6 @@
             result.classList.add('hidden');
             error.classList.add('hidden');
         }
-
     </script>
-
 </body>
-
 </html>
-
