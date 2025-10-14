@@ -1233,6 +1233,7 @@
 
             entries.forEach((entry) => {
                 let workingString = entry.replace(/^\d+[:\.]\s*/, '').trim();
+                let matchedParts = [];
 
                 if (CHUYEN_VIEN_KEYWORDS.some(k => workingString.toLowerCase().includes(k))) {
                      html += `<li class="p-3 bg-amber-50 rounded-md border border-amber-200 shadow-sm">
@@ -1244,24 +1245,24 @@
                 }
                 
                 let total = 'Không rõ SL';
-                const quantityMatch = workingString.match(/\s*x\s*(\d+\s*[\w\.]+)/i);
+                const quantityRegex = /\s*x\s*(\d+\s*[\p{L}0-9\.]+)/iu;
+                const quantityMatch = workingString.match(quantityRegex);
                 if (quantityMatch) {
                     total = quantityMatch[1].trim();
-                    workingString = workingString.replace(quantityMatch[0], '');
+                    matchedParts.push({ index: quantityMatch.index, length: quantityMatch[0].length });
                 }
 
                 let daysText = '';
-                const daysMatch = workingString.match(/(?:,\s*)?(?:số ngày|songay|sn)\s*[:\-\s]*(\d+)/i);
+                const daysRegex = /(?:,\s*)?(?:số ngày|songay|sn)\s*[:\-\s]*(\d+)/iu;
+                const daysMatch = workingString.match(daysRegex);
                  if (daysMatch) {
                     daysText = `x ${daysMatch[1]} ngày`;
-                    workingString = workingString.replace(daysMatch[0], '');
+                    matchedParts.push({ index: daysMatch.index, length: daysMatch[0].length });
                 }
 
                 const doseParts = [];
-                const doseRegex = /(sáng|trưa|chiều|tối|s|t|c|to)\s*[:\-\s]\s*([\d\.\/]+\s*[\w\.]*)/gi;
+                const doseRegex = /\b(sáng|trưa|chiều|tối|s|t|c|to)\b\s*[:\-\s]\s*([\d./]+\s*[\p{L}0-9.]*)/giu;
                 const allDoseMatches = [...workingString.matchAll(doseRegex)];
-                
-                let tempWorkingString = workingString;
                 allDoseMatches.forEach(match => {
                     const time = match[1].toLowerCase();
                     const dose = match[2].trim();
@@ -1271,21 +1272,34 @@
                     else if ('chiềuc'.includes(time)) fullTime = 'Chiều';
                     else if ('tốito'.includes(time)) fullTime = 'Tối';
                     doseParts.push(`${fullTime} ${dose}`);
-                    tempWorkingString = tempWorkingString.replace(match[0], '');
+                    matchedParts.push({ index: match.index, length: match[0].length });
                 });
-                workingString = tempWorkingString;
                 
                 let notesText = '';
-                const notesRegex = /(sau ăn no|sau ăn|trước ăn)/gi;
+                const notesRegex = /\b(sau ăn no|sau ăn|trước ăn)\b/giu;
                 const allNotesMatches = [...workingString.matchAll(notesRegex)];
-                if (allNotesMatches.length > 0) {
-                     notesText = `(${allNotesMatches.map(m => m[0]).join(', ')})`;
-                     allNotesMatches.forEach(match => {
-                        workingString = workingString.replace(match[0], '');
-                     });
+                 if (allNotesMatches.length > 0) {
+                    notesText = `(${allNotesMatches.map(m => m[0]).join(', ')})`;
+                    allNotesMatches.forEach(match => {
+                        matchedParts.push({ index: match.index, length: match[0].length });
+                    });
                 }
-                
-                let medNamePart = workingString.replace(/-\s*uống/i, '').replace(/[,]/g, ' ').replace(/\s\s+/g, ' ').trim();
+
+                const keywordRegex = /-\s*uống/giu;
+                const allKeywordMatches = [...workingString.matchAll(keywordRegex)];
+                allKeywordMatches.forEach(match => {
+                     matchedParts.push({ index: match.index, length: match[0].length });
+                });
+
+                matchedParts.sort((a, b) => a.index - b.index);
+                let medNamePart = '';
+                let lastIndex = 0;
+                matchedParts.forEach(part => {
+                    medNamePart += workingString.substring(lastIndex, part.index);
+                    lastIndex = part.index + part.length;
+                });
+                medNamePart += workingString.substring(lastIndex);
+                medNamePart = medNamePart.replace(/[,]/g, ' ').replace(/\s\s+/g, ' ').trim();
 
                 let usageLine = doseParts.join(' - ') || 'Không rõ cách dùng';
 
@@ -1310,23 +1324,23 @@
             const lowerTinhTrang = tinhTrang.toLowerCase();
             const labels = [];
             
-            const thaMatch = lowerTinhTrang.match(/tăng huyết áp( điều trị (tại trạm|nơi khác))?/);
-            if (thaMatch) {
-                const location = thaMatch[2] ? (thaMatch[2].includes('tại trạm') ? 'Tại trạm' : 'Nơi khác') : '';
-                labels.push(`THA ${location}`.trim());
+            const thaEntry = tinhTrang.split(';').find(s => s.toLowerCase().includes('tăng huyết áp')) || '';
+            if (thaEntry) {
+                const location = thaEntry.toLowerCase().includes('tại trạm') ? 'Tại trạm' : 'Nơi khác';
+                labels.push(`THA ${location}`);
             }
 
-            const dtdMatch = lowerTinhTrang.match(/(đái tháo đường|tiểu đường)( điều trị (tại trạm|nơi khác))?/);
-            if (dtdMatch) {
-                const location = dtdMatch[2] ? (dtdMatch[2].includes('tại trạm') ? 'Tại trạm' : 'Nơi khác') : '';
-                labels.push(`ĐTĐ ${location}`.trim());
+            const dtdEntry = tinhTrang.split(';').find(s => s.toLowerCase().includes('đái tháo đường') || s.toLowerCase().includes('tiểu đường')) || '';
+            if (dtdEntry) {
+                const location = dtdEntry.toLowerCase().includes('tại trạm') ? 'Tại trạm' : 'Nơi khác';
+                labels.push(`ĐTĐ ${location}`);
             }
 
             if (labels.length > 0) {
                 return [...new Set(labels)].join(' + ');
             }
             
-            return tinhTrang.split(';')[0];
+            return tinhTrang.split(';')[0]; // Fallback
         }
 
 
