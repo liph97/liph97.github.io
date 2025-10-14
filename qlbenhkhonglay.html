@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -17,7 +18,7 @@
         .tab-active { border-bottom-color: #0ea5e9; color: #0ea5e9; font-weight: 600; }
         .modal { transition: opacity 0.25s ease; }
         .modal-content { transition: transform 0.25s ease; }
-        .info-card { background: white; border-radius: 12px; box-shadow: 0 4px M M M M 15px rgba(0, 0, 0, 0.05); padding: 24px; border: 1px solid #e2e8f0; }
+        .info-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); padding: 24px; border: 1px solid #e2e8f0; }
         #history-table-container th.month-header, 
         #history-table-container td.month-cell { min-width: 6rem; max-width: 6rem; text-align: center; }
         #history-table-container td.month-cell { height: 3rem; padding: 0; }
@@ -68,7 +69,7 @@
             <!-- Thanh điều hướng các tab -->
             <div class="mb-6 bg-white rounded-lg shadow-sm border border-slate-200">
                 <nav class="flex flex-wrap space-x-4 sm:space-x-8 px-6" aria-label="Tabs">
-                    <button data-tab="dashboard" class="tab-button tab-active py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"><i data-lucide="layout-dashboard"></i><span class="hidden sm:inline">Bảng điều khiển</span></button>
+                    <button data-tab="dashboard" class="tab-button tab-active py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"><i data-lucide="layout-dashboard"></i><span class="hidden sm:inline">Tổng quan</span></button>
                     <button data-tab="report" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="file-text"></i><span class="hidden sm:inline">Báo cáo</span></button>
                     <button data-tab="export" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="printer"></i><span class="hidden sm:inline">Xuất danh sách</span></button>
                     <button data-tab="all-encounters" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="list-filter"></i><span class="hidden sm:inline">Tổng hợp Lượt khám</span></button>
@@ -76,12 +77,13 @@
                     <button data-tab="patients" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="users-round"></i><span class="hidden sm:inline">Bệnh nhân</span></button>
                     <button data-tab="history" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="calendar-days"></i><span class="hidden sm:inline">Lịch sử</span></button>
                     <button data-tab="reference" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="book-marked"></i><span class="hidden sm:inline">Tham chiếu</span></button>
+                    <button data-tab="save-load" class="tab-button py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center gap-2"><i data-lucide="save"></i><span class="hidden sm:inline">Lưu & Tải</span></button>
                 </nav>
             </div>
 
             <!-- Nội dung các tab -->
             <div id="tab-content">
-                <!-- Tab Bảng điều khiển -->
+                <!-- Tab Tổng quan -->
                  <div id="dashboard-view" class="tab-pane space-y-6">
                     <div class="info-card">
                         <div class="flex items-center justify-center space-x-2" id="dashboard-filters">
@@ -382,6 +384,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tab Lưu & Tải -->
+                <div id="save-load-view" class="tab-pane hidden space-y-6">
+                    <div class="info-card">
+                        <h2 class="text-xl font-bold mb-4">Lưu trữ & Khôi phục Dữ liệu</h2>
+                        <p class="text-slate-600 mb-6">Chức năng này cho phép bạn xuất ra một file Excel chứa toàn bộ dữ liệu khám bệnh cùng với các ghi chú và tình trạng bệnh nhân (tử vong/chuyển đi) mà bạn đã nhập. File này có thể được tải lên lại để khôi phục trạng thái làm việc.</p>
+                        <div class="p-4 border-l-4 border-amber-400 bg-amber-50 mb-6">
+                            <h4 class="font-bold text-amber-800">Quan trọng!</h4>
+                            <p class="text-sm text-amber-700">Hãy xuất và lưu file này thường xuyên để tránh mất dữ liệu khi bạn làm mới hoặc đóng trình duyệt. Đây là cách duy nhất để lưu lại các ghi chú và cập nhật tình trạng bệnh nhân.</p>
+                        </div>
+                        <button id="export-save-data-btn" class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="download"></i>
+                            Xuất file Excel để lưu trữ
+                        </button>
+                        <p id="export-save-status" class="text-sm mt-2"></p>
+                    </div>
+                </div>
+
             </div>
         </main>
         
@@ -401,6 +421,8 @@
                 </div>
             </div>
         </div>
+        
+        <div id="alerts-container" class="fixed top-5 right-5 z-50 space-y-3"></div>
 
         <footer class="fixed bottom-4 right-8 z-50">
             <p style="font-family: 'Dancing Script', cursive;" class="text-2xl font-bold text-slate-600 select-none">Dr.Liph</p>
@@ -424,7 +446,10 @@
         let chartInstances = {};
         
         let appState = {
+            isDirty: false, // Flag to check if data has been modified (notes, status)
             rawData: [],
+            rawHeaders: [],
+            headerRowIndex: -1,
             encounters: [],
             patients: {},
             activeTab: 'dashboard',
@@ -462,8 +487,41 @@
             chanDoan: ['chẩn đoán', 'chandoan'],
             dieuTri: ['phương pháp điều trị', 'dieu tri', 'điều trị'],
             cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'],
-            bhyt: ['số thẻ bhyt']
+            bhyt: ['số thẻ bhyt'],
+            // New columns for data persistence
+            note: ['ghi chú', 'ghichu'],
+            ngayTuVong: ['ngày tử vong', 'ngay tuvong'],
+            ngayChuyenDi: ['ngày chuyển đi', 'ngay chuyendi']
         };
+        
+        function showAlert(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('alerts-container');
+            const alertId = `alert-${Date.now()}`;
+            
+            const colors = {
+                info: 'bg-blue-100 border-blue-400 text-blue-700',
+                success: 'bg-green-100 border-green-400 text-green-700',
+                warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+                error: 'bg-red-100 border-red-400 text-red-700',
+            };
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = alertId;
+            alertDiv.className = `border px-4 py-3 rounded relative shadow-lg ${colors[type]}`;
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `<span class="block sm:inline">${message}</span>`;
+            
+            container.appendChild(alertDiv);
+
+            setTimeout(() => {
+                const el = document.getElementById(alertId);
+                if (el) {
+                    el.style.opacity = '0';
+                    el.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => el.remove(), 500);
+                }
+            }, duration);
+        }
 
         function findHeaderRow(rows) {
             const keywords = ['họ và tên', 'giới tính', 'địa chỉ', 'chẩn đoán', 'sinh', 'triệu chứng'];
@@ -486,9 +544,12 @@
             if (!dateValue) return null;
             if (dateValue instanceof Date) return dateValue;
              if (typeof dateValue === 'number') {
-                return new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+                const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+                 // Adjust for timezone offset to get correct UTC date
+                return new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
             }
             if (typeof dateValue === 'string') {
+                // Try parsing dd/mm/yyyy or dd.mm.yyyy
                 const parts = dateValue.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
                 if (parts) {
                     const day = parseInt(parts[1], 10);
@@ -496,6 +557,7 @@
                     let year = parseInt(parts[3], 10);
                      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                         if (year < 100) year += 2000;
+                        // Use UTC to avoid timezone issues during parsing
                         const date = new Date(Date.UTC(year, month - 1, day));
                         if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
                             return date;
@@ -503,12 +565,16 @@
                     }
                 }
             }
+            // Fallback for other string formats like ISO
             const parsedDate = new Date(dateValue);
             return isNaN(parsedDate.getTime()) ? null : parsedDate;
         }
 
-        function formatDate(date) {
+        function formatDate(date, format = 'dd/mm/yyyy') {
             if (!date || !(date instanceof Date) || isNaN(date)) return 'N/A';
+            if (format === 'yyyy-mm-dd') {
+                return date.toISOString().split('T')[0];
+            }
             return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
         
@@ -579,14 +645,16 @@
 
         function processData(jsonData) {
             appState.patients = {};
-            const headerRowIndex = findHeaderRow(jsonData);
-            if (headerRowIndex === -1) {
+            appState.headerRowIndex = findHeaderRow(jsonData);
+            if (appState.headerRowIndex === -1) {
                 console.error("Could not find a valid header row.");
+                showAlert("Lỗi: Không tìm thấy dòng tiêu đề hợp lệ trong file Excel.", "error");
                 return;
             }
 
-            const headers = jsonData[headerRowIndex].map(h => String(h || '').toLowerCase().trim());
-            const dataRows = jsonData.slice(headerRowIndex + 1);
+            appState.rawHeaders = jsonData[appState.headerRowIndex];
+            const headers = appState.rawHeaders.map(h => String(h || '').toLowerCase().trim());
+            const dataRows = jsonData.slice(appState.headerRowIndex + 1);
 
             const headerMap = {};
             for (const key in COLUMN_MAPPINGS) {
@@ -599,7 +667,7 @@
             let encountersList = [];
             let encounterIdCounter = 0;
 
-            dataRows.forEach((row) => {
+            dataRows.forEach((row, rowIndex) => {
                 if (!row || !Array.isArray(row) || row.every(cell => !cell)) return;
 
                 const firstCell = String(row[0] || '').trim();
@@ -615,7 +683,11 @@
 
                 if (!hoTen || !namSinh) return;
 
-                const encounter = { id: `enc-${encounterIdCounter++}` };
+                const encounter = { 
+                    id: `enc-${encounterIdCounter++}`,
+                    originalRowIndex: appState.headerRowIndex + 1 + rowIndex // Store original position
+                };
+
                 for (const key in headerMap) {
                     encounter[key] = row[headerMap[key]];
                 }
@@ -634,6 +706,7 @@
                 if (!appState.patients[patientId]) {
                     appState.patients[patientId] = {
                         id: patientId, hoTen: String(encounter.hoTen).trim(), namSinh: encounter.namSinhNum,
+                        status: 'active', statusDate: null,
                         encounters: []
                     };
                 }
@@ -641,15 +714,45 @@
                 encountersList.push(encounter);
             });
 
+            // Second pass to populate patient-level data from saved file (tử vong, chuyển đi)
+            if (headerMap.ngayTuVong || headerMap.ngayChuyenDi) {
+                 encountersList.forEach(encounter => {
+                    const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                    const patient = appState.patients[patientId];
+                    if (!patient) return;
+                    
+                    const ngayTuVong = normalizeDate(encounter.ngayTuVong);
+                    if (ngayTuVong && (!patient.statusDate || ngayTuVong > patient.statusDate)) {
+                        patient.status = 'deceased';
+                        patient.statusDate = ngayTuVong;
+                    }
+
+                    const ngayChuyenDi = normalizeDate(encounter.ngayChuyenDi);
+                    if (ngayChuyenDi && (!patient.statusDate || ngayChuyenDi > patient.statusDate)) {
+                        patient.status = 'transferred';
+                        patient.statusDate = ngayChuyenDi;
+                    }
+                 });
+            }
+
             Object.values(appState.patients).forEach(p => {
                 p.encounters.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
                 if(p.encounters.length > 0) {
                     p.gioiTinh = p.encounters[0].gioiTinh;
                     p.diaChi = p.encounters[0].diaChi;
                 }
+                // Validation check
+                if (p.status !== 'active' && p.statusDate) {
+                    const invalidEncounter = p.encounters.find(e => e.ngayKhamDate > p.statusDate);
+                    if(invalidEncounter) {
+                        const statusText = p.status === 'deceased' ? 'tử vong' : 'chuyển đi';
+                        showAlert(`Cảnh báo: Bệnh nhân <b>${p.hoTen}</b> có lượt khám vào ngày ${formatDate(invalidEncounter.ngayKhamDate)} sau ngày ghi nhận ${statusText} (${formatDate(p.statusDate)}). Vui lòng kiểm tra lại dữ liệu.`, 'warning', 10000);
+                    }
+                }
             });
 
             appState.encounters = encountersList.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
+            appState.isDirty = false; // Reset dirty flag after loading new data
         }
         
         function renderAllViews() {
@@ -899,12 +1002,20 @@
             tableBody.innerHTML = filteredPatients.map(p => {
                 const latestEncounter = p.encounters[0];
                 const atStationCount = p.encounters.filter(e => e.tinhTrang.includes('tại trạm')).length;
+                
+                let statusIndicator = '';
+                if (p.status === 'deceased') {
+                    statusIndicator = '<span class="ml-2 text-xs font-bold text-red-600">(TỬ VONG)</span>';
+                } else if (p.status === 'transferred') {
+                    statusIndicator = '<span class="ml-2 text-xs font-bold text-orange-600">(CHUYỂN ĐI)</span>';
+                }
+
                 return `<tr class="hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${p.id}')">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${p.hoTen}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${p.hoTen} ${statusIndicator}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.namSinh}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.gioiTinh}</td>
                     <td class="px-6 py-4 text-sm text-slate-800 address-col">${p.diaChi || ''}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(latestEncounter.ngayKhamDate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${latestEncounter ? formatDate(latestEncounter.ngayKhamDate) : 'N/A'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${p.encounters.length}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 text-center">${atStationCount}</td>
                 </tr>`;
@@ -987,29 +1098,37 @@
                 monthTimestamps.forEach((ts, index) => {
                     let cellContent = '';
                     const hasRecord = patient.monthlyRecords[ts];
-                    if (mode === 'C' && hasRecord) {
-                         cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">C</span>`;
-                         monthlyTotals[ts]++;
-                    } else if (mode === 'M' && index === firstRecordIndex) {
-                        cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-sky-100 text-sky-800 font-bold rounded-md">M</span>`;
-                        monthlyTotals[ts]++;
-                    } else if (mode === 'B') {
-                        if(hasRecord) { consecutiveEmpty = 0; } else { consecutiveEmpty++; }
-                        if (consecutiveEmpty === 3) {
-                             cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-amber-100 text-amber-800 font-bold rounded-md">B</span>`;
+                    
+                    // Exclude from count if patient is deceased/transferred before this month
+                    const currentMonthDate = new Date(ts);
+                    const shouldExclude = patient.status !== 'active' && patient.statusDate && patient.statusDate < currentMonthDate;
+                    
+                    if (!shouldExclude) {
+                        if (mode === 'C' && hasRecord) {
+                             cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">C</span>`;
                              monthlyTotals[ts]++;
-                             dropped = true;
-                        }
-                    } else if (mode === 'Q') {
-                         if(hasRecord) { consecutiveEmpty = 0; if(dropped && !returned){ cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-pink-100 text-pink-800 font-bold rounded-md">Q</span>`; monthlyTotals[ts]++; returned = true; } } else { consecutiveEmpty++; }
-                         if (consecutiveEmpty >= 3) { dropped = true; returned = false; }
-                    } else if (mode === 'QL') {
-                        const isManaged = recordIndices.some(r_idx => index >= r_idx && index <= r_idx + 2);
-                        if(isManaged){
-                            cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">O</span>`;
+                        } else if (mode === 'M' && index === firstRecordIndex) {
+                            cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-sky-100 text-sky-800 font-bold rounded-md">M</span>`;
                             monthlyTotals[ts]++;
+                        } else if (mode === 'B') {
+                            if(hasRecord) { consecutiveEmpty = 0; } else { consecutiveEmpty++; }
+                            if (consecutiveEmpty === 3) {
+                                 cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-amber-100 text-amber-800 font-bold rounded-md">B</span>`;
+                                 monthlyTotals[ts]++;
+                                 dropped = true;
+                            }
+                        } else if (mode === 'Q') {
+                             if(hasRecord) { consecutiveEmpty = 0; if(dropped && !returned){ cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-pink-100 text-pink-800 font-bold rounded-md">Q</span>`; monthlyTotals[ts]++; returned = true; } } else { consecutiveEmpty++; }
+                             if (consecutiveEmpty >= 3) { dropped = true; returned = false; }
+                        } else if (mode === 'QL') {
+                            const isManaged = recordIndices.some(r_idx => index >= r_idx && index <= r_idx + 2);
+                            if(isManaged){
+                                cellContent = `<span class="flex items-center justify-center w-8 h-8 mx-auto bg-green-100 text-green-800 font-bold rounded-md">O</span>`;
+                                monthlyTotals[ts]++;
+                            }
                         }
                     }
+
                     tableHTML += `<td class="month-cell align-middle">${cellContent}</td>`;
                 });
                 tableHTML += '</tr>';
@@ -1094,10 +1213,12 @@
             localStorage.setItem('dtdMeds', JSON.stringify(appState.dtdMeds));
         }
         
+        // --- FIX: Rewritten function for more accurate medication parsing ---
         function formatTreatment(dieuTri) {
             if (!dieuTri) return '<div class="p-3 bg-white rounded-md border text-slate-500 italic">Không có dữ liệu điều trị.</div>';
             
             const rawString = String(dieuTri).trim();
+            // Split by number followed by a dot or colon, ensuring it's a list item
             const entries = rawString.split(/(?=\d+\.\s*|\d+:\s*)/).filter(s => s.trim());
 
             if (entries.length === 0) {
@@ -1107,52 +1228,77 @@
             let html = '<ol class="space-y-3">';
             entries.forEach((entry, index) => {
                 const cleanedEntry = entry.replace(/^\d+[\.:]\s*/, '').trim();
-                
-                const mainRegex = /^(.*?)(?:x\s*(\d+\s*\w+))/i;
-                const mainMatch = cleanedEntry.match(mainRegex);
-                
-                let medName = cleanedEntry;
-                let total = 'Không rõ SL';
 
-                if (mainMatch) {
-                    medName = mainMatch[1].trim();
-                    total = mainMatch[2].trim();
-                } else {
-                    const parts = cleanedEntry.split(' ');
-                    if(!isNaN(parseInt(parts[parts.length-1], 10))) {
-                        total = parts.pop();
-                        medName = parts.join(' ');
+                // Separate drug name + strength from the rest of the instructions
+                let medNamePart = cleanedEntry;
+                let usagePart = '';
+
+                // Common delimiters for usage instructions
+                const usageDelimiters = ['- uống', 'uống,', 'cách dùng'];
+                let splitIndex = -1;
+
+                for (const delimiter of usageDelimiters) {
+                    const idx = medNamePart.toLowerCase().indexOf(delimiter);
+                    if (idx !== -1) {
+                        splitIndex = idx;
+                        break;
                     }
                 }
                 
-                const doseParts = [];
-                const sangMatch = cleanedEntry.match(/(?:sáng|s)\s*[:\-\s]\s*([\d\.\/]+)/i);
-                const truaMatch = cleanedEntry.match(/(?:trưa|t)\s*[:\-\s]\s*([\d\.\/]+)/i);
-                const chieuMatch = cleanedEntry.match(/(?:chiều|c)\s*[:\-\s]\s*([\d\.\/]+)/i);
-                const toiMatch = cleanedEntry.match(/(?:tối|to)\s*[:\-\s]\s*([\d\.\/]+)/i);
+                if (splitIndex !== -1) {
+                    usagePart = medNamePart.substring(splitIndex);
+                    medNamePart = medNamePart.substring(0, splitIndex).trim();
+                } else {
+                    // If no clear delimiter, use heuristics
+                    const words = cleanedEntry.split(/\s+/);
+                    let potentialUsageIndex = -1;
+                    // Find first word indicating usage like 'sáng', 'ngày', etc.
+                    for (let i = 0; i < words.length; i++) {
+                        if (['sáng', 's:', 'trưa', 't:', 'chiều', 'c:', 'tối', 'to:', 'ngày', 'uống'].includes(words[i].toLowerCase())) {
+                            potentialUsageIndex = i;
+                            break;
+                        }
+                    }
+                    if (potentialUsageIndex > 0) {
+                        medNamePart = words.slice(0, potentialUsageIndex).join(' ');
+                        usagePart = words.slice(potentialUsageIndex).join(' ');
+                    }
+                }
 
-                if (sangMatch) doseParts.push(`Sáng ${sangMatch[1]}`);
-                if (truaMatch) doseParts.push(`Trưa ${truaMatch[1]}`);
-                if (chieuMatch) doseParts.push(`Chiều ${chieuMatch[1]}`);
-                if (toiMatch) doseParts.push(`Tối ${toiMatch[1]}`);
+                // Extract total quantity (e.g., x 30 Viên) from the name part
+                const quantityMatch = medNamePart.match(/(x\s*\d+\s*\w+)$/i);
+                let total = 'Không rõ SL';
+                if (quantityMatch) {
+                    total = quantityMatch[0].replace('x', '').trim();
+                    medNamePart = medNamePart.replace(quantityMatch[0], '').trim();
+                }
+                
+                const fullUsageString = (usagePart + ' ' + medNamePart).toLowerCase(); // Combine for easier matching
+
+                const doseParts = [];
+                const sangMatch = fullUsageString.match(/(?:sáng|s)\s*[:\-\s]\s*([\d\.\/]+\s*\w*)/i);
+                const truaMatch = fullUsageString.match(/(?:trưa|t)\s*[:\-\s]\s*([\d\.\/]+\s*\w*)/i);
+                const chieuMatch = fullUsageString.match(/(?:chiều|c)\s*[:\-\s]\s*([\d\.\/]+\s*\w*)/i);
+                const toiMatch = fullUsageString.match(/(?:tối|to)\s*[:\-\s]\s*([\d\.\/]+\s*\w*)/i);
+
+                if (sangMatch) doseParts.push(`Sáng ${sangMatch[1].trim()}`);
+                if (truaMatch) doseParts.push(`Trưa ${truaMatch[1].trim()}`);
+                if (chieuMatch) doseParts.push(`Chiều ${chieuMatch[1].trim()}`);
+                if (toiMatch) doseParts.push(`Tối ${toiMatch[1].trim()}`);
 
                 let usageLine = doseParts.join(' - ');
                 
-                const daysMatch = cleanedEntry.match(/(?:số ngày|songay|sn)\s*[:\-\s]*(\d+)/i);
+                const daysMatch = fullUsageString.match(/(?:số ngày|songay|sn)\s*[:\-\s]*(\d+)/i);
                 const daysText = daysMatch ? `x ${daysMatch[1]} ngày` : '';
 
                 if (!usageLine) {
-                    const genericUsageMatch = cleanedEntry.match(/ngày\s+\d+\s+lần/i);
-                    if (genericUsageMatch) {
-                        usageLine = genericUsageMatch[0];
-                    } else {
-                         usageLine = 'Không rõ cách dùng';
-                    }
+                    const genericUsageMatch = fullUsageString.match(/ngày\s+\d+\s+lần/i);
+                    usageLine = genericUsageMatch ? genericUsageMatch[0] : 'Không rõ cách dùng';
                 }
 
                 html += `<li class="p-3 bg-white rounded-md border border-slate-200 shadow-sm">
                             <div class="flex items-center justify-between">
-                               <p class="font-semibold text-slate-800"><span class="text-sky-600 font-bold mr-2">${index + 1}.</span>${medName}</p>
+                               <p class="font-semibold text-slate-800"><span class="text-sky-600 font-bold mr-2">${index + 1}.</span>${medNamePart}</p>
                                <p class="font-bold text-slate-700 text-right">${total}</p>
                             </div>
                             <p class="text-sm text-slate-500 mt-1 pl-6">${usageLine} ${daysText}</p>
@@ -1162,17 +1308,26 @@
             return html;
         }
 
+
         function showDetailModal(patientId, encounterId = null) {
             const patient = appState.patients[patientId];
             if (!patient) return;
             
             appState.currentPatientId = patientId;
             modalTitle.textContent = `Hồ sơ bệnh nhân: ${patient.hoTen}`;
+
+            const statusDateHtml = (statusType) => `
+                <div id="${statusType}-date-container" class="${patient.status === statusType ? '' : 'hidden'} mt-2">
+                    <label class="block text-xs font-medium text-gray-500">Ngày ${statusType === 'deceased' ? 'tử vong' : 'chuyển đi'}</label>
+                    <input type="date" id="${statusType}-date" value="${patient.status === statusType && patient.statusDate ? formatDate(patient.statusDate, 'yyyy-mm-dd') : ''}" class="w-full p-1 border border-slate-300 rounded-md text-sm">
+                </div>
+            `;
             
             modalBody.innerHTML = `
                 <div class="p-6 bg-white rounded-lg shadow-md border border-slate-200 mb-4">
-                     <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+                     <div class="grid grid-cols-1 md:grid-cols-[80px_1fr_250px] gap-6">
                         <div class="flex-shrink-0"><i data-lucide="user-circle-2" class="w-20 h-20 text-slate-400"></i></div>
+                        
                         <div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
                             <div>
                                 <p class="text-xs text-slate-500">Họ và Tên</p>
@@ -1198,6 +1353,26 @@
                                 <p class="text-xs text-slate-500">BHYT</p>
                                 <p class="font-semibold text-slate-700">${patient.encounters[0]?.bhyt || 'N/A'}</p>
                             </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                             <h4 class="font-bold text-slate-800 mb-2 text-sm">Tình trạng bệnh nhân</h4>
+                             <div class="space-y-2 text-sm">
+                                <label class="flex items-center">
+                                    <input type="radio" name="patient-status" value="active" ${patient.status === 'active' ? 'checked' : ''} class="form-radio h-4 w-4 text-sky-600">
+                                    <span class="ml-2">Đang theo dõi</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="patient-status" value="deceased" ${patient.status === 'deceased' ? 'checked' : ''} class="form-radio h-4 w-4 text-sky-600">
+                                    <span class="ml-2">Tử vong</span>
+                                </label>
+                                ${statusDateHtml('deceased')}
+                                <label class="flex items-center">
+                                    <input type="radio" name="patient-status" value="transferred" ${patient.status === 'transferred' ? 'checked' : ''} class="form-radio h-4 w-4 text-sky-600">
+                                    <span class="ml-2">Chuyển đi nơi khác</span>
+                                </label>
+                                ${statusDateHtml('transferred')}
+                             </div>
                         </div>
                      </div>
                 </div>
@@ -1234,8 +1409,52 @@
             modal.classList.remove('opacity-0', 'pointer-events-none');
             modal.querySelector('.modal-content').classList.remove('scale-95');
             lucide.createIcons();
+            
+            // --- EVENT LISTENERS FOR NEW FEATURES ---
+            addPatientStatusListeners(patientId);
+            addDetailTabsListeners();
+        }
+        
+        function addPatientStatusListeners(patientId) {
+            const patient = appState.patients[patientId];
+            const statusRadios = document.querySelectorAll('input[name="patient-status"]');
+            const deceasedDateContainer = document.getElementById('deceased-date-container');
+            const transferredDateContainer = document.getElementById('transferred-date-container');
+            const deceasedDateInput = document.getElementById('deceased-date');
+            const transferredDateInput = document.getElementById('transferred-date');
 
-            // Add event listeners for new tabs
+            statusRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    appState.isDirty = true;
+                    const newStatus = e.target.value;
+                    patient.status = newStatus;
+                    deceasedDateContainer.classList.toggle('hidden', newStatus !== 'deceased');
+                    transferredDateContainer.classList.toggle('hidden', newStatus !== 'transferred');
+                    
+                    if (newStatus === 'active') {
+                        patient.statusDate = null;
+                        deceasedDateInput.value = '';
+                        transferredDateInput.value = '';
+                    } else if (newStatus === 'deceased') {
+                        patient.statusDate = deceasedDateInput.value ? new Date(deceasedDateInput.value) : null;
+                    } else if (newStatus === 'transferred') {
+                        patient.statusDate = transferredDateInput.value ? new Date(transferredDateInput.value) : null;
+                    }
+                    renderPatientsView(); // Re-render patient list to show status change
+                });
+            });
+
+            deceasedDateInput.addEventListener('change', (e) => {
+                appState.isDirty = true;
+                patient.statusDate = e.target.value ? new Date(e.target.value) : null;
+            });
+            transferredDateInput.addEventListener('change', (e) => {
+                appState.isDirty = true;
+                patient.statusDate = e.target.value ? new Date(e.target.value) : null;
+            });
+        }
+        
+        function addDetailTabsListeners() {
             document.getElementById('detail-tabs-container').addEventListener('click', e => {
                 const button = e.target.closest('.detail-tab-btn');
                 if (!button) return;
@@ -1252,7 +1471,6 @@
                 document.getElementById('detail-chart-view').classList.toggle('hidden', targetTab !== 'chart');
                 
                 if (targetTab === 'chart') {
-                    // Initial render of the chart
                     renderAdherenceChart(appState.currentPatientId);
                 }
             });
@@ -1295,8 +1513,8 @@
             const diagnosesHTML = (encounter.chanDoan || 'N/A').split(';').map(d => `<li class="flex items-start"><span class="text-orange-500 mr-2 mt-1">&#9679;</span><span>${d.trim()}</span></li>`).join('');
 
             container.innerHTML = `
-                <div class="visit-card">
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <div class="visit-card space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b">
                          <h3 class="font-bold text-lg text-sky-700">Ngày khám: ${formatDate(encounter.ngayKhamDate)} (Tuổi: ${encounter.tuoi})</h3>
                          <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${encounter.tinhTrang.includes('tại trạm') ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800'}">${encounter.tinhTrang}</span>
                     </div>
@@ -1325,8 +1543,18 @@
                             </div>
                         </div>
                     </div>
+                     <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-semibold text-indigo-700 border-l-4 border-indigo-500 pl-2 mb-3">Ghi chú cho lần khám này</h4>
+                        <textarea id="encounter-note-${encounter.id}" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500 text-sm" rows="3" placeholder="Thêm ghi chú...">${encounter.note || ''}</textarea>
+                    </div>
                 </div>
             `;
+            // Add listener for the new note textarea
+            const noteTextarea = document.getElementById(`encounter-note-${encounter.id}`);
+            noteTextarea.addEventListener('input', (e) => {
+                encounter.note = e.target.value;
+                appState.isDirty = true; // Mark data as modified
+            });
         }
         
         function renderAdherenceChartView() {
@@ -1380,7 +1608,10 @@
             }
 
             const firstVisit = relevantEncounters[0].ngayKhamDate;
-            const lastVisit = new Date(); // Use today as the end date for timeline
+            let lastVisit = new Date(); // Use today as the end date for timeline
+            if (patient.status !== 'active' && patient.statusDate) {
+                lastVisit = patient.statusDate; // Stop tracking after deceased/transferred date
+            }
             
             const months = [];
             let currentDate = new Date(firstVisit.getFullYear(), firstVisit.getMonth(), 1);
@@ -1484,6 +1715,14 @@
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
+            
+            if (appState.isDirty) {
+                 if (!confirm("Bạn có dữ liệu chưa lưu (ghi chú, tình trạng bệnh nhân). Tải lên file mới sẽ làm mất các thay đổi này. Bạn có chắc chắn muốn tiếp tục?")) {
+                    fileInput.value = ''; // Reset file input
+                    return;
+                }
+            }
+
             fileNameDisplay.textContent = `Tệp đã chọn: ${file.name}`;
             loadingOverlay.classList.remove('hidden');
             const reader = new FileReader();
@@ -1509,6 +1748,7 @@
                 } catch(err) {
                     loadingOverlay.classList.add('hidden');
                     fileNameDisplay.textContent = 'Lỗi: Không thể đọc tệp. Vui lòng kiểm tra định dạng.';
+                    showAlert("Lỗi: Không thể đọc tệp Excel. Vui lòng kiểm tra lại.", "error");
                     console.error(err);
                 }
             };
@@ -1705,8 +1945,23 @@
                     underManagementPatientIds.add(p.id);
                 }
             });
+            
+            // Calculate total detected and real managed up to the end of the period
+            let totalDetectedToDate = 0;
+            let realManagedToDate = 0;
+            Object.values(appState.patients).forEach(p => {
+                const hasDisease = p.encounters.some(e => e.ngayKhamDate <= periodEnd && e.tinhTrang.toLowerCase().includes(diseaseKeyword));
+                if (hasDisease) {
+                    totalDetectedToDate++;
+                    const isInactive = p.status !== 'active' && p.statusDate && p.statusDate <= periodEnd;
+                    if (!isInactive) {
+                        realManagedToDate++;
+                    }
+                }
+            });
+            
             const medicated = medicatedPatientIds.size;
-            return { newlyDetected, underManagement: underManagementPatientIds.size, medicated, targetAchieved: Math.round(medicated * 0.20) };
+            return { newlyDetected, underManagement: underManagementPatientIds.size, medicated, targetAchieved: Math.round(medicated * 0.20), totalDetected: totalDetectedToDate, realManaged: realManagedToDate };
         }
 
         function calculateReportMetrics(diseaseType, startDate, endDate, population, prevalenceRate) {
@@ -1721,7 +1976,7 @@
                 });
                 const patientsForStatus = Array.from(allRelevantPatientIds).map(id => appState.patients[id]).filter(Boolean);
                 const metrics = getHistoryBasedMetrics(patientsForStatus, periodStart, periodEnd, keyword, statusFilter);
-                return { detected: Math.round(population * prevalenceRate), ...metrics };
+                return { detectedEstimate: Math.round(population * prevalenceRate), ...metrics };
             };
             const lastYearStartDate = new Date(startDate); lastYearStartDate.setFullYear(lastYearStartDate.getFullYear() - 1);
             const lastYearEndDate = new Date(endDate); lastYearEndDate.setFullYear(lastYearEndDate.getFullYear() - 1);
@@ -1742,13 +1997,59 @@
         }
 
         function createReportSectionHTML(title, data) {
-             const createMetricComparisonHTML = (metric) => {
+             const createMetricComparisonHTML = (metric, isSpecial = false) => {
                 let comparisonText = `<p class="text-xs text-slate-500 mt-1">Cùng kỳ: ${metric.lastYearValue}</p>`;
+                 if (isSpecial) { // Don't show comparison for estimates or totals
+                     return `<p class="text-xs text-slate-500 mt-1">&nbsp;</p>`;
+                 }
                 if (metric.change === null || isNaN(metric.change)) return comparisonText + (metric.value > 0 && metric.lastYearValue === 0 ? `<p class="text-xs font-semibold text-green-500">Mới</p>` : '');
                 const color = metric.change >= 0 ? 'text-green-500' : 'text-red-500', icon = metric.change >= 0 ? 'arrow-up' : 'arrow-down', sign = metric.change > 0 ? '+' : '';
                 return comparisonText + `<p class="text-xs font-semibold ${color} inline-flex items-center"><i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${sign}${metric.change}%</p>`;
             };
-            const createSubSection = (subTitle, metrics, note) => `<div class="p-4 bg-slate-50 rounded-lg border"><h4 class="font-semibold text-slate-700 mb-3">${subTitle}</h4><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm"><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Tổng số phát hiện</p><p class="text-xl font-bold text-sky-600">${metrics.detected.value}</p><p class="text-xs text-slate-400 mt-1">${note}</p></div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số mới phát hiện</p><p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value}</p>${createMetricComparisonHTML(metrics.newlyDetected)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số đang quản lí</p><p class="text-xl font-bold text-sky-600">${metrics.underManagement.value}</p>${createMetricComparisonHTML(metrics.underManagement)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Số khám cấp thuốc</p><p class="text-xl font-bold text-sky-600">${metrics.medicated.value}</p>${createMetricComparisonHTML(metrics.medicated)}</div><div class="bg-white p-3 rounded-md border"><p class="text-slate-500">Điều trị đạt mục tiêu</p><p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value}</p>${createMetricComparisonHTML(metrics.targetAchieved)}<p class="text-xs text-slate-400 mt-1">(Ước tính 20% số cấp thuốc)</p></div></div></div>`;
+            const createSubSection = (subTitle, metrics, note) => `
+            <div class="p-4 bg-slate-50 rounded-lg border">
+                <h4 class="font-semibold text-slate-700 mb-3">${subTitle}</h4>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                    <div class="bg-white p-3 rounded-md border lg:col-span-2 grid grid-cols-2 gap-2">
+                         <div class="border-r pr-2">
+                             <p class="text-slate-500">Ước tính phát hiện</p>
+                             <p class="text-xl font-bold text-sky-600">${metrics.detectedEstimate.value}</p>
+                             <p class="text-xs text-slate-400 mt-1">${note}</p>
+                         </div>
+                         <div>
+                             <p class="text-slate-500">Tổng đã phát hiện</p>
+                             <p class="text-xl font-bold text-sky-600">${metrics.totalDetected.value}</p>
+                             ${createMetricComparisonHTML(metrics.totalDetected, true)}
+                         </div>
+                         <div class="border-r pr-2">
+                            <p class="text-slate-500 text-green-600 font-semibold">Số quản lý thực tế</p>
+                             <p class="text-xl font-bold text-green-600">${metrics.realManaged.value}</p>
+                            <p class="text-xs text-slate-400 mt-1">(Trừ tử vong/chuyển đi)</p>
+                         </div>
+                    </div>
+                    <div class="bg-white p-3 rounded-md border">
+                        <p class="text-slate-500">Số mới phát hiện</p>
+                        <p class="text-xl font-bold text-sky-600">${metrics.newlyDetected.value}</p>
+                        ${createMetricComparisonHTML(metrics.newlyDetected)}
+                    </div>
+                    <div class="bg-white p-3 rounded-md border">
+                        <p class="text-slate-500">Số đang quản lí</p>
+                        <p class="text-xl font-bold text-sky-600">${metrics.underManagement.value}</p>
+                        ${createMetricComparisonHTML(metrics.underManagement)}
+                    </div>
+                    <div class="bg-white p-3 rounded-md border">
+                        <p class="text-slate-500">Số khám cấp thuốc</p>
+                        <p class="text-xl font-bold text-sky-600">${metrics.medicated.value}</p>
+                        ${createMetricComparisonHTML(metrics.medicated)}
+                    </div>
+                    <div class="bg-white p-3 rounded-md border">
+                        <p class="text-slate-500">Điều trị đạt mục tiêu</p>
+                        <p class="text-xl font-bold text-sky-600">${metrics.targetAchieved.value}</p>
+                        ${createMetricComparisonHTML(metrics.targetAchieved)}
+                        <p class="text-xs text-slate-400 mt-1">(Ước tính 20%)</p>
+                    </div>
+                </div>
+            </div>`;
             const note = title === 'Tăng huyết áp' ? '(Ước tính 12% dân số)' : '(Ước tính 2% dân số)';
             return `<div class="info-card"><h3 class="text-xl font-bold mb-4 text-sky-700">${title}</h3><div class="space-y-4">${createSubSection('Điều trị tại trạm', data.taiTram, note)}${createSubSection('Điều trị nơi khác', data.noiKhac, note)}${createSubSection('Tổng hợp', data.tongHop, note)}</div></div>`;
         }
@@ -1821,6 +2122,87 @@
             }
         }
 
+        // --- NEW: Function to export data for saving ---
+        document.getElementById('export-save-data-btn').addEventListener('click', () => {
+            const btn = document.getElementById('export-save-data-btn');
+            const statusEl = document.getElementById('export-save-status');
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> Đang tạo file...`;
+            lucide.createIcons();
+            statusEl.textContent = '';
+
+            setTimeout(() => {
+                try {
+                    let outputData = appState.rawData.map(row => [...row]); // Deep copy
+                    const newHeaders = ['Ghi chú', 'Ngày tử vong', 'Ngày chuyển đi'];
+                    const existingHeaders = appState.rawHeaders.map(h => String(h || '').toLowerCase().trim());
+                    
+                    let noteColIdx = existingHeaders.indexOf('ghi chú');
+                    let deceasedColIdx = existingHeaders.indexOf('ngày tử vong');
+                    let transferredColIdx = existingHeaders.indexOf('ngày chuyển đi');
+
+                    if (noteColIdx === -1) { noteColIdx = outputData[appState.headerRowIndex].length; outputData[appState.headerRowIndex].push('Ghi chú'); }
+                    if (deceasedColIdx === -1) { deceasedColIdx = outputData[appState.headerRowIndex].length; outputData[appState.headerRowIndex].push('Ngày tử vong'); }
+                    if (transferredColIdx === -1) { transferredColIdx = outputData[appState.headerRowIndex].length; outputData[appState.headerRowIndex].push('Ngày chuyển đi'); }
+                    
+                    const patientLastNcdEncounter = {};
+                     Object.values(appState.patients).forEach(p => {
+                        const lastNcdEncounter = p.encounters.find(e => e.tinhTrang !== 'Không xác định');
+                        if (lastNcdEncounter) {
+                            patientLastNcdEncounter[p.id] = lastNcdEncounter.id;
+                        }
+                    });
+
+                    appState.encounters.forEach(encounter => {
+                        const rowIndex = encounter.originalRowIndex;
+                        if(outputData[rowIndex]) {
+                            outputData[rowIndex][noteColIdx] = encounter.note || '';
+
+                            const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                            // Only write status date on the row of the last NCD encounter
+                            if (patientLastNcdEncounter[patientId] === encounter.id) {
+                                const patient = appState.patients[patientId];
+                                if (patient.status === 'deceased' && patient.statusDate) {
+                                    outputData[rowIndex][deceasedColIdx] = formatDate(patient.statusDate);
+                                }
+                                if (patient.status === 'transferred' && patient.statusDate) {
+                                     outputData[rowIndex][transferredColIdx] = formatDate(patient.statusDate);
+                                }
+                            }
+                        }
+                    });
+
+                    const worksheet = XLSX.utils.aoa_to_sheet(outputData);
+                    const workbook = XLSX.utils.book_new();
+                    const sheetName = appState.rawData[0] ? (appState.rawData[0].find(c => typeof c === 'string' && c.toLowerCase().includes('sổ khám')) || 'Sổ khám bệnh') : 'Sổ khám bệnh';
+
+                    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                    XLSX.writeFile(workbook, `Du_lieu_QL_BKL_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+                    statusEl.textContent = 'Xuất file thành công!';
+                    statusEl.className = 'text-sm mt-2 text-green-600';
+                    appState.isDirty = false; // Data is now saved
+                } catch (err) {
+                    console.error("Error exporting save data:", err);
+                    statusEl.textContent = 'Đã có lỗi xảy ra khi xuất file.';
+                    statusEl.className = 'text-sm mt-2 text-red-600';
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i data-lucide="download"></i> Xuất file Excel để lưu trữ`;
+                    lucide.createIcons();
+                }
+            }, 500);
+        });
+
+        // --- NEW: Add beforeunload listener to warn about unsaved data ---
+        window.addEventListener('beforeunload', (event) => {
+            if (appState.isDirty) {
+                event.preventDefault();
+                event.returnValue = ''; // Required for Chrome
+                return ''; // For other browsers
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             loadReferenceMeds();
             lucide.createIcons();
@@ -1828,3 +2210,4 @@
     </script>
 </body>
 </html>
+```
