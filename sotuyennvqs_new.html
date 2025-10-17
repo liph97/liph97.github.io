@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Khám Sơ tuyển NVQS (v4.0)</title>
+    
+    <!-- Thư viện ngoài -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --pastel-green: #A8D8B9;
+            --pastel-blue: #1aa4d5;
+            --dark-green: #004d00;
+            --bs-primary: var(--pastel-green);
+            --bs-primary-rgb: 168, 216, 185;
+            --bs-primary-dark: #8FBC9F;
+            --bs-link-color: var(--dark-green);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            font-size: 15px;
+        }
+        .navbar {
+            background: linear-gradient(90deg, var(--pastel-green), var(--pastel-blue));
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .navbar-brand, .navbar-nav .nav-link {
+             color: #fff !important;
+             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .nav-link.active {
+            font-weight: bold;
+            border-bottom: 2px solid #fff;
+        }
+        .module { display: none; }
+        .module.active { display: block; }
+        .card {
+            border-radius: .5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            border: 1px solid #dee2e6;
+            overflow: hidden;
+        }
+        .form-section { 
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: .5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        .readonly-field {
+            background-color: #e9ecef;
+            font-weight: bold;
+            cursor: not-allowed;
+        }
+        .table-responsive { max-height: 65vh; }
+        .btn-action {
+            width: 35px; height: 35px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-primary {
+            background-color: var(--pastel-blue);
+            border-color: var(--pastel-blue);
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-info {
+             background-color: var(--pastel-green);
+             border-color: var(--pastel-green);
+        }
+        .accordion-button:not(.collapsed) {
+            color: #fff;
+            background-color: var(--pastel-blue);
+        }
+        .accordion-button:focus { box-shadow: 0 0 0 .25rem rgba(26, 164, 213, .25); }
+        .autocomplete-container { position: relative; }
+        .autocomplete-list {
+            position: absolute; border: 1px solid #ddd; background: white; z-index: 1050;
+            width: 100%; max-height: 250px; overflow-y: auto;
+            border-bottom-left-radius: .375rem;
+            border-bottom-right-radius: .375rem;
+        }
+        .autocomplete-list div { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .autocomplete-list div:hover { background-color: #eaf8ff; }
+        .autocomplete-list div small { color: #6c757d; }
+        .badge.bg-exempted { background-color: #dc3545; }
+        .badge.bg-temporary { background-color: #ffc107; color: #000 !important;}
+        .dropdown-item i { width: 20px; margin-right: 8px; }
+        
+        .condition-row {
+            display: grid;
+            grid-template-columns: 2fr 4fr 2fr 40px;
+            gap: 1rem;
+            align-items: center;
+            padding: .75rem;
+            border-radius: .375rem;
+            margin-bottom: .75rem;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+        }
+        
+        .stat-card { border-left-width: 5px; }
+        .stat-card .stat-value { font-size: 2.5rem; font-weight: 700; }
+        .stat-card .stat-label { font-size: 1rem; font-weight: 500; color: #6c757d; }
+        .stat-breakdown { font-size: 0.9rem; color: #495057; }
+        
+        @media (max-width: 992px) {
+            .condition-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <datalist id="ap-list"></datalist>
+    <!-- Thanh điều hướng chính -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-shield-halved"></i> Sơ tuyển NVQS (v4.0)</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active" href="#" data-module="dashboardModule"><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-module="danhSachModule"><i class="fas fa-users"></i> Quản lý Danh sách</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-module="nhapLieuModule"><i class="fas fa-keyboard"></i> Nhập liệu Khám</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                     <span class="navbar-text me-3" id="saveStatus"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Khu vực nội dung chính -->
+    <main class="container-fluid mt-4">
+
+        <!-- Module 1: Bảng điều khiển -->
+        <div id="dashboardModule" class="module active">
+             <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card h-100 shadow-sm" style="border-left-color: var(--pastel-blue);"><div class="card-body d-flex flex-column justify-content-center"><div class="stat-label">Công dân trong DS</div><div class="stat-value" style="color: var(--pastel-blue);" id="dashboardTotal">0</div></div></div></div>
+                <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card h-100 shadow-sm" style="border-left-color: #198754;"><div class="card-body d-flex flex-column justify-content-center"><div class="stat-label">Đã sơ tuyển</div><div class="stat-value text-success" id="dashboardScreened">0</div></div></div></div>
+                <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card h-100 shadow-sm" style="border-left-color: #0dcaf0;"><div class="card-body d-flex flex-column justify-content-center"><div class="stat-label">Đủ điều kiện</div><div class="stat-value text-info" id="dashboardEligible">0</div></div></div></div>
+                <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card h-100 shadow-sm" style="border-left-color: #dc3545;"><div class="card-body d-flex flex-column justify-content-center"><div class="stat-label">Không đủ điều kiện</div><div class="stat-value text-danger" id="dashboardIneligible">0</div><div class="stat-breakdown mt-2"><div>Miễn NVQS: <strong id="dashboardExempted">0</strong></div><div>Tạm hoãn: <strong id="dashboardPostponed">0</strong></div></div></div></div></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card mt-3 h-100">
+                        <div class="card-header">Tổng quan Kết quả Sơ tuyển</div>
+                        <div class="card-body"><canvas id="healthChart"></canvas></div>
+                    </div>
+                </div>
+                 <div class="col-lg-4 mb-4">
+                     <div class="card mt-3 h-100 border-danger">
+                        <div class="card-header bg-danger text-white">Vùng nguy hiểm</div>
+                        <div class="card-body text-center">
+                            <p class="text-muted">Hành động này sẽ xóa vĩnh viễn toàn bộ danh sách công dân và kết quả khám. Không thể hoàn tác.</p>
+                             <div class="mb-3">
+                                <label for="deleteConfirmInput" class="form-label">Nhập "<strong>xoa toan bo</strong>" để xác nhận:</label>
+                                <input type="text" class="form-control" id="deleteConfirmInput">
+                            </div>
+                            <button class="btn btn-danger w-100" id="deleteAllDataBtn" disabled><i class="fas fa-trash-alt"></i> Xóa Toàn Bộ Dữ Liệu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module 2: Quản lý Danh sách -->
+        <div id="danhSachModule" class="module">
+             <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5>Danh sách Công dân Gọi khám</h5>
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group me-2" role="group">
+                                <input type="file" id="importFile" class="d-none" accept=".json, .xlsx, .xls">
+                                <button class="btn btn-primary" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Tải lên</button>
+                                <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#addCitizenModal"><i class="fas fa-user-plus"></i> Thêm Mới</button>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-download"></i> Tải xuống / Báo cáo</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><h6 class="dropdown-header">Nhập liệu</h6></li>
+                                    <li><a class="dropdown-item" href="#" id="downloadTemplateBtn"><i class="fas fa-file-excel text-success"></i> Tải File Mẫu (Excel)</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Báo cáo & Thống kê</h6></li>
+                                    <li><a class="dropdown-item" href="#" id="exportMau2aBtn"><i class="fas fa-file-contract" style="color:var(--pastel-blue)"></i> Báo cáo KQ (Mẫu 2a)</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportMau2kBtn"><i class="fas fa-book" style="color:var(--dark-green)"></i> Sổ Thống kê (Mẫu 2k)</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Sao lưu Dữ liệu</h6></li>
+                                    <li><a class="dropdown-item" href="#" id="exportFullExcelBtn"><i class="fas fa-file-archive text-success"></i> Sao lưu (Excel)</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportJsonBtn"><i class="fas fa-file-code text-warning"></i> Sao lưu (JSON)</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3"><input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo tên, CCCD hoặc ấp..."></div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="table-dark"><tr><th>STT</th><th>Họ và Tên</th><th>Giới tính</th><th>Ngày sinh</th><th>Địa chỉ</th><th>Số CCCD</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                            <tbody id="citizenTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+             </div>
+        </div>
+
+        <!-- Module 3: Nhập liệu Sơ tuyển -->
+        <div id="nhapLieuModule" class="module">
+            <div class="row">
+                <div class="col-12"><div class="form-section autocomplete-container">
+                    <h4>Chọn Công dân để Nhập liệu</h4>
+                    <input type="text" class="form-control" id="citizenSearchInput" placeholder="Gõ tên, năm sinh, hoặc ấp để tìm kiếm nhanh...">
+                    <div class="autocomplete-list" id="citizen-search-results"></div>
+                </div></div>
+            </div>
+            <div id="screeningFormContainer" class="d-none"></div>
+        </div>
+    </main>
+
+    <!-- Modal: Thêm công dân thủ công -->
+    <div class="modal fade" id="addCitizenModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-dark"><h5 class="modal-title">Thêm mới Công dân Gọi khám</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addCitizenForm" onsubmit="return false;"><div class="row">
+        <div class="col-md-6 col-lg-4 mb-3"><label class="form-label">Họ và tên*</label><input type="text" class="form-control" name="hoTen" required></div>
+        <div class="col-md-6 col-lg-4 mb-3"><label class="form-label">Ngày sinh (dd/mm/yyyy)*</label><input type="text" class="form-control" name="ngaySinh" placeholder="dd/mm/yyyy" required></div>
+        <div class="col-md-6 col-lg-4 mb-3"><label class="form-label">Giới tính*</label><select name="gioiTinh" class="form-select"><option value="Nam" selected>Nam</option><option value="Nữ">Nữ</option></select></div>
+        <div class="col-md-6 col-lg-6 mb-3"><label class="form-label">Số CCCD</label><input type="text" class="form-control" name="soCCCD"></div>
+        <div class="col-md-6 col-lg-6 mb-3"><label class="form-label">Ấp*</label><input type="text" class="form-control" name="ap" list="ap-list" required></div>
+    </div><div class="mb-3"><label class="form-label">Ghi chú ban đầu</label><textarea class="form-control" name="ghiChu" rows="3" placeholder="Thêm ghi chú nếu có..."></textarea></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button><button type="button" class="btn btn-primary" id="saveNewCitizenBtn">Lưu Công dân</button></div></div></div></div>
+    
+    <!-- Template cho Form Nhập liệu (ẩn) -->
+    <template id="screeningFormTemplate">
+        <form id="screeningForm" autocomplete="off">
+            <div class="accordion" id="screeningAccordion">
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">Phần I: Sơ yếu Lý lịch</button></h2><div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#screeningAccordion"><div class="accordion-body form-section"><div class="row"><div class="col-lg-3 col-md-6 mb-3"><label class="form-label">Họ và tên</label><input type="text" class="form-control readonly-field" name="hoTen" readonly></div><div class="col-lg-3 col-md-6 mb-3"><label class="form-label">Giới tính</label><input type="text" class="form-control readonly-field" name="gioiTinh" readonly></div><div class="col-lg-3 col-md-6 mb-3"><label class="form-label">Ngày sinh</label><input type="text" class="form-control readonly-field" name="ngaySinh" readonly></div><div class="col-lg-3 col-md-6 mb-3"><label class="form-label">Số CCCD</label><input type="text" class="form-control readonly-field" name="soCCCD" readonly></div></div></div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">Phần II: Kết quả Sơ tuyển Sức khỏe</button></h2><div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#screeningAccordion"><div class="accordion-body">
+                    <div class="form-section"><h5>A. Khám Thể lực</h5><div class="row"><div class="col-6 col-md-3 mb-3"><label>Chiều cao (cm)</label><input type="number" class="form-control" name="chieuCao" step="0.1"></div><div class="col-6 col-md-3 mb-3"><label>Cân nặng (kg)</label><input type="number" class="form-control" name="canNang" step="0.1"></div><div class="col-6 col-md-3 mb-3"><label>Vòng ngực (cm)</label><input type="number" class="form-control" name="vongNguc" step="0.1"></div><div class="col-6 col-md-3 mb-3"><label>Chỉ số BMI</label><input type="text" class="form-control readonly-field" name="bmi" readonly></div><div class="col-12 mb-3"><label>Điểm Thể lực</label><input type="text" class="form-control readonly-field" name="diemTheLuc" readonly></div></div></div>
+                    <div class="form-section"><h5>B. Khám Mắt</h5>
+                        <div class="row align-items-center border-bottom pb-2 mb-2"><div class="col-lg-2"><strong>Cận thị</strong></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Hai mắt</span><input type="number" step="0.25" class="form-control eye-input" name="canThiHaiMat" placeholder="D"><span class="input-group-text">D</span></div></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Mắt Phải</span><input type="number" step="0.25" class="form-control eye-input" name="canThiPhai" placeholder="D"><span class="input-group-text">D</span></div></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Mắt Trái</span><input type="number" step="0.25" class="form-control eye-input" name="canThiTrai" placeholder="D"><span class="input-group-text">D</span></div></div></div>
+                        <div class="row align-items-center border-bottom pb-2 mb-2"><div class="col-lg-2"><strong>Loạn thị</strong></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Hai mắt</span><input type="number" step="0.25" class="form-control eye-input" name="loanThiHaiMat" placeholder="D"><span class="input-group-text">D</span></div></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Mắt Phải</span><input type="number" step="0.25" class="form-control eye-input" name="loanThiPhai" placeholder="D"><span class="input-group-text">D</span></div></div><div class="col-lg-3"><div class="input-group"><span class="input-group-text">Mắt Trái</span><input type="number" step="0.25" class="form-control eye-input" name="loanThiTrai" placeholder="D"><span class="input-group-text">D</span></div></div></div>
+                        <div class="row align-items-center"><div class="col-lg-2"><strong>Tật khúc xạ khác</strong></div><div class="col-lg-6"><input type="text" class="form-control eye-input" name="tkxKhac" placeholder="Ghi rõ tật khúc xạ khác..."></div><div class="col-lg-4"><div class="form-check form-switch"><input class="form-check-input eye-input" type="checkbox" role="switch" name="tkxKhacPostpone"><label class="form-check-label">Tạm hoãn</label></div></div></div>
+                    </div>
+                    <div class="form-section"><h5>C. Khám Bệnh tật Chuyên khoa</h5><div id="conditions-container"></div><button type="button" class="btn btn-sm btn-outline-primary" id="add-condition-btn"><i class="fas fa-plus"></i> Thêm tình trạng sức khỏe</button></div>
+                    <div class="form-section"><h5>D. Tiền sử bệnh tật</h5><div class="row"><div class="col-md-6 mb-3"><label class="form-label">Gia đình</label><textarea class="form-control" rows="2" name="tienSuGiaDinh" placeholder="Khai thác tiền sử bệnh của gia đình..."></textarea></div><div class="col-md-6 mb-3"><label class="form-label">Bản thân</label><textarea class="form-control" rows="2" name="tienSuBanThan" placeholder="Khai thác tiền sử bệnh của công dân..."></textarea></div></div></div>
+                    <div class="form-section exemption-section"><h5>E. Các trường hợp Miễn đăng ký NVQS (Mục III)</h5>
+                        <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="mainExemptionSwitch"><label class="form-check-label" for="mainExemptionSwitch"><strong>Thuộc diện miễn đăng ký NVQS</strong></label></div>
+                        <div id="exemption-details" class="d-none"><div class="row">
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Tâm thần" id="ex-1"><label class="form-check-label" for="ex-1">1. Tâm thần</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Động kinh" id="ex-2"><label class="form-check-label" for="ex-2">2. Động kinh</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Parkinson" id="ex-3"><label class="form-check-label" for="ex-3">3. Parkinson</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Mù một mắt" id="ex-4"><label class="form-check-label" for="ex-4">4. Mù một mắt</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Điếc" id="ex-5"><label class="form-check-label" for="ex-5">5. Điếc</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Di chứng lao xương khớp" id="ex-6"><label class="form-check-label" for="ex-6">6. Di chứng lao xương khớp</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Di chứng phong" id="ex-7"><label class="form-check-label" for="ex-7">7. Di chứng phong</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Bệnh lý ác tính" id="ex-8"><label class="form-check-label" for="ex-8">8. Bệnh lý ác tính</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Nhiễm HIV" id="ex-9"><label class="form-check-label" for="ex-9">9. Nhiễm HIV</label></div></div>
+                            <div class="col-md-6"><div class="form-check"><input class="form-check-input exemption-checkbox" type="checkbox" value="Khuyết tật nặng/đặc biệt nặng" id="ex-10"><label class="form-check-label" for="ex-10">10. Khuyết tật nặng/đặc biệt nặng</label></div></div>
+                        </div></div>
+                    </div>
+                </div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">Phần III: Kết luận</button></h2><div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#screeningAccordion"><div class="accordion-body form-section">
+                    <div class="row align-items-end"><div class="col-md-4 mb-3"><label class="form-label"><strong>Kết luận</strong></label><input type="text" class="form-control readonly-field fs-4 text-center text-danger fw-bold" name="ketLuan" readonly></div><div class="col-md-8 mb-3"><label class="form-label"><strong>Lý do</strong></label><textarea class="form-control readonly-field" name="lyDo" readonly rows="3"></textarea></div></div>
+                    <div class="mb-3"><label class="form-label"><strong>Ghi chú / Kết luận của Tổ trưởng</strong></label><textarea class="form-control" rows="2" name="ghiChuChung" placeholder="Nhập kết luận, các lưu ý đặc biệt, thông tin phát sinh..."></textarea></div>
+                    <button type="submit" class="btn btn-lg btn-primary"><i class="fas fa-save"></i> Lưu Kết quả Khám</button><button type="button" class="btn btn-lg btn-danger ms-2" id="deleteScreeningBtn"><i class="fas fa-trash"></i> Xóa Lần khám này</button></div></div></div>
+            </div>
+        </form>
+    </template>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // PHẦN MỀM QUẢN LÝ SƠ TUYỂN SỨC KHỎE NVQS
+    // Phiên bản Tự động hóa v4.0 theo yêu cầu tùy chỉnh
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        let appState = { citizens: [], config: { version: "4.0.0" } };
+        let healthChartInstance = null;
+        
+        const CATEGORIES = [
+            'Mắt', 'Răng - Hàm - Mặt', 'Tai - Mũi - Họng', 'Thần kinh', 'Tâm thần', 
+            'Tiêu hóa', 'Hô hấp', 'Tim mạch', 'Cơ - Xương - Khớp', 
+            'Thận - Tiết niệu - Sinh dục', 'Nội tiết - Chuyển hóa - Hạch - Máu', 
+            'Da liễu', 'Phụ khoa'
+        ];
+        
+        // =================================================================
+        // I. QUẢN LÝ TRẠNG THÁI & HÀM TIỆN ÍCH
+        // =================================================================
+        function saveState() {
+            try {
+                localStorage.setItem('nvqsAppState_v4_0_custom', JSON.stringify(appState));
+                const now = new Date();
+                document.getElementById('saveStatus').textContent = `Lưu lúc ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+            } catch (error) { console.error("Lỗi khi lưu trạng thái:", error); }
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('nvqsAppState_v4_0_custom');
+            if (savedState) appState = JSON.parse(savedState);
+            if (!Array.isArray(appState.citizens)) appState.citizens = [];
+        }
+
+        function formatDate(isoString) {
+            if (!isoString || !isoString.includes('-')) return '';
+            const [year, month, day] = isoString.split('T')[0].split('-');
+            return `${day}/${month}/${year}`;
+        }
+        
+        function parseDate(ddmmyyyy) {
+            if (!ddmmyyyy || !ddmmyyyy.includes('/')) return null;
+            const parts = ddmmyyyy.split('/');
+            if (parts.length !== 3) return null;
+            const [day, month, year] = parts.map(p => parseInt(p, 10));
+            if(isNaN(day) || isNaN(month) || isNaN(year) || year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+            return `${String(year).padStart(4, '20')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        // =================================================================
+        // II. XỬ LÝ FILE (IMPORT/EXPORT)
+        // =================================================================
+        function setupFileHandlers() {
+            document.getElementById('importFile').addEventListener('change', (e) => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); if(f.name.endsWith('.json')){ r.onload=(ev)=>handleJsonImport(ev.target.result); r.readAsText(f); } else { r.onload=(ev)=>handleExcelImport(ev.target.result); r.readAsArrayBuffer(f); } e.target.value=''; });
+            document.getElementById('downloadTemplateBtn').addEventListener('click', downloadTemplate);
+            document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+            document.getElementById('exportFullExcelBtn').addEventListener('click', exportFullExcel);
+            document.getElementById('exportMau2aBtn').addEventListener('click', exportMau2a);
+            document.getElementById('exportMau2kBtn').addEventListener('click', exportMau2k);
+        }
+
+        function handleJsonImport(jsonString) { try { const d = JSON.parse(jsonString); if (d.citizens && d.config) { appState = d; alert(`Đã nạp ${d.citizens.length} hồ sơ.`); updateAllUI(); } else { throw new Error("File không đúng định dạng."); } } catch (e) { alert("Lỗi: " + e.message); } }
+        
+        function handleExcelImport(arrayBuffer) {
+            try {
+                const wb = XLSX.read(arrayBuffer, {type: 'buffer', cellDates:true});
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const data = XLSX.utils.sheet_to_json(ws);
+                if (data.length === 0) return alert("File Excel không có dữ liệu.");
+
+                let countNew = 0, countUpdated = 0;
+                const isBackupFile = 'screeningData_json' in data[0];
+
+                data.forEach(row => {
+                    let dob = row.ngaySinh;
+                    if (dob instanceof Date) {
+                        // FIX: Chống lệch ngày do múi giờ
+                        const tzOffset = dob.getTimezoneOffset() * 60000; //offset in milliseconds
+                        const localDate = new Date(dob.valueOf() - tzOffset);
+                        dob = localDate.toISOString().slice(0, 10);
+                    } else if (typeof dob === 'string' && dob.includes('/')) {
+                        dob = parseDate(dob);
+                    }
+                    
+                    const citizenData = {
+                        hoTen: row.hoTen || '',
+                        ngaySinh: dob || '',
+                        gioiTinh: row.gioiTinh || 'Nam',
+                        soCCCD: String(row.soCCCD || ''),
+                        ap: row.ap || '',
+                        xa: 'Xuân Bắc',
+                        huyen: 'Xuân Lộc',
+                        tinh: 'Đồng Nai'
+                    };
+                    
+                    const uid = citizenData.soCCCD || `local-${citizenData.hoTen}-${citizenData.ngaySinh}`;
+                    citizenData.uid = uid;
+
+                    const existingIndex = appState.citizens.findIndex(c => c.uid === uid || (c.soCCCD && c.soCCCD === citizenData.soCCCD));
+
+                    if (isBackupFile) {
+                        if (row.screeningData_json) citizenData.screeningData = JSON.parse(row.screeningData_json);
+                        if (existingIndex > -1) { appState.citizens[existingIndex] = citizenData; countUpdated++; } 
+                        else { appState.citizens.push(citizenData); countNew++; }
+                    } else { 
+                        if (row.ghiChu) citizenData.screeningData = { ghiChuChung: row.ghiChu };
+                        if (existingIndex > -1) { Object.assign(appState.citizens[existingIndex], citizenData); countUpdated++; } 
+                        else { appState.citizens.push(citizenData); countNew++; }
+                    }
+                });
+                alert(`Nhập dữ liệu thành công!\nThêm mới: ${countNew}\nCập nhật: ${countUpdated}`);
+                updateAllUI();
+            } catch (err) { console.error(err); alert("Lỗi nạp file Excel: " + err.message); }
+        }
+
+        function downloadTemplate(e) { 
+            e.preventDefault(); 
+            const d = [{ hoTen: "Nguyễn Văn A", ngaySinh: "15/01/2005", gioiTinh: "Nam", soCCCD: "001205000123", ap: "1A", ghiChu: "Lưu ý sức khỏe về mắt" }];
+            const w = XLSX.utils.json_to_sheet(d); 
+            XLSX.utils.sheet_add_aoa(w, [["HƯỚNG DẪN:", "Cột 'ngaySinh' phải theo định dạng dd/mm/yyyy."]], { origin: "A8" }); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, w, "DanhSachMau"); 
+            XLSX.writeFile(wb, "FileMau_NhapLieuNVQS.xlsx"); 
+        }
+
+        function exportJson(e) { e.preventDefault(); const d=JSON.stringify(appState, null, 2); const b=new Blob([d],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`nvqs_backup_toanbo_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(u); }
+        
+        function exportFullExcel(e) { e.preventDefault(); const d=appState.citizens.map(c=>{const b={...c}; if(b.screeningData){b.screeningData_json=JSON.stringify(b.screeningData);} delete b.screeningData; return b;}); const w=XLSX.utils.json_to_sheet(d); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,w,"FullBackupData"); XLSX.writeFile(wb,"NVQS_SaoLuu_ToanBo.xlsx"); }
+        
+        function exportMau2a(e) {
+            e.preventDefault();
+            const totalPlanned = appState.citizens.length;
+            const screenedCitizens = appState.citizens.filter(c => c.screeningData && c.screeningData.ketLuan);
+            const totalScreened = screenedCitizens.length;
+            if(totalScreened === 0) return alert("Chưa có dữ liệu sơ tuyển để xuất báo cáo.");
+            
+            const eligible = screenedCitizens.filter(c => c.screeningData.ketLuan === 'Đủ điều kiện SK khám tại tuyến trên').length;
+            const exempted = screenedCitizens.filter(c => c.screeningData.ketLuan === 'Thuộc diện miễn làm NVQS').length;
+            const postponed = screenedCitizens.filter(c => c.screeningData.ketLuan === 'Không đủ ĐK khám tại tuyến trên').length;
+            const rejected = exempted + postponed;
+
+            const reportData = [
+                { 'Nội dung': 'Số lượng sơ tuyển sức khỏe theo kế hoạch', 'Kết quả': totalPlanned },
+                { 'Nội dung': 'Số lượng đã sơ tuyển', 'Kết quả': totalScreened },
+                { 'Nội dung': 'Số lượng đủ điều kiện khám tại tuyến trên', 'Kết quả': eligible },
+                { 'Nội dung': 'Tổng số đã loại ra', 'Kết quả': rejected },
+                { 'Nội dung': '   Trong đó:', 'Kết quả': '' },
+                { 'Nội dung': '   - Số lượng đề nghị miễn thực hiện NVQS', 'Kết quả': exempted },
+                { 'Nội dung': '   - Lý do khác (Tạm hoãn)', 'Kết quả': postponed },
+            ];
+
+            const ws = XLSX.utils.json_to_sheet(reportData, {skipHeader: true});
+            XLSX.utils.sheet_add_aoa(ws, [["Nội dung", "Kết quả"]], { origin: "A1" });
+            ws['!cols'] = [ {wch: 50}, {wch: 15} ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "BaoCao_Mau2a");
+            XLSX.writeFile(wb, `BaoCao_KQST_Mau2a_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function exportMau2k(e) {
+            e.preventDefault();
+            const screenedCitizens = appState.citizens.filter(c => c.screeningData && c.screeningData.ketLuan);
+            if (screenedCitizens.length === 0) return alert("Chưa có dữ liệu sơ tuyển để xuất báo cáo.");
+            
+            const reportData = screenedCitizens.map((c, i) => {
+                const data = c.screeningData;
+                return {
+                    'STT': i + 1,
+                    'Họ và Tên': c.hoTen,
+                    'Ngày sinh': formatDate(c.ngaySinh),
+                    'Địa chỉ': `Ấp ${c.ap}, xã Xuân Bắc`,
+                    'Cao (cm)': roundPhysical(data.chieuCao),
+                    'Nặng (kg)': roundPhysical(data.canNang),
+                    'Vòng ngực (cm)': roundPhysical(data.vongNguc),
+                    'Tình trạng sức khỏe và bệnh tật': data.lyDo || '',
+                    'Đủ ĐK SK khám tại huyện': (data.ketLuan === 'Đủ điều kiện SK khám tại tuyến trên') ? 'X' : '',
+                    'Thuộc diện miễn làm NVQS': (data.ketLuan === 'Thuộc diện miễn làm NVQS') ? 'X' : '',
+                    'Không đủ ĐK khám tại huyện': (data.ketLuan === 'Không đủ ĐK khám tại tuyến trên') ? 'X' : ''
+                };
+            });
+            const ws = XLSX.utils.json_to_sheet(reportData);
+            ws['!cols'] = [ {wch: 5}, {wch: 25}, {wch: 12}, {wch: 25}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 60}, {wch: 20}, {wch: 20}, {wch: 20} ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "SoThongKe_Mau2k");
+            XLSX.writeFile(wb, `SoThongKe_SoTuyen_Mau2k_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+        
+        // =================================================================
+        // III. LOGIC TÍNH TOÁN & PHÂN LOẠI TỰ ĐỘNG
+        // =================================================================
+        function roundPhysical(v) { if (!v || isNaN(v)) return ''; const n = parseFloat(v); return Math.round(n); }
+        
+        function calculatePhysicalScore(data) {
+           const cao = roundPhysical(data.chieuCao), nang = roundPhysical(data.canNang), nguc = roundPhysical(data.vongNguc), bmi = parseFloat(data.bmi);
+            let s=[];
+            if (cao >= 163) s.push(1); else if (cao >= 160 && cao <= 162) s.push(2); else if (cao >= 157 && cao <= 159) s.push(3); else if (cao >= 155 && cao <= 156) s.push(4); else if (cao >= 153 && cao <= 154) s.push(5); else if (cao <= 152) s.push(6);
+            if (nang >= 51) s.push(1); else if (nang >= 47 && nang <= 50) s.push(2); else if (nang >= 43 && nang <= 46) s.push(3); else if (nang >= 41 && nang <= 42) s.push(4); else if (nang === 40) s.push(5); else if (nang <= 39) s.push(6);
+            if (nguc >= 81) s.push(1); else if (nguc >= 78 && nguc <= 80) s.push(2); else if (nguc >= 75 && nguc <= 77) s.push(3); else if (nguc >= 73 && nguc <= 74) s.push(4); else if (nguc >= 71 && nguc <= 72) s.push(5); else if (nguc <= 70) s.push(6);
+            if (bmi >= 18.5 && bmi <= 24.9) s.push(1); else if (bmi >= 25 && bmi <= 26.9) s.push(2); else if (bmi >= 27 && bmi <= 29.9) s.push(3); else if (bmi < 18.5 || (bmi >= 30 && bmi <= 34.9)) s.push(4); else if (bmi >= 35 && bmi <= 39.9) s.push(5); else if (bmi >= 40) s.push(6);
+            
+            return s.length > 0 ? Math.max(...s) : 0;
+        }
+
+        function calculateAllScores(form, citizen) {
+            const s = citizen.screeningData || {};
+            
+            // Lấy dữ liệu từ form
+            const formData = new FormData(form);
+            for (let [key, value] of formData.entries()) { s[key] = value; }
+            s.tkxKhacPostpone = form.querySelector('[name="tkxKhacPostpone"]').checked;
+
+            let finalConclusion = "Đủ điều kiện SK khám tại tuyến trên";
+            let postponementReasons = [];
+            let isPostponed = false;
+            let finalReason = "";
+
+            // 1. Kiểm tra miễn NVQS (Ưu tiên cao nhất)
+            const exemptions = []; 
+            form.querySelectorAll('.exemption-checkbox:checked').forEach(cb => exemptions.push(cb.value));
+            if (form.querySelector('#mainExemptionSwitch').checked && exemptions.length > 0) {
+                finalConclusion = "Thuộc diện miễn làm NVQS";
+                finalReason = exemptions.join(', ');
+                s.ketLuan = finalConclusion;
+                s.lyDo = finalReason;
+                citizen.screeningData = s;
+                updateConclusionUI(form, s);
+                return;
+            }
+
+            // 2. Kiểm tra thể lực
+            const cM = parseFloat(s.chieuCao)/100, cN = parseFloat(s.canNang);
+            s.bmi = (cM > 0 && cN > 0) ? (cN / (cM * cM)).toFixed(2) : ''; 
+            const physicalScore = calculatePhysicalScore(s);
+            if (physicalScore > 0) {
+                finalReason = `Loại ${physicalScore} - Thể lực`; // Lý do mặc định nếu đủ ĐK
+                if (physicalScore >= 4) {
+                    isPostponed = true;
+                    postponementReasons.push(`Loại ${physicalScore} - Thể lực`);
+                }
+            }
+
+            // 3. Kiểm tra mắt
+            const eyeValues = {
+                'Cận thị hai mắt': parseFloat(s.canThiHaiMat), 'Cận thị mắt phải': parseFloat(s.canThiPhai), 'Cận thị mắt trái': parseFloat(s.canThiTrai),
+                'Loạn thị hai mắt': parseFloat(s.loanThiHaiMat), 'Loạn thị mắt phải': parseFloat(s.loanThiPhai), 'Loạn thị mắt trái': parseFloat(s.loanThiTrai)
+            };
+            for (const [key, value] of Object.entries(eyeValues)) {
+                if (!isNaN(value) && value >= 1.5) {
+                    isPostponed = true;
+                    postponementReasons.push(`${key} ${value.toFixed(2)}D`);
+                }
+            }
+            if (s.tkxKhacPostpone && s.tkxKhac) {
+                isPostponed = true;
+                postponementReasons.push(s.tkxKhac);
+            }
+            
+            // 4. Kiểm tra bệnh tật chuyên khoa
+            s.conditions = [];
+            form.querySelectorAll('.condition-row').forEach(row => {
+                const condition = {
+                    category: row.querySelector('.condition-category').value,
+                    details: row.querySelector('.condition-details').value,
+                    postponed: row.querySelector('.condition-postpone-cb').checked
+                };
+                s.conditions.push(condition);
+                if (condition.postponed) {
+                    isPostponed = true;
+                    postponementReasons.push(`${condition.category}: ${condition.details}`);
+                }
+            });
+
+            // 5. Tổng hợp kết luận
+            if (isPostponed) {
+                finalConclusion = "Không đủ ĐK khám tại tuyến trên";
+                finalReason = postponementReasons.join('; ');
+            }
+
+            s.ketLuan = finalConclusion;
+            s.lyDo = finalReason;
+            citizen.screeningData = s;
+            updateConclusionUI(form, s);
+        }
+
+        function updateConclusionUI(form, s) {
+            form.querySelector('[name="bmi"]').value = s.bmi || '';
+            const pScore = (s.chieuCao && s.canNang && s.vongNguc) ? calculatePhysicalScore(s) : 0;
+            form.querySelector('[name="diemTheLuc"]').value = pScore > 0 ? 'Điểm ' + pScore : '';
+            
+            form.querySelector('[name="ketLuan"]').value = s.ketLuan || ''; 
+            form.querySelector('[name="lyDo"]').value = s.lyDo || '';
+        }
+        
+        // =================================================================
+        // IV. CẬP NHẬT GIAO DIỆN (UI RENDERING)
+        // =================================================================
+        function updateAllUI() { saveState(); renderDashboard(); renderCitizenTable(); updateApDataList(); }
+        
+        function renderCitizenTable() {
+            const tableBody = document.getElementById('citizenTableBody');
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filteredCitizens = appState.citizens.filter(c => c.hoTen.toLowerCase().includes(searchInput) || (c.soCCCD && c.soCCCD.includes(searchInput)) || (c.ap && c.ap.toLowerCase().includes(searchInput)));
+            tableBody.innerHTML = '';
+            if (filteredCitizens.length === 0) { tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Không tìm thấy công dân nào.</td></tr>'; return; }
+            
+            filteredCitizens.forEach((c, index) => {
+                let statusBadge = '<span class="badge bg-secondary">Chưa khám</span>';
+                if (c.screeningData && c.screeningData.ketLuan) {
+                    const kl = c.screeningData.ketLuan;
+                    if (kl === 'Đủ điều kiện SK khám tại tuyến trên') {
+                        statusBadge = `<span class="badge bg-success">Đủ ĐK</span>`;
+                    } else if (kl === 'Không đủ ĐK khám tại tuyến trên') {
+                        statusBadge = `<span class="badge bg-warning text-dark">Tạm hoãn</span>`;
+                    } else if (kl === 'Thuộc diện miễn làm NVQS') {
+                        statusBadge = `<span class="badge bg-danger">Miễn NVQS</span>`;
+                    }
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${c.hoTen}</td>
+                    <td>${c.gioiTinh || 'Nam'}</td>
+                    <td>${formatDate(c.ngaySinh)}</td>
+                    <td>Ấp ${c.ap || ''}</td>
+                    <td>${c.soCCCD || ''}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary btn-action edit-btn" data-uid="${c.uid}" title="Khám / Cập nhật"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-action delete-btn" data-uid="${c.uid}" title="Xóa Công dân"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+        function updateApDataList() {
+            const apSet = new Set(appState.citizens.map(c => c.ap).filter(Boolean));
+            const datalist = document.getElementById('ap-list');
+            datalist.innerHTML = '';
+            apSet.forEach(ap => {
+                const option = document.createElement('option');
+                option.value = ap;
+                datalist.appendChild(option);
+            });
+        }
+
+        function renderScreeningForm(uid) {
+            const citizen = appState.citizens.find(c => c.uid === uid);
+            if (!citizen) return;
+            const screeningFormContainer = document.getElementById('screeningFormContainer');
+            screeningFormContainer.innerHTML = '';
+            const template = document.getElementById('screeningFormTemplate');
+            const clone = template.content.cloneNode(true);
+            screeningFormContainer.appendChild(clone);
+            screeningFormContainer.classList.remove('d-none');
+            const form = document.getElementById('screeningForm');
+            form.dataset.uid = uid;
+
+            form.querySelector('[name="hoTen"]').value = citizen.hoTen;
+            form.querySelector('[name="gioiTinh"]').value = citizen.gioiTinh || 'Nam';
+            form.querySelector('[name="ngaySinh"]').value = formatDate(citizen.ngaySinh);
+            form.querySelector('[name="soCCCD"]').value = citizen.soCCCD || '';
+            
+            if (citizen.screeningData) {
+                 Object.entries(citizen.screeningData).forEach(([key, value]) => {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        if (input.type === 'checkbox') input.checked = !!value;
+                        else input.value = value;
+                    }
+                });
+            }
+             form.querySelector('[name="ghiChuChung"]').value = citizen.screeningData?.ghiChuChung || citizen.screeningData?.ghiChu || '';
+            
+            const conditionsContainer = form.querySelector('#conditions-container');
+            conditionsContainer.innerHTML = '';
+            const conditions = citizen.screeningData?.conditions || [];
+            if (conditions.length === 0) {
+                 createConditionRow(conditionsContainer, { category: 'Mắt' }, true);
+            } else {
+                conditions.forEach((cond, index) => createConditionRow(conditionsContainer, cond, index === 0));
+            }
+            
+            const mainExemptionSwitch = form.querySelector('#mainExemptionSwitch');
+            const exemptionDetails = form.querySelector('#exemption-details');
+            const hasExemptions = citizen.screeningData && Array.isArray(citizen.screeningData.exemptions) && citizen.screeningData.exemptions.length > 0;
+            if(hasExemptions) {
+                mainExemptionSwitch.checked = true;
+                exemptionDetails.classList.remove('d-none');
+                citizen.screeningData.exemptions.forEach(ex => {
+                    const cb = form.querySelector(`.exemption-checkbox[value="${ex}"]`);
+                    if(cb) cb.checked = true;
+                });
+            } else {
+                 mainExemptionSwitch.checked = false;
+                 exemptionDetails.classList.add('d-none');
+            }
+            
+            setupScreeningFormListeners(form, citizen);
+            calculateAllScores(form, citizen);
+        }
+
+        // =================================================================
+        // V. XỬ LÝ SỰ KIỆN VÀ LOGIC NGHIỆP VỤ
+        // =================================================================
+        function setupAppListeners() {
+            document.getElementById('saveNewCitizenBtn').addEventListener('click', saveNewCitizen);
+            document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', navigateModule));
+            document.getElementById('searchInput').addEventListener('input', renderCitizenTable);
+            document.getElementById('citizenTableBody').addEventListener('click', handleTableActions);
+            const csi = document.getElementById('citizenSearchInput'), csr = document.getElementById('citizen-search-results');
+            csi.addEventListener('input', () => { 
+                const q=csi.value.toLowerCase(); csr.innerHTML=''; if(q.length<1)return; 
+                const r=appState.citizens.filter(c=>c.hoTen.toLowerCase().includes(q)||(c.soCCCD && c.soCCCD.includes(q))||c.ngaySinh.includes(q)||(c.ap&&c.ap.toLowerCase().includes(q))).slice(0,10); 
+                r.forEach(res=>{ const d=document.createElement('div'); d.innerHTML=`${res.hoTen} <small>(${formatDate(res.ngaySinh)} - Ấp ${res.ap||'N/A'})</small>`; d.addEventListener('click',()=>{renderScreeningForm(res.uid);csi.value='';csr.innerHTML='';}); csr.appendChild(d); });
+            });
+            document.body.addEventListener('click', (e) => { if (!csi.contains(e.target)) { csr.innerHTML = ''; } });
+
+            const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+            const deleteAllDataBtn = document.getElementById('deleteAllDataBtn');
+            deleteConfirmInput.addEventListener('input', () => { deleteAllDataBtn.disabled = deleteConfirmInput.value !== 'xoa toan bo'; });
+            deleteAllDataBtn.addEventListener('click', () => { if(confirm('BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ DỮ LIỆU KHÔNG? HÀNH ĐỘNG NÀY SẼ XÓA SẠCH MỌI THÔNG TIN VÀ KHÔNG THỂ HOÀN TÁC.')) { appState.citizens = []; updateAllUI(); alert('Đã xóa toàn bộ dữ liệu.'); deleteConfirmInput.value = ''; deleteAllDataBtn.disabled = true; } });
+        }
+        
+        function saveNewCitizen() {
+            const form = document.getElementById('addCitizenForm');
+            const cccd = form.soCCCD.value.trim();
+            const dob = form.ngaySinh.value.trim();
+            const isoDob = parseDate(dob);
+
+            if (!form.hoTen.value.trim() || !dob || !form.ap.value.trim()) return alert("Vui lòng điền đầy đủ các trường có dấu *.");
+            if (!isoDob) return alert("Định dạng ngày sinh không hợp lệ. Vui lòng nhập theo dd/mm/yyyy.");
+            if (cccd && appState.citizens.some(c => c.soCCCD === cccd)) return alert("Số CCCD đã tồn tại.");
+            
+            const uid = cccd || `local-${Date.now()}`;
+            const newCitizen = { uid, hoTen: form.hoTen.value.trim(), ngaySinh: isoDob, gioiTinh: form.gioiTinh.value, soCCCD: cccd, ap: form.ap.value.trim(), screeningData: { ghiChuChung: form.ghiChu.value.trim() } };
+            appState.citizens.unshift(newCitizen);
+            form.reset();
+            bootstrap.Modal.getInstance(document.getElementById('addCitizenModal')).hide();
+            document.querySelector('.nav-link[data-module="danhSachModule"]').click();
+        }
+        
+        function navigateModule(e) {
+            e.preventDefault(); 
+            document.querySelectorAll('.nav-link').forEach(i=>i.classList.remove('active')); 
+            e.target.classList.add('active'); 
+            document.querySelectorAll('.module').forEach(m=>m.classList.remove('active')); 
+            const targetModule = document.getElementById(e.target.dataset.module);
+            if (targetModule) targetModule.classList.add('active');
+            if(e.target.dataset.module !== 'nhapLieuModule') document.getElementById('screeningFormContainer').classList.add('d-none');
+            updateAllUI();
+        }
+
+        function handleTableActions(e) {
+            const t = e.target.closest('button'); if (!t) return; 
+            const uid = t.dataset.uid; 
+            if (t.classList.contains('edit-btn')) { 
+                document.querySelector('.nav-link[data-module="nhapLieuModule"]').click(); 
+                setTimeout(()=>renderScreeningForm(uid),100); 
+            } 
+            if (t.classList.contains('delete-btn')) { 
+                if (confirm(`Bạn có chắc muốn xóa vĩnh viễn công dân này? Hành động này không thể hoàn tác.`)) { 
+                    appState.citizens = appState.citizens.filter(c_ => c_.uid !== uid); 
+                    updateAllUI(); 
+                } 
+            }
+        }
+
+        function setupScreeningFormListeners(form, citizen) {
+             form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                calculateAllScores(form, citizen);
+                alert('Đã lưu kết quả khám thành công!');
+                document.querySelector('.nav-link[data-module="danhSachModule"]').click();
+             });
+             
+             form.querySelector('#add-condition-btn').addEventListener('click', () => {
+                createConditionRow(form.querySelector('#conditions-container'));
+             });
+             
+             form.querySelector('#deleteScreeningBtn').addEventListener('click', () => { if (confirm('Bạn có chắc muốn xóa toàn bộ kết quả khám của công dân này? Dữ liệu đã xóa không thể phục hồi.')) { citizen.screeningData = { ghiChuChung: citizen.screeningData?.ghiChuChung || '' }; alert('Đã xóa kết quả khám.'); document.querySelector('.nav-link[data-module="danhSachModule"]').click(); }});
+             
+             form.querySelectorAll('input, select, textarea').forEach(el => {
+                el.addEventListener('input', () => calculateAllScores(form, citizen));
+             });
+
+             const mainSwitch = form.querySelector('#mainExemptionSwitch');
+             const detailsDiv = form.querySelector('#exemption-details');
+             mainSwitch.addEventListener('change', () => {
+                detailsDiv.classList.toggle('d-none', !mainSwitch.checked);
+                if (!mainSwitch.checked) {
+                    form.querySelectorAll('.exemption-checkbox').forEach(cb => cb.checked = false);
+                }
+                calculateAllScores(form, citizen);
+            });
+        }
+        
+        function createConditionRow(container, data = {}, isFirst = false) {
+            const row = document.createElement('div');
+            row.className = 'condition-row';
+            const categoryOptions = CATEGORIES.map(c => `<option value="${c}" ${data.category === c ? 'selected' : ''}>${c}</option>`).join('');
+            
+            row.innerHTML = `
+                <div><select class="form-select form-select-sm condition-category">${categoryOptions}</select></div>
+                <div><input type="text" class="form-control form-control-sm condition-details" placeholder="Nhập chi tiết bệnh..." value="${data.details || ''}"></div>
+                <div class="form-check form-switch d-flex justify-content-center align-items-center">
+                    <input class="form-check-input condition-postpone-cb" type="checkbox" role="switch" ${data.postponed ? 'checked' : ''}>
+                    <label class="form-check-label ms-2">Tạm hoãn</label>
+                </div>
+                <button type="button" class="btn-close remove-condition-btn" ${isFirst ? 'style="visibility:hidden;"' : ''}></button>
+            `;
+            container.appendChild(row);
+
+            const reCalc = () => {
+                const form = document.getElementById('screeningForm');
+                if (!form) return;
+                const uid = form.dataset.uid;
+                const citizen = appState.citizens.find(c => c.uid === uid);
+                if (citizen) calculateAllScores(form, citizen);
+            };
+
+            row.querySelectorAll('input, select').forEach(el => el.addEventListener('change', reCalc));
+            row.querySelector('.remove-condition-btn').addEventListener('click', () => { row.remove(); reCalc(); });
+        }
+        
+        function renderDashboard() { 
+            const total = appState.citizens.length;
+            const screened = appState.citizens.filter(c => c.screeningData && c.screeningData.ketLuan);
+            const screenedCount = screened.length;
+            const eligible = screened.filter(c => c.screeningData.ketLuan === 'Đủ điều kiện SK khám tại tuyến trên').length;
+            const exempted = screened.filter(c => c.screeningData.ketLuan === 'Thuộc diện miễn làm NVQS').length;
+            const postponed = screened.filter(c => c.screeningData.ketLuan === 'Không đủ ĐK khám tại tuyến trên').length;
+            const ineligible = exempted + postponed;
+            
+            document.getElementById('dashboardTotal').textContent=total;
+            document.getElementById('dashboardScreened').textContent=screenedCount;
+            document.getElementById('dashboardEligible').textContent=eligible;
+            document.getElementById('dashboardIneligible').textContent=ineligible;
+            document.getElementById('dashboardExempted').textContent=exempted;
+            document.getElementById('dashboardPostponed').textContent=postponed;
+
+            const healthData = { "Đủ điều kiện": eligible, "Tạm hoãn": postponed, "Miễn NVQS": exempted };
+            const ctx = document.getElementById('healthChart').getContext('2d'); 
+            if(healthChartInstance) healthChartInstance.destroy(); 
+            healthChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(healthData),
+                    datasets:[{
+                        label: 'Số lượng',
+                        data: Object.values(healthData),
+                        backgroundColor:['#198754', '#ffc107', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false }, title: { display: true, text: 'Thống kê Kết quả Sơ tuyển' } }
+                }
+            });
+        }
+        
+        // =================================================================
+        // VI. KHỞI ĐỘNG ỨNG DỤNG
+        // =================================================================
+        loadState();
+        setupFileHandlers();
+        setupAppListeners();
+        updateAllUI();
+    });
+    </script>
+</body>
+</html>
