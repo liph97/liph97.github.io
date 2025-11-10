@@ -223,7 +223,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày khám</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
@@ -288,7 +288,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày khám</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tuổi</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
@@ -323,7 +323,7 @@
                             <thead class="bg-slate-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Họ và Tên</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày sinh</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giới tính</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider address-col">Địa chỉ</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Khám gần nhất</th>
@@ -479,7 +479,7 @@
         const COLUMN_MAPPINGS = {
             ngayKham: ['ngay kham', 'ngày khám'],
             hoTen: ['họ và tên', 'họ tên', 'hoten'],
-            namSinh: ['năm sinh', 'namsinh', 'ns', 'ngày tháng năm sinh'],
+            ngaySinh: ['ngày sinh', 'ngày tháng năm sinh', 'năm sinh', 'namsinh', 'ns'], // Prioritize full date of birth
             gioiTinh: ['giới', 'giới tính', 'gioi'],
             diaChi: ['địa chỉ', 'diachi'],
             trieuChung: ['triệu chứng', 'trieuchung'],
@@ -487,7 +487,6 @@
             dieuTri: ['phương pháp điều trị', 'dieu tri', 'điều trị'],
             cccd: ['đdcn/ giấy tờ tùy thân', 'cccd'],
             bhyt: ['số thẻ bhyt'],
-            // New columns for data persistence
             note: ['ghi chú', 'ghichu'],
             ngayTuVong: ['ngày tử vong', 'ngay tuvong'],
             ngayChuyenDi: ['ngày chuyển đi', 'ngay chuyendi']
@@ -544,11 +543,9 @@
             if (dateValue instanceof Date) return dateValue;
              if (typeof dateValue === 'number') {
                 const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
-                 // Adjust for timezone offset to get correct UTC date
                 return new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
             }
             if (typeof dateValue === 'string') {
-                // Try parsing dd/mm/yyyy or dd.mm.yyyy
                 const parts = dateValue.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
                 if (parts) {
                     const day = parseInt(parts[1], 10);
@@ -556,7 +553,6 @@
                     let year = parseInt(parts[3], 10);
                      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                         if (year < 100) year += 2000;
-                        // Use UTC to avoid timezone issues during parsing
                         const date = new Date(Date.UTC(year, month - 1, day));
                         if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
                             return date;
@@ -564,7 +560,6 @@
                     }
                 }
             }
-            // Fallback for other string formats like ISO
             const parsedDate = new Date(dateValue);
             return isNaN(parsedDate.getTime()) ? null : parsedDate;
         }
@@ -577,9 +572,14 @@
             return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
         
-        function calculateAge(birthYear, encounterDate) {
-            if (!birthYear || !encounterDate || isNaN(parseInt(birthYear))) return 'N/A';
-            return encounterDate.getFullYear() - parseInt(birthYear);
+        function calculateAge(birthDate, encounterDate) {
+            if (!birthDate || !(birthDate instanceof Date) || !encounterDate || isNaN(birthDate)) return 'N/A';
+            let age = encounterDate.getFullYear() - birthDate.getFullYear();
+            const m = encounterDate.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && encounterDate.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
         }
 
         function extractVitals(symptoms) {
@@ -678,13 +678,13 @@
                 }
                 
                 const hoTen = row[headerMap.hoTen];
-                const namSinh = row[headerMap.namSinh];
+                const ngaySinhRaw = row[headerMap.ngaySinh];
 
-                if (!hoTen || !namSinh) return;
+                if (!hoTen || !ngaySinhRaw) return;
 
                 const encounter = { 
                     id: `enc-${encounterIdCounter++}`,
-                    originalRowIndex: appState.headerRowIndex + 1 + rowIndex // Store original position
+                    originalRowIndex: appState.headerRowIndex + 1 + rowIndex
                 };
 
                 for (const key in headerMap) {
@@ -692,19 +692,22 @@
                 }
                 
                 encounter.ngayKhamDate = normalizeDate(encounter.ngayKham) || currentDate;
-                const namSinhClean = String(namSinh).split(/[\/\.-]/).pop().trim();
-                encounter.namSinhNum = parseInt(namSinhClean, 10);
+                encounter.ngaySinhDate = normalizeDate(ngaySinhRaw);
 
-                if (!encounter.hoTen || !encounter.namSinhNum || isNaN(encounter.namSinhNum) || !encounter.ngayKhamDate) return;
+                if (!encounter.hoTen || !encounter.ngaySinhDate || !encounter.ngayKhamDate) {
+                    return; // Skip if essential data is missing or invalid
+                }
 
-                encounter.tuoi = calculateAge(encounter.namSinhNum, encounter.ngayKhamDate);
+                encounter.tuoi = calculateAge(encounter.ngaySinhDate, encounter.ngayKhamDate);
                 encounter.vitals = extractVitals(encounter.trieuChung);
                 encounter.tinhTrang = determineStatus(encounter);
 
-                const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                // *** NEW PATIENT ID LOGIC: HoTen + dd/mm/yyyy ***
+                const patientId = `${String(encounter.hoTen).trim()}_${formatDate(encounter.ngaySinhDate)}`;
+                
                 if (!appState.patients[patientId]) {
                     appState.patients[patientId] = {
-                        id: patientId, hoTen: String(encounter.hoTen).trim(), namSinh: encounter.namSinhNum,
+                        id: patientId, hoTen: String(encounter.hoTen).trim(), ngaySinh: encounter.ngaySinhDate,
                         status: 'active', statusDate: null,
                         encounters: []
                     };
@@ -713,10 +716,9 @@
                 encountersList.push(encounter);
             });
 
-            // Second pass to populate patient-level data from saved file (tử vong, chuyển đi)
             if (headerMap.ngayTuVong || headerMap.ngayChuyenDi) {
                  encountersList.forEach(encounter => {
-                    const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                    const patientId = `${String(encounter.hoTen).trim()}_${formatDate(encounter.ngaySinhDate)}`;
                     const patient = appState.patients[patientId];
                     if (!patient) return;
                     
@@ -740,7 +742,6 @@
                     p.gioiTinh = p.encounters[0].gioiTinh;
                     p.diaChi = p.encounters[0].diaChi;
                 }
-                // Validation check
                 if (p.status !== 'active' && p.statusDate) {
                     const invalidEncounter = p.encounters.find(e => e.ngayKhamDate > p.statusDate);
                     if(invalidEncounter) {
@@ -751,7 +752,7 @@
             });
 
             appState.encounters = encountersList.sort((a, b) => b.ngayKhamDate - a.ngayKhamDate);
-            appState.isDirty = false; // Reset dirty flag after loading new data
+            appState.isDirty = false;
         }
         
         function renderAllViews() {
@@ -774,7 +775,7 @@
                 if (filter === 'dtd') return statusLower.includes('đái tháo đường');
                 return statusLower.includes('tăng huyết áp') || statusLower.includes('đái tháo đường');
             });
-            const patientIds = new Set(encounters.map(e => `${e.hoTen.trim()}_${e.namSinhNum}`));
+            const patientIds = new Set(encounters.map(e => `${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`));
             const patients = Array.from(patientIds).map(id => appState.patients[id]).filter(Boolean);
             
             const firstVisitMonths = {};
@@ -805,7 +806,8 @@
                 else if (gender === 'nữ') genderData.Nữ++;
                 else genderData.Khác++;
 
-                const age = new Date().getFullYear() - p.namSinh;
+                const age = calculateAge(p.ngaySinh, new Date());
+                if(age === 'N/A') return;
                 if (age < 40) ageGroups['Dưới 40']++;
                 else if (age <= 60) ageGroups['40-60']++;
                 else ageGroups['Trên 60']++;
@@ -909,11 +911,11 @@
                 let rowClass = '';
                 if (isTaiTram) rowClass = 'bg-sky-50/50';
                 else if (isNoiKhac) rowClass = 'bg-amber-50/50';
-
-                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${e.hoTen.trim()}_${e.namSinhNum}', '${e.id}')">
+                const patientId = `${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`;
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${patientId}', '${e.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngaySinhDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
                     <td class="px-6 py-4 text-sm text-slate-800 address-col">${e.diaChi || ''}</td>
@@ -937,11 +939,9 @@
             const sortedMonths = Array.from(encounterMonths).sort((a,b) => b.localeCompare(a));
             
             monthFilters.forEach(filter => {
-                // Clear existing options except the first one
                 while (filter.options.length > 1) {
                     filter.remove(1);
                 }
-                
                 sortedMonths.forEach(monthKey => {
                     const [year, month] = monthKey.split('-');
                     const option = document.createElement('option');
@@ -963,7 +963,7 @@
 
                 const searchTextMatch = !filters.searchText || searchString.includes(filters.searchText.toLowerCase());
                 const monthMatch = filters.month === 'all' || (e.ngayKhamDate && `${e.ngayKhamDate.getFullYear()}-${String(e.ngayKhamDate.getMonth() + 1).padStart(2, '0')}` === filters.month);
-                const birthYearMatch = !filters.birthYear || e.namSinhNum == filters.birthYear;
+                const birthYearMatch = !filters.birthYear || (e.ngaySinhDate && e.ngaySinhDate.getFullYear() == filters.birthYear);
                 const genderMatch = filters.gender === 'all' || (e.gioiTinh && e.gioiTinh.toLowerCase() === filters.gender.toLowerCase());
                 const diseaseMatch = filters.diseases.length === 0 || filters.diseases.some(d => statusLower.includes(d));
                 const statusMatch = filters.statuses.length === 0 || filters.statuses.some(s => statusLower.includes(s));
@@ -974,11 +974,11 @@
             tableBody.innerHTML = filteredEncounters.map(e => {
                 const isTaiTram = e.tinhTrang.includes('tại trạm');
                 let rowClass = isTaiTram ? 'bg-sky-50/50' : 'bg-amber-50/50';
-
-                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${e.hoTen.trim()}_${e.namSinhNum}', '${e.id}')">
+                const patientId = `${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`;
+                return `<tr class="${rowClass} hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${patientId}', '${e.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngayKhamDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${e.hoTen}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.namSinhNum}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(e.ngaySinhDate)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.tuoi}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${e.gioiTinh}</td>
                     <td class="px-6 py-4 text-sm text-slate-800 address-col">${e.diaChi || ''}</td>
@@ -1013,7 +1013,7 @@
 
                 return `<tr class="hover:bg-slate-100 cursor-pointer" onclick="showDetailModal('${p.id}')">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${p.hoTen} ${statusIndicator}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.namSinh}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${formatDate(p.ngaySinh)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${p.gioiTinh}</td>
                     <td class="px-6 py-4 text-sm text-slate-800 address-col">${p.diaChi || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">${latestEncounter ? formatDate(latestEncounter.ngayKhamDate) : 'N/A'}</td>
@@ -1083,7 +1083,7 @@
                 <thead class="bg-slate-50 sticky top-0 z-10">
                     <tr>
                         <th class="sticky-name px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50 z-20">Họ và Tên</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Năm sinh</th>`;
+                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày sinh</th>`;
             months.forEach((m, index) => tableHTML += `<th data-col-index="${index + 2}" class="month-header px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200">${m.toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })}</th>`);
             tableHTML += `</tr><tr class="bg-slate-100"><th class="sticky left-0 bg-slate-100 z-20"></th><th></th>`;
             months.forEach(m => tableHTML += `<th id="total-${m.getTime()}" class="font-bold text-sky-600">0</th>`);
@@ -1092,7 +1092,7 @@
             patientsToDisplay.forEach(patient => {
                 tableHTML += `<tr>
                     <td class="sticky-name px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-900 sticky left-0 bg-white">${patient.hoTen}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-800">${patient.namSinh}</td>`;
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-800">${formatDate(patient.ngaySinh)}</td>`;
 
                 const recordIndices = monthTimestamps.map((ts, i) => patient.monthlyRecords[ts] ? i : -1).filter(i => i !== -1);
                 let firstRecordIndex = recordIndices.length > 0 ? recordIndices[0] : -1;
@@ -1104,7 +1104,6 @@
                     let cellContent = '';
                     const hasRecord = patient.monthlyRecords[ts];
                     
-                    // Exclude from count if patient is deceased/transferred before this month
                     const currentMonthDate = new Date(ts);
                     const shouldExclude = patient.status !== 'active' && patient.statusDate && patient.statusDate < currentMonthDate;
                     
@@ -1218,7 +1217,6 @@
             localStorage.setItem('dtdMeds', JSON.stringify(appState.dtdMeds));
         }
         
-        // --- FIX: Rewritten function for robust medication parsing ---
         function formatTreatment(dieuTri) {
             if (!dieuTri) return '<div class="p-3 bg-white rounded-md border text-slate-500 italic">Không có dữ liệu điều trị.</div>';
             
@@ -1319,7 +1317,6 @@
             return html;
         }
 
-        // --- FIX: Updated helper function for detailed sidebar visit summary ---
         function getVisitSummary(tinhTrang) {
             const lowerTinhTrang = tinhTrang.toLowerCase();
             const labels = [];
@@ -1340,9 +1337,8 @@
                 return [...new Set(labels)].join(' + ');
             }
             
-            return tinhTrang.split(';')[0]; // Fallback
+            return tinhTrang.split(';')[0];
         }
-
 
         function showDetailModal(patientId, encounterId = null) {
             const patient = appState.patients[patientId];
@@ -1369,8 +1365,8 @@
                                 <p class="text-lg font-bold text-slate-800">${patient.hoTen}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-slate-500">Năm sinh</p>
-                                <p class="font-semibold text-slate-700">${patient.namSinh}</p>
+                                <p class="text-xs text-slate-500">Ngày sinh</p>
+                                <p class="font-semibold text-slate-700">${formatDate(patient.ngaySinh)}</p>
                             </div>
                              <div>
                                 <p class="text-xs text-slate-500">Giới tính</p>
@@ -1583,11 +1579,10 @@
                     </div>
                 </div>
             `;
-            // Add listener for the new note textarea
             const noteTextarea = document.getElementById(`encounter-note-${encounter.id}`);
             noteTextarea.addEventListener('input', (e) => {
                 encounter.note = e.target.value;
-                appState.isDirty = true; // Mark data as modified
+                appState.isDirty = true;
             });
             lucide.createIcons();
         }
@@ -1643,9 +1638,9 @@
             }
 
             const firstVisit = relevantEncounters[0].ngayKhamDate;
-            let lastVisit = new Date(); // Use today as the end date for timeline
+            let lastVisit = new Date();
             if (patient.status !== 'active' && patient.statusDate) {
-                lastVisit = patient.statusDate; // Stop tracking after deceased/transferred date
+                lastVisit = patient.statusDate;
             }
             
             const months = [];
@@ -1753,7 +1748,7 @@
             
             if (appState.isDirty) {
                  if (!confirm("Bạn có dữ liệu chưa lưu (ghi chú, tình trạng bệnh nhân). Tải lên file mới sẽ làm mất các thay đổi này. Bạn có chắc chắn muốn tiếp tục?")) {
-                    fileInput.value = ''; // Reset file input
+                    fileInput.value = '';
                     return;
                 }
             }
@@ -1772,7 +1767,7 @@
                     appState.rawData = jsonData;
                     setTimeout(() => {
                         processData(jsonData);
-                        populateAllMonthFilters(); // Populate filters right after processing data
+                        populateAllMonthFilters();
                         loadingOverlay.classList.add('hidden');
                         uploadContainer.classList.add('hidden');
                         mainContent.classList.remove('hidden');
@@ -1847,7 +1842,6 @@
                 }
             }
         });
-
 
         closeModalButtons.forEach(btn => btn.addEventListener('click', () => {
             modal.classList.add('opacity-0', 'pointer-events-none');
@@ -1981,7 +1975,6 @@
                 }
             });
             
-            // Calculate total detected and real managed up to the end of the period
             let totalDetectedToDate = 0;
             let realManagedToDate = 0;
             Object.values(appState.patients).forEach(p => {
@@ -2006,7 +1999,7 @@
                 appState.encounters.forEach(e => {
                     const statusLower = e.tinhTrang.toLowerCase();
                     if (statusLower.includes(keyword) && (statusFilter === 'all' || statusLower.includes(statusFilter))) {
-                        allRelevantPatientIds.add(`${e.hoTen.trim()}_${e.namSinhNum}`);
+                        allRelevantPatientIds.add(`${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`);
                     }
                 });
                 const patientsForStatus = Array.from(allRelevantPatientIds).map(id => appState.patients[id]).filter(Boolean);
@@ -2034,7 +2027,7 @@
         function createReportSectionHTML(title, data) {
              const createMetricComparisonHTML = (metric, isSpecial = false) => {
                 let comparisonText = `<p class="text-xs text-slate-500 mt-1">Cùng kỳ: ${metric.lastYearValue}</p>`;
-                 if (isSpecial) { // Don't show comparison for estimates or totals
+                 if (isSpecial) {
                      return `<p class="text-xs text-slate-500 mt-1">&nbsp;</p>`;
                  }
                 if (metric.change === null || isNaN(metric.change)) return comparisonText + (metric.value > 0 && metric.lastYearValue === 0 ? `<p class="text-xs font-semibold text-green-500">Mới</p>` : '');
@@ -2118,10 +2111,10 @@
                     const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.some(d => statusLower.includes(d));
                     const statusMatch = selectedStatuses.length === 0 || selectedStatuses.some(s => statusLower.includes(s));
                     if (diseaseMatch && statusMatch) {
-                        const patientId = `${e.hoTen.trim()}_${e.namSinhNum}`;
+                        const patientId = `${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`;
                         if (!patientData[patientId]) {
                             const patientInfo = appState.patients[patientId];
-                            patientData[patientId] = { hoTen: patientInfo.hoTen, gioiTinh: patientInfo.gioiTinh, namSinh: patientInfo.namSinh, diaChi: patientInfo.diaChi, encounters: [] };
+                            patientData[patientId] = { hoTen: patientInfo.hoTen, gioiTinh: patientInfo.gioiTinh, ngaySinh: patientInfo.ngaySinh, diaChi: patientInfo.diaChi, encounters: [] };
                         }
                         patientData[patientId].encounters.push(e);
                     }
@@ -2129,7 +2122,7 @@
             });
             const tableData = Object.values(patientData).map((p, index) => {
                 const visitDates = p.encounters.map(e => formatDate(e.ngayKhamDate)).join('; ');
-                return [index + 1, p.hoTen, p.gioiTinh || 'N/A', p.namSinh, p.diaChi || 'N/A', p.encounters.length, visitDates];
+                return [index + 1, p.hoTen, p.gioiTinh || 'N/A', formatDate(p.ngaySinh), p.diaChi || 'N/A', p.encounters.length, visitDates];
             });
             if (tableData.length === 0) {
                  const msgEl = document.createElement('p');
@@ -2143,10 +2136,10 @@
                  return;
             }
             try {
-                const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Năm sinh', 'Địa chỉ', 'Số lần khám', 'Ghi chú (ngày khám)'];
+                const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Ngày sinh', 'Địa chỉ', 'Số lần khám', 'Ghi chú (ngày khám)'];
                 const dataToExport = [headers, ...tableData];
                 const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
-                worksheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 40 }, { wch: 15 }, { wch: 40 }];
+                worksheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 40 }, { wch: 15 }, { wch: 40 }];
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
                 XLSX.writeFile(workbook, `Danh_sach_benh_nhan_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -2167,8 +2160,7 @@
 
             setTimeout(() => {
                 try {
-                    let outputData = appState.rawData.map(row => [...row]); // Deep copy
-                    const newHeaders = ['Ghi chú', 'Ngày tử vong', 'Ngày chuyển đi'];
+                    let outputData = appState.rawData.map(row => [...row]);
                     const existingHeaders = (appState.rawHeaders || []).map(h => String(h || '').toLowerCase().trim());
                     
                     let noteColIdx = existingHeaders.indexOf('ghi chú');
@@ -2191,8 +2183,7 @@
                         const rowIndex = encounter.originalRowIndex;
                         if(outputData[rowIndex]) {
                             outputData[rowIndex][noteColIdx] = encounter.note || '';
-
-                            const patientId = `${String(encounter.hoTen).trim()}_${encounter.namSinhNum}`;
+                            const patientId = `${String(encounter.hoTen).trim()}_${formatDate(encounter.ngaySinhDate)}`;
                             if (patientLastNcdEncounter[patientId] === encounter.id) {
                                 const patient = appState.patients[patientId];
                                 if (patient.status === 'deceased' && patient.statusDate) {
@@ -2214,7 +2205,7 @@
 
                     statusEl.textContent = 'Xuất file thành công!';
                     statusEl.className = 'text-sm mt-2 text-green-600';
-                    appState.isDirty = false; // Data is now saved
+                    appState.isDirty = false;
                 } catch (err) {
                     console.error("Error exporting save data:", err);
                     statusEl.textContent = 'Đã có lỗi xảy ra khi xuất file.';
@@ -2230,8 +2221,8 @@
         window.addEventListener('beforeunload', (event) => {
             if (appState.isDirty) {
                 event.preventDefault();
-                event.returnValue = ''; // Required for Chrome
-                return ''; // For other browsers
+                event.returnValue = '';
+                return '';
             }
         });
 
