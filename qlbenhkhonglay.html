@@ -151,7 +151,7 @@
                 <div id="export-view" class="tab-pane hidden space-y-6">
                     <div class="info-card">
                         <h2 class="text-xl font-bold mb-4">Tùy chọn Xuất danh sách Bệnh nhân</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Chọn bệnh</label>
                                 <div class="space-y-1 mt-2">
@@ -165,6 +165,16 @@
                                     <label class="flex items-center"><input type="checkbox" name="export-status" value="tại trạm" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Điều trị tại trạm</span></label>
                                     <label class="flex items-center"><input type="checkbox" name="export-status" value="nơi khác" class="form-checkbox h-4 w-4 text-sky-600 rounded focus:ring-sky-500" checked> <span class="ml-2 text-sm text-gray-700">Điều trị nơi khác</span></label>
                                 </div>
+                            </div>
+                             <div>
+                                <label for="export-list-type" class="block text-sm font-medium text-gray-700 mb-1">Loại danh sách</label>
+                                <select id="export-list-type" class="w-full p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
+                                    <option value="visited">Danh sách bệnh nhân có đến khám</option>
+                                    <option value="new">Danh sách bệnh nhân mới</option>
+                                    <option value="managed" selected>Danh sách bệnh nhân đang quản lý</option>
+                                    <option value="dropped">Danh sách bệnh nhân bỏ điều trị</option>
+                                    <option value="returned">Danh sách bệnh nhân quay lại điều trị</option>
+                                </select>
                             </div>
                             <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
@@ -189,7 +199,7 @@
                                      </div>
                                 </div>
                             </div>
-                            <div class="lg:col-start-4 flex items-center">
+                            <div class="lg:col-start-5 flex items-center">
                                 <button id="export-excel-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
                                     <i data-lucide="file-down"></i>
                                     Xuất Excel
@@ -2081,6 +2091,16 @@
             const note = title === 'Tăng huyết áp' ? '(Ước tính 12% dân số)' : '(Ước tính 2% dân số)';
             return `<div class="info-card"><h3 class="text-xl font-bold mb-4 text-sky-700">${title}</h3><div class="space-y-4">${createSubSection('Điều trị tại trạm', data.taiTram, note)}${createSubSection('Điều trị nơi khác', data.noiKhac, note)}${createSubSection('Tổng hợp', data.tongHop, note)}</div></div>`;
         }
+        
+        // --- START: MODIFIED SECTION ---
+        // Helper function to calculate the difference in months between two dates
+        function monthDiff(d1, d2) {
+            let months;
+            months = (d2.getFullYear() - d1.getFullYear()) * 12;
+            months -= d1.getMonth();
+            months += d2.getMonth();
+            return months <= 0 ? 0 : months;
+        }
 
         function generatePatientListExcel() {
             const exportBtn = document.getElementById('export-excel-btn');
@@ -2088,11 +2108,16 @@
             exportBtn.disabled = true;
             exportBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Đang xử lý...`;
             lucide.createIcons();
+            
             const oldMsg = document.getElementById('export-error-msg');
             if (oldMsg) oldMsg.remove();
+            
+            // Get all filter values
             const selectedDiseases = Array.from(document.querySelectorAll('#export-view input[name="export-disease"]:checked')).map(cb => cb.value);
             const selectedStatuses = Array.from(document.querySelectorAll('#export-view input[name="export-status"]:checked')).map(cb => cb.value);
+            const listType = document.getElementById('export-list-type').value;
             const period = document.getElementById('export-period').value;
+            
             let startDate, endDate;
             if (period === 'month') {
                 const [year, month] = document.getElementById('export-month').value.split('-').map(Number);
@@ -2104,51 +2129,137 @@
                 startDate.setHours(0, 0, 0, 0);
                 endDate.setHours(23, 59, 59, 999);
             }
-            const patientData = {};
-            appState.encounters.forEach(e => {
-                if (e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate) {
-                    const statusLower = e.tinhTrang.toLowerCase();
-                    const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.some(d => statusLower.includes(d));
-                    const statusMatch = selectedStatuses.length === 0 || selectedStatuses.some(s => statusLower.includes(s));
-                    if (diseaseMatch && statusMatch) {
-                        const patientId = `${e.hoTen.trim()}_${formatDate(e.ngaySinhDate)}`;
-                        if (!patientData[patientId]) {
-                            const patientInfo = appState.patients[patientId];
-                            patientData[patientId] = { hoTen: patientInfo.hoTen, gioiTinh: patientInfo.gioiTinh, ngaySinh: patientInfo.ngaySinh, diaChi: patientInfo.diaChi, encounters: [] };
+
+            let patientsToExportData = [];
+            const allPatients = Object.values(appState.patients);
+
+            allPatients.forEach(patient => {
+                const relevantEncounters = patient.encounters
+                    .filter(e => {
+                        const statusLower = e.tinhTrang.toLowerCase();
+                        const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.some(d => statusLower.includes(d));
+                        const statusMatch = selectedStatuses.length === 0 || selectedStatuses.some(s => statusLower.includes(s));
+                        return diseaseMatch && statusMatch && e.ngayKhamDate;
+                    })
+                    .sort((a, b) => a.ngayKhamDate - b.ngayKhamDate); // Sort oldest to newest
+
+                if (relevantEncounters.length === 0) return;
+
+                switch (listType) {
+                    case 'visited': {
+                        const visitsInPeriod = relevantEncounters.filter(e => e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate);
+                        if (visitsInPeriod.length > 0) {
+                            patientsToExportData.push({
+                                patientId: patient.id,
+                                visitCount: visitsInPeriod.length,
+                                note: visitsInPeriod.map(e => formatDate(e.ngayKhamDate)).join('; ')
+                            });
                         }
-                        patientData[patientId].encounters.push(e);
+                        break;
+                    }
+                    case 'new': {
+                        const firstVisitDate = relevantEncounters[0].ngayKhamDate;
+                        if (firstVisitDate >= startDate && firstVisitDate <= endDate) {
+                            const visitsInPeriod = relevantEncounters.filter(e => e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate);
+                            patientsToExportData.push({
+                                patientId: patient.id,
+                                visitCount: visitsInPeriod.length,
+                                note: "Bệnh nhân mới - Ngày khám: " + visitsInPeriod.map(e => formatDate(e.ngayKhamDate)).join('; ')
+                            });
+                        }
+                        break;
+                    }
+                    case 'managed': {
+                        const managementStartDate = new Date(startDate);
+                        managementStartDate.setMonth(startDate.getMonth() - 2);
+                        
+                        const latestVisit = relevantEncounters[relevantEncounters.length - 1];
+                        
+                        if (latestVisit.ngayKhamDate >= managementStartDate && latestVisit.ngayKhamDate <= endDate) {
+                             patientsToExportData.push({
+                                patientId: patient.id,
+                                visitCount: relevantEncounters.length, // Total visits
+                                note: `Khám gần nhất: ${formatDate(latestVisit.ngayKhamDate)}`
+                            });
+                        }
+                        break;
+                    }
+                    case 'dropped': {
+                        const threeMonthsBeforeStart = new Date(startDate);
+                        threeMonthsBeforeStart.setMonth(startDate.getMonth() - 3);
+                        const latestVisit = relevantEncounters[relevantEncounters.length - 1];
+
+                        if (latestVisit.ngayKhamDate < threeMonthsBeforeStart) {
+                            patientsToExportData.push({
+                                patientId: patient.id,
+                                visitCount: relevantEncounters.length,
+                                note: `Bỏ điều trị - Khám lần cuối: ${formatDate(latestVisit.ngayKhamDate)}`
+                            });
+                        }
+                        break;
+                    }
+                    case 'returned': {
+                        const visitsInPeriod = relevantEncounters.filter(e => e.ngayKhamDate >= startDate && e.ngayKhamDate <= endDate);
+                        if (visitsInPeriod.length > 0) {
+                            const firstVisitInPeriod = visitsInPeriod[0];
+                            const lastVisitBeforePeriod = relevantEncounters.filter(e => e.ngayKhamDate < startDate).pop(); // Get the last one before period
+
+                            if (lastVisitBeforePeriod) {
+                                if (monthDiff(lastVisitBeforePeriod.ngayKhamDate, firstVisitInPeriod.ngayKhamDate) >= 3) {
+                                    patientsToExportData.push({
+                                        patientId: patient.id,
+                                        visitCount: visitsInPeriod.length,
+                                        note: "Quay lại điều trị - Ngày khám: " + visitsInPeriod.map(e => formatDate(e.ngayKhamDate)).join('; ')
+                                    });
+                                }
+                            }
+                        }
+                        break;
                     }
                 }
             });
-            const tableData = Object.values(patientData).map((p, index) => {
-                const visitDates = p.encounters.map(e => formatDate(e.ngayKhamDate)).join('; ');
-                return [index + 1, p.hoTen, p.gioiTinh || 'N/A', formatDate(p.ngaySinh), p.diaChi || 'N/A', p.encounters.length, visitDates];
-            });
-            if (tableData.length === 0) {
+
+            if (patientsToExportData.length === 0) {
                  const msgEl = document.createElement('p');
                  msgEl.id = 'export-error-msg';
                  msgEl.className = 'text-red-500 text-sm ml-4 absolute bottom-0 mb-[-25px]';
                  msgEl.textContent = 'Không có dữ liệu phù hợp.';
                  exportBtn.parentElement.style.position = 'relative';
                  exportBtn.parentElement.appendChild(msgEl);
-                 exportBtn.disabled = false; exportBtn.innerHTML = originalBtnHTML; lucide.createIcons();
-                 setTimeout(() => msgEl.remove(), 3000);
-                 return;
+                 setTimeout(() => { if (msgEl) msgEl.remove(); }, 3000);
+            } else {
+                 try {
+                    const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Ngày sinh', 'Địa chỉ', 'Tổng số lần khám', 'Ghi chú'];
+                    const tableData = patientsToExportData.map((pData, index) => {
+                        const patientInfo = appState.patients[pData.patientId];
+                        return [
+                            index + 1,
+                            patientInfo.hoTen,
+                            patientInfo.gioiTinh || 'N/A',
+                            formatDate(patientInfo.ngaySinh),
+                            patientInfo.diaChi || 'N/A',
+                            pData.visitCount,
+                            pData.note
+                        ];
+                    });
+
+                    const dataToExport = [headers, ...tableData];
+                    const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
+                    worksheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 40 }, { wch: 15 }, { wch: 40 }];
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
+                    XLSX.writeFile(workbook, `Danh_sach_benh_nhan_${listType}_${new Date().toISOString().slice(0,10)}.xlsx`);
+                } catch(err) {
+                    console.error("Error generating Excel file:", err);
+                     showAlert("Đã có lỗi xảy ra khi xuất file Excel.", "error");
+                }
             }
-            try {
-                const headers = ['STT', 'Họ và Tên', 'Giới tính', 'Ngày sinh', 'Địa chỉ', 'Số lần khám', 'Ghi chú (ngày khám)'];
-                const dataToExport = [headers, ...tableData];
-                const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
-                worksheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 40 }, { wch: 15 }, { wch: 40 }];
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachBenhNhan');
-                XLSX.writeFile(workbook, `Danh_sach_benh_nhan_${new Date().toISOString().slice(0,10)}.xlsx`);
-            } catch(err) {
-                console.error("Error generating Excel file:", err);
-            } finally {
-                exportBtn.disabled = false; exportBtn.innerHTML = originalBtnHTML; lucide.createIcons();
-            }
+            
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalBtnHTML;
+            lucide.createIcons();
         }
+        // --- END: MODIFIED SECTION ---
 
         document.getElementById('export-save-data-btn').addEventListener('click', () => {
             const btn = document.getElementById('export-save-data-btn');
